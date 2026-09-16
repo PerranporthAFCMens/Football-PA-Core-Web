@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Football PA Admin Console</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--blue:#1357A6;--ink:#102033;--muted:#6d7b8a;--line:#d9e3ec;--ok:#1f8f54;--bad:#b42318}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(180deg,#e7eef6,#f8fafc 45%,#edf2f7);color:var(--ink)}button,input,select{font:inherit}.wrap{width:min(100% - 28px,760px);margin:auto;padding:16px 0 60px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.brand{display:flex;align-items:center;gap:10px}.brand img{width:44px;height:44px;object-fit:contain}.eyebrow{font-size:11px;font-weight:900;letter-spacing:1px}.muted{font-size:12px;color:var(--muted)}.btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;cursor:pointer}.secondary{background:#fff;border:1px solid var(--line);color:var(--ink)}.primary{background:var(--blue);color:#fff}.card,.status{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 24px #173d6812}.card{padding:18px;margin-bottom:12px}.status{padding:13px 14px;margin-bottom:12px;font-size:12px}.status.ok{color:var(--ok)}.status.bad{color:var(--bad)}.hero h1{margin:4px 0 5px;font-size:24px}.field{margin-top:16px}.field label{display:block;font-size:12px;font-weight:900;margin-bottom:7px}.field select,.field input{width:100%;border:1px solid #cfd9e3;border-radius:12px;background:#fff;padding:13px;font-size:16px}.choice{display:grid;grid-template-columns:1fr 1fr;gap:10px}.choice button{border:1px solid var(--line);background:#f8fafc;border-radius:14px;padding:16px 12px;text-align:left;cursor:pointer}.choice button.active{border-color:var(--blue);box-shadow:0 0 0 2px #d8eaff inset;background:#f5faff}.choice strong{display:block;font-size:14px}.choice small{display:block;color:var(--muted);font-size:11px;margin-top:4px}.summary{background:#f5f8fb;border-radius:14px;padding:14px;margin-top:16px}.summary strong{font-size:20px;display:block;margin-top:4px}.save{width:100%;margin-top:16px}.save:disabled{opacity:.5;cursor:not-allowed}.hidden{display:none!important}.note{font-size:11px;line-height:1.5;color:var(--muted);margin-top:12px}@media(max-width:600px){.wrap{width:100%;padding:12px 12px 40px}.choice{grid-template-columns:1fr}.hero h1{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand"><img src="https://raw.githubusercontent.com/PerranporthAFCMens/Football-PA/main/football-pa-logo-dark.svg" alt="Football PA"><div><div class="eyebrow">FOOTBALL PA</div><div class="muted">Admin Console</div></div></div>
+    <button class="btn secondary" onclick="location.href='/'">← Core</button>
+  </div>
+
+  <div id="status" class="status">Loading Subs settings…</div>
+  <div id="app" class="hidden">
+    <section class="card hero"><div class="eyebrow muted">SUBS CONFIGURATION</div><h1 id="teamName">Team</h1><div id="clubLine" class="muted"></div></section>
+
+    <section class="card">
+      <div class="field"><label>Season</label><select id="season"></select></div>
+
+      <div class="field"><label>How should players be charged?</label>
+        <div class="choice">
+          <button type="button" data-model="per_game"><strong>Per game</strong><small>Charge a player each time they play.</small></button>
+          <button type="button" data-model="annual"><strong>Annual</strong><small>One season fee for each player.</small></button>
+        </div>
+      </div>
+
+      <div class="field"><label id="amountLabel">Amount</label><input id="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="3.00"></div>
+
+      <div class="summary"><div class="muted">Current setup</div><strong id="summary">—</strong></div>
+      <button id="save" class="btn primary save">Save Subs settings</button>
+      <div class="note">This setting is stored against the selected team and season, so historic seasons keep their original charging model and amount.</div>
+    </section>
+  </div>
+</div>
+<script>
+const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW');
+const $=id=>document.getElementById(id);let club,team,seasons=[],model='per_game';
+function setStatus(t,type=''){const el=$('status');el.textContent=t;el.className='status '+type}
+function money(pence){return new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format((pence||0)/100)}
+function syncButtons(){document.querySelectorAll('[data-model]').forEach(b=>b.classList.toggle('active',b.dataset.model===model));$('amountLabel').textContent=model==='per_game'?'Amount per game':'Annual amount';updateSummary()}
+function updateSummary(){const pennies=Math.round((Number($('amount').value)||0)*100);$('summary').textContent=model==='per_game'?`${money(pennies)} per played match`:`${money(pennies)} per season`}
+async function loadSetting(){const seasonId=$('season').value;const {data,error}=await sb.from('subs_settings').select('charge_model,amount_pence').eq('team_id',team.id).eq('season_id',seasonId).maybeSingle();if(error)throw error;if(data){model=data.charge_model;$('amount').value=(data.amount_pence/100).toFixed(2)}else{model='per_game';$('amount').value='0.00'}syncButtons()}
+async function boot(){const {data:{session}}=await sb.auth.getSession();if(!session){location.replace('/login.html');return}try{let r=await sb.from('clubs').select('id,name,short_name,primary_colour').limit(1);if(r.error)throw r.error;club=r.data?.[0];r=await sb.from('teams').select('id,name,club_id,season_label').limit(1);if(r.error)throw r.error;team=r.data?.[0];if(!club||!team)throw new Error('No club or team is available.');r=await sb.from('seasons').select('id,label,active').eq('club_id',club.id).order('starts_on',{ascending:false});if(r.error)throw r.error;seasons=r.data||[];const {data:allowed,error:permErr}=await sb.rpc('can_manage_subs',{p_team_id:team.id});if(permErr)throw permErr;if(!allowed)throw new Error('You do not have permission to manage Subs settings.');if(club.primary_colour)document.documentElement.style.setProperty('--blue',club.primary_colour);$('teamName').textContent=team.name;$('clubLine').textContent=club.name+' · Subs';$('season').innerHTML=seasons.map(s=>`<option value="${s.id}" ${s.active?'selected':''}>${s.label}</option>`).join('');await loadSetting();$('app').classList.remove('hidden');setStatus('Admin access confirmed.','ok')}catch(e){setStatus(e.message,'bad')}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-model]');if(!b)return;model=b.dataset.model;syncButtons()});$('amount').addEventListener('input',updateSummary);$('season').addEventListener('change',()=>loadSetting().catch(e=>setStatus(e.message,'bad')));$('save').onclick=async()=>{const amount=Number($('amount').value);if(!Number.isFinite(amount)||amount<0){setStatus('Enter a valid amount.','bad');return}const pence=Math.round(amount*100);$('save').disabled=true;$('save').textContent='Saving…';const {error}=await sb.rpc('save_subs_settings',{p_team_id:team.id,p_season_id:$('season').value,p_charge_model:model,p_amount_pence:pence});$('save').disabled=false;$('save').textContent='Save Subs settings';if(error){setStatus(error.message,'bad');return}setStatus('Subs settings saved.','ok');updateSummary()};sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});boot();
+</script>
+</body>
+</html>
