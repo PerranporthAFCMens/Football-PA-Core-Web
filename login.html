@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Football PA Core Login</title>
+<style>
+:root{--blue:#1357A6;--ink:#102033;--muted:#6d7b8a;--line:#d9e3ec;--ok:#1f8f54;--bad:#b42318}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(180deg,#e7eef6,#f8fafc 45%,#edf2f7);color:var(--ink)}.wrap{max-width:560px;margin:auto;padding:24px 16px 60px}.brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}.mark{width:44px;height:44px;border-radius:13px;background:#101827;color:#fff;display:grid;place-items:center;font-weight:900}.eyebrow{font-size:11px;font-weight:900;letter-spacing:1.1px}.muted{font-size:12px;color:var(--muted)}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 10px 30px #173d6815}.card h1{margin:0 0 6px;font-size:24px}.field{margin-top:14px}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:6px}.field input{width:100%;padding:13px;border-radius:12px;border:1px solid #cfd9e3;font-size:16px}.row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.btn{border:0;border-radius:12px;padding:13px;font-weight:800;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#edf3f8;color:var(--ink)}.status{margin-top:14px;padding:11px 12px;border-radius:12px;background:#f5f8fb;font-size:12px;line-height:1.45}.ok{color:var(--ok)}.bad{color:var(--bad)}.hidden{display:none}.data{margin-top:16px;display:grid;gap:10px}.item{padding:12px;border:1px solid var(--line);border-radius:13px;background:#f9fbfd}.item b{display:block}.topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.tiny{font-size:11px;color:var(--muted)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body><div class="wrap">
+<div class="brand"><div class="mark">FP</div><div><div class="eyebrow">FOOTBALL PA</div><div class="muted">Core authentication test</div></div></div>
+<div class="card" id="authCard">
+<h1>Sign in to Core</h1><div class="muted">This is the first real Supabase login for Football PA Core.</div>
+<div class="field"><label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
+<div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Minimum 6 characters"></div>
+<div class="row"><button class="btn primary" id="signIn">Sign in</button><button class="btn secondary" id="signUp">Create account</button></div>
+<div id="status" class="status">Use a test account only for now. New Core accounts automatically get read-only access to the fake Harbour Athletic demo data.</div>
+</div>
+<div class="card hidden" id="sessionCard">
+<div class="topline"><div><div class="eyebrow">SIGNED IN</div><div id="who" class="muted"></div></div><button class="btn secondary" id="signOut">Sign out</button></div>
+<h1>Supabase is connected</h1><div class="muted">The data below is being read from the Core database, not from Apps Script or browser demo data.</div>
+<div id="data" class="data"></div>
+<div class="row"><a class="btn primary" style="text-decoration:none;text-align:center" href="/">Open Core app</a><button class="btn secondary" id="refresh">Refresh data</button></div>
+</div>
+</div>
+<script>
+const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW');
+const $=id=>document.getElementById(id);function msg(t,bad=false){$('status').textContent=t;$('status').className='status '+(bad?'bad':'ok')}
+async function loadData(){const {data:clubs,error:e1}=await sb.from('clubs').select('id,name,short_name,primary_colour').limit(5);if(e1)throw e1;const {data:teams,error:e2}=await sb.from('teams').select('id,name,season_label,club_id').limit(5);if(e2)throw e2;const {data:players,error:e3}=await sb.from('players').select('display_name,preferred_position,shirt_number').order('shirt_number').limit(30);if(e3)throw e3;const {data:fixtures,error:e4}=await sb.from('fixtures').select('opponent,venue,competition,status,home_score,away_score,kick_off').order('kick_off').limit(10);if(e4)throw e4;$('data').innerHTML=`<div class="item"><b>${clubs?.[0]?.name||'No club visible'}</b><span class="tiny">Club from Supabase</span></div><div class="item"><b>${teams?.[0]?.name||'No team visible'}</b><span class="tiny">${teams?.[0]?.season_label||''}</span></div><div class="item"><b>${players.length} players visible</b><span class="tiny">${players.slice(0,5).map(p=>p.display_name).join(' · ')}</span></div><div class="item"><b>${fixtures.length} fixtures visible</b><span class="tiny">${fixtures.map(f=>f.opponent).join(' · ')}</span></div>`}
+async function renderSession(){const {data:{session}}=await sb.auth.getSession();if(session){$('authCard').classList.add('hidden');$('sessionCard').classList.remove('hidden');$('who').textContent=session.user.email;try{await loadData()}catch(err){$('data').innerHTML=`<div class="item bad"><b>Signed in, but data could not load.</b><span class="tiny">${err.message}</span></div>`}}else{$('authCard').classList.remove('hidden');$('sessionCard').classList.add('hidden')}}
+$('signIn').onclick=async()=>{msg('Signing in…');const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)return msg(error.message,true);msg('Signed in.');await renderSession()};
+$('signUp').onclick=async()=>{msg('Creating account…');const {data,error}=await sb.auth.signUp({email:$('email').value.trim(),password:$('password').value,options:{emailRedirectTo:'https://core.footballpa.com/login.html'}});if(error)return msg(error.message,true);if(data.session){msg('Account created and signed in.');await renderSession()}else msg('Account created. Check your email to confirm it, then return here and sign in.')};
+$('signOut').onclick=async()=>{await sb.auth.signOut();await renderSession()};$('refresh').onclick=loadData;sb.auth.onAuthStateChange(()=>setTimeout(renderSession,0));renderSession();
+</script></body></html>
