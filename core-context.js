@@ -42,14 +42,19 @@ async function resolve(opts={}){
   const {data:club,error:clubError}=await sb.from('clubs').select('id,name,short_name,primary_colour').eq('id',team.club_id).single();
   if(clubError) throw clubError;
 
-  const [featureRes,settingsRes]=await Promise.all([
+  const [featureRes,settingsRes,teamMemberRes,clubMemberRes,platformAdminRes]=await Promise.all([
     sb.from('team_features').select('*').eq('team_id',team.id).maybeSingle(),
-    sb.from('team_settings').select('*').eq('team_id',team.id).maybeSingle()
+    sb.from('team_settings').select('*').eq('team_id',team.id).maybeSingle(),
+    sb.from('team_memberships').select('role,permissions').eq('team_id',team.id).eq('user_id',session.user.id).eq('active',true).maybeSingle(),
+    sb.from('club_memberships').select('role,permissions').eq('club_id',team.club_id).eq('user_id',session.user.id).eq('active',true).maybeSingle(),
+    sb.from('platform_admins').select('user_id').eq('user_id',session.user.id).eq('active',true).maybeSingle()
   ]);
+  const teamRole=teamMemberRes.data?.role||null,clubRole=clubMemberRes.data?.role||null;
+  const canManage=!!platformAdminRes.data||['team_admin','manager','coach'].includes(teamRole)||['owner','club_admin'].includes(clubRole);
 
   const previewSuffix=preview?'&dev_preview=1':'';
   return {
-    session,team,club,preview,
+    session,team,club,preview,canManage,teamRole,clubRole,
     features:featureRes.data||{},
     settings:settingsRes.data||{},
     href(path,extra=''){
