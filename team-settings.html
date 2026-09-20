@@ -35,27 +35,26 @@ $('saveFixtureSource').onclick=saveFixtureSource;
 async function checkFullTime(){
  const url=$('fullTimeUrl').value.trim(),btn=$('checkFixtures');
  if(!url){status('Paste the FA Full-Time link first.','bad');return}
- btn.disabled=true;btn.textContent='Checking…';let secondsLeft=15;const renderWait=()=>{$('fixtureSourceStatus').innerHTML='<div class="syncWait"><span class="spinner"></span><div><b>Checking FA Full-Time…</b><br><span class="muted">Please wait. Up to '+secondsLeft+' second'+(secondsLeft===1?'':'s')+' remaining.</span></div></div>'};renderWait();const countdown=setInterval(()=>{secondsLeft=Math.max(0,secondsLeft-1);renderWait()},1000);$('fixturePreview').style.display='none';
- let watchdog;
- const fail=(msg)=>{$('fixtureSourceStatus').innerHTML='<b>Full-Time check failed.</b><br><span class="muted">'+esc(msg)+'</span>';status('Could not read FA Full-Time: '+msg,'bad')};
- try{
-  const sessionResult=await Promise.race([sb.auth.getSession(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Session check timed out after 5 seconds.')),5000))]);
-  const session=sessionResult?.data?.session;if(!session)throw new Error('Your session has expired. Sign in again.');
-  const ctrl=new AbortController();
-  watchdog=setTimeout(()=>ctrl.abort(),12000);
-  /* countdown remains visible while contacting Full-Time */
-  const resp=await fetch('https://hennzggqaquevqgiucqn.supabase.co/functions/v1/fa-fulltime-preview',{method:'POST',signal:ctrl.signal,headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':'sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW'},body:JSON.stringify({url,teamId:team.id})});
-  let data;try{data=await resp.json()}catch(_){throw new Error('Sync service returned HTTP '+resp.status+' without a readable response.')}
-  if(!resp.ok||!data?.ok)throw new Error(data?.error||('Sync service returned HTTP '+resp.status));
-  const now=new Date(),patch={fixture_last_checked_at:now.toISOString()};
-  sb.from('team_settings').update(patch).eq('team_id',team.id).then(()=>{});
-  settings={...settings,...patch};
+ btn.disabled=true;btn.textContent='Checking…';$('fixturePreview').style.display='none';
+ let secondsLeft=15,finished=false;
+ const renderWait=()=>{$('fixtureSourceStatus').innerHTML='<div class="syncWait"><span class="spinner"></span><div><b>Checking FA Full-Time…</b><br><span class="muted">Please wait. '+secondsLeft+' second'+(secondsLeft===1?'':'s')+' remaining.</span></div></div>'};
+ renderWait();
+ const countdown=setInterval(()=>{if(finished)return;secondsLeft--;if(secondsLeft<=0){finish(false,'The check did not complete within 15 seconds.');return}renderWait()},1000);
+ function finish(ok,msg,data){
+  if(finished)return;finished=true;clearInterval(countdown);btn.disabled=false;btn.textContent='Check now';
+  if(!ok){$('fixtureSourceStatus').innerHTML='<b>Full-Time check timed out.</b><br><span class="muted">'+esc(msg)+'</span>';status('Full-Time check stopped.','bad');return}
+  const now=new Date(),patch={fixture_last_checked_at:now.toISOString()};settings={...settings,...patch};sb.from('team_settings').update(patch).eq('team_id',team.id).then(()=>{});
   $('fixtureSourceStatus').textContent='Connected · Full-Time responded · '+data.rowCount+' dated fixture/result rows found · Last checked: '+now.toLocaleString('en-GB');
-  const p=$('fixturePreview');p.style.display='block';p.className='sourceStatus';p.innerHTML='<b>Full-Time connection working</b><br>'+esc(data.title||'Team page')+'<br><span class="muted">Team ID '+esc(data.teamId)+' · '+data.rowCount+' fixture/result rows detected.</span>';
-  status('FA Full-Time connection checked successfully.','ok');
- }catch(e){fail(e?.name==='AbortError'?'Full-Time check timed out after 12 seconds.':(e?.message||String(e)))}
- finally{clearInterval(countdown);if(watchdog)clearTimeout(watchdog);btn.disabled=false;btn.textContent='Check now'}
+  const p=$('fixturePreview');p.style.display='block';p.className='sourceStatus';p.innerHTML='<b>Full-Time connection working</b><br>'+esc(data.title||'Team page')+'<br><span class="muted">Team ID '+esc(data.teamId)+' · '+data.rowCount+' fixture/result rows detected.</span>';status('FA Full-Time connection checked successfully.','ok');
+ }
+ try{
+  const sessionResult=await Promise.race([sb.auth.getSession(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Session check timed out.')),5000))]);if(finished)return;
+  const session=sessionResult?.data?.session;if(!session)throw new Error('Your session has expired. Sign in again.');
+  const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),11000);
+  const resp=await fetch('https://hennzggqaquevqgiucqn.supabase.co/functions/v1/fa-fulltime-preview',{method:'POST',signal:ctrl.signal,headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':'sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW'},body:JSON.stringify({url,teamId:team.id})});if(finished)return;
+  let data;try{data=await resp.json()}catch(_){throw new Error('Sync service returned HTTP '+resp.status)}if(!resp.ok||!data?.ok)throw new Error(data?.error||('Sync service returned HTTP '+resp.status));finish(true,'',data);
+ }catch(e){if(!finished)finish(false,e?.name==='AbortError'?'The Full-Time service did not respond in time.':(e?.message||String(e)))}
 }
-$('checkFixtures').onclick=()=>{let settled=false;const btn=$('checkFixtures');const hard=setTimeout(()=>{if(settled)return;settled=true;btn.disabled=false;btn.textContent='Check now';$('fixtureSourceStatus').innerHTML='<b>Full-Time check failed.</b><br><span class="muted">The check did not complete within 15 seconds. This is a Football PA connection problem, not a saved-fixture change.</span>';status('Full-Time check stopped after 15 seconds.','bad')},15000);checkFullTime().finally(()=>{if(!settled){settled=true;clearTimeout(hard)}})};
+$('checkFixtures').onclick=checkFullTime;
 $('addLogo').onclick=()=>{if(team?.badge_url){$('logoFile').value='';setLogoPreview('');team.badge_url='';$('addLogo').textContent='＋ Add image';$('addLogo').click();return}$('logoFile').click()};$('logoFile').onchange=e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>5*1024*1024){status('Please choose an image under 5 MB.','bad');e.target.value='';return}setLogoPreview(URL.createObjectURL(file));$('uploadLogo').style.display='inline-block';status('Image selected. Tap Upload image to save it to this team.','ok')};$('uploadLogo').onclick=uploadSelectedLogo;$('removeLogo').onclick=()=>{};$('periodType').onchange=syncPeriods;$('cancel').onclick=()=>location.href='/index.html'+(new URLSearchParams(location.search).get('dev_preview')==='1'?'?team='+encodeURIComponent(team.id)+'&dev_preview=1':'');load();
 </script></body></html>
