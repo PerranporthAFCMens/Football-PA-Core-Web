@@ -72,3 +72,106 @@ body{background:linear-gradient(180deg,#e7eef6,#f8fafc 42%,#edf2f7)!important;co
 .fpa-shell-brand{display:flex;align-items:center;gap:10px;min-width:0}
 .fpa-shell-brand b{display:block;font-size:14px;font-weight:900}
 .fpa-shell-brand .muted{display:block;font-size:11px;margin-top:2px}
+
+/* Football PA subtle colour pass v1 */
+:root{
+  --fpa-accent:var(--blue,#1357A6);
+  --fpa-accent-soft:#eaf3fc;
+  --fpa-accent-softer:#f6faff;
+  --fpa-accent-line:#c9ddf0;
+}
+body{
+  background:
+    radial-gradient(circle at 10% 0%, color-mix(in srgb,var(--fpa-accent) 8%,transparent) 0 18%, transparent 38%),
+    linear-gradient(180deg,#e8f0f8 0%,#f8fafc 44%,#edf2f7 100%)!important;
+}
+.fpa-pagebar{
+  background:linear-gradient(90deg,
+    color-mix(in srgb,var(--fpa-accent) 9%,white),
+    color-mix(in srgb,var(--fpa-accent) 3%,white)
+  )!important;
+  border:1px solid color-mix(in srgb,var(--fpa-accent) 18%,#d9e3ec)!important;
+  border-radius:14px!important;
+  padding:8px 12px!important;
+}
+.fpa-page .card,
+.fpa-page .panel,
+.fpa-page .manage,
+.fpa-page .status,
+.fpa-page .empty,
+.fpa-card{
+  border-color:color-mix(in srgb,var(--fpa-accent) 14%,#d9e3ec)!important;
+}
+.fpa-page .card,
+.fpa-page .panel,
+.fpa-page .manage,
+.fpa-card{
+  background:linear-gradient(180deg,#fff 0%,color-mix(in srgb,var(--fpa-accent) 2.5%,white) 100%)!important;
+}
+.fpa-page h1,
+.fpa-page h2,
+.fpa-page h3{
+  color:color-mix(in srgb,var(--fpa-accent) 28%,#102033)!important;
+}
+.fpa-page .eyebrow,
+.fpa-page .field label{
+  color:color-mix(in srgb,var(--fpa-accent) 78%,#102033)!important;
+}
+.fpa-page .btn.primary,
+.fpa-page button.primary,
+.fpa-page .accept{
+  background:linear-gradient(180deg,
+    color-mix(in srgb,var(--fpa-accent) 92%,white),
+    var(--fpa-accent)
+  )!important;
+  color:#fff!important;
+  box-shadow:0 5px 12px color-mix(in srgb,var(--fpa-accent) 18%,transparent)!important;
+}
+.fpa-page .btn.secondary,
+.fpa-page button.secondary{
+  background:color-mix(in srgb,var(--fpa-accent) 8%,white)!important;
+  color:color-mix(in srgb,var(--fpa-accent) 82%,#102033)!important;
+  border:1px solid color-mix(in srgb,var(--fpa-accent) 16%,#d9e3ec)!important;
+}
+.fpa-page .tabs{
+  background:color-mix(in srgb,var(--fpa-accent) 7%,#eef3f8)!important;
+}
+.fpa-page .tabs button.active{
+  background:var(--fpa-accent)!important;
+}
+.fpa-page table thead,
+.fpa-page .table thead{
+  background:color-mix(in srgb,var(--fpa-accent) 7%,white)!important;
+}
+.fpa-page table th{
+  color:color-mix(in srgb,var(--fpa-accent) 72%,#102033)!important;
+}
+.fpa-page input:focus,
+.fpa-page select:focus,
+.fpa-page textarea:focus{
+  outline:3px solid color-mix(in srgb,var(--fpa-accent) 16%,transparent)!important;
+  border-color:color-mix(in srgb,var(--fpa-accent) 55%,#cbd6e2)!important;
+}
+.fpa-preview{
+  background:linear-gradient(90deg,#fff4cc,#fff9e6)!important;
+  border-color:#ead58b!important;
+}
+.home-stat{
+  position:relative;
+  overflow:hidden;
+}
+.home-stat:before{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:0;height:4px;
+  background:var(--fpa-accent);
+  opacity:.72;
+}
+.fixture-venue,
+.shirt{
+  background:color-mix(in srgb,var(--fpa-accent) 9%,white)!important;
+  color:color-mix(in srgb,var(--fpa-accent) 90%,#102033)!important;
+}
+@media(max-width:650px){
+  .fpa-pagebar{padding:7px 10px!important;border-radius:12px!important}
+}
