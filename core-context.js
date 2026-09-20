@@ -44,11 +44,11 @@ async function resolve(opts={}){
 
   let season=null;
   if(team.season_label){
-    const {data}=await sb.from('seasons').select('id,label,club_id,active,start_date,end_date').eq('club_id',team.club_id).eq('label',team.season_label).maybeSingle();
+    const {data}=await sb.from('seasons').select('id,label,club_id,active,starts_on,ends_on').eq('club_id',team.club_id).eq('label',team.season_label).maybeSingle();
     season=data||null;
   }
   if(!season){
-    const {data}=await sb.from('seasons').select('id,label,club_id,active,start_date,end_date').eq('club_id',team.club_id).eq('active',true).order('start_date',{ascending:false}).limit(1).maybeSingle();
+    const {data}=await sb.from('seasons').select('id,label,club_id,active,starts_on,ends_on').eq('club_id',team.club_id).eq('active',true).order('starts_on',{ascending:false}).limit(1).maybeSingle();
     season=data||null;
   }
 
