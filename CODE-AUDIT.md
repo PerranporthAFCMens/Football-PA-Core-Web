@@ -27,16 +27,16 @@ Reviewed repository structure, shared context/navigation, Dashboard, Players, Tr
 
 Vercel build-rate limiting is the main reason the visible site can lag behind `main`.
 
-## Cleanup direction
+## Cleanup completed
 
-The cleanup pass should:
-- make `players.html` the single player-management/training-log surface
-- keep `training.html` only as a redirect
-- remove dead UI/state rather than hiding it
-- remove temporary deployment markers
-- remove unused Features fetches from Settings while retaining platform feature-gating compatibility
-- update the goal map to the approved half-pitch layout
-- strengthen smoke checks
+- `players.html` is now the single player-management/training-log surface
+- `training.html` is a backwards-compatible redirect
+- old Player Dashboard UI/state was removed from the Players surface
+- temporary deployment marker removed
+- unused Features fetch/state removed from Team Settings
+- approved half-pitch goal map implemented
+- duplicate shared-navigation mounts removed from Subs, Voting and Fixture Sync
+- smoke checks expanded to cover the regressions above
 
 ## Deliberately retained
 

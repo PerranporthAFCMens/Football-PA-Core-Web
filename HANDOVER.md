@@ -125,6 +125,20 @@ Substitutions are stored in `substitutions`, while `rpcEvents()` excludes substi
 
 Front-end `canManage` can include club owner/admin, while some fixture RLS historically focused on team roles plus platform admin. If UI permits a write but RLS rejects it, compare both models before broadening access.
 
+## Deep-clean status
+
+Completed on main:
+- durable README, handover, resume and audit docs added
+- Players & Training rewritten as one focused management/attendance surface
+- legacy Training route reduced to a redirect
+- duplicate shared-navigation mounts removed from Subs, Voting and Fixture Sync
+- dead Features loading removed from Team Settings
+- temporary deploy marker removed from shared navigation
+- approved half-pitch goal-zone map implemented
+- smoke checks expanded around regressions already seen in testing
+
+The remaining high-priority work is architectural rather than cosmetic: starting-lineup history/current-XI persistence and substitution-feed reconstruction.
+
 ## Validation discipline
 
 Before calling a fix complete:
