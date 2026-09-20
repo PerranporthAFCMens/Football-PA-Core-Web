@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eef3f8">
+<title>Team Dashboard · Football PA</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/core-context.js"></script>
+<script src="/core-nav.js"></script>
+<link rel="stylesheet" href="/core-ui.css">
+<style>
+.dashboard{display:grid;gap:12px}.dash-hero{padding:18px;position:relative;overflow:hidden}.dash-hero:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:-85px;top:-85px;background:color-mix(in srgb,var(--blue) 11%,transparent)}.dash-kicker{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.dash-title{margin:4px 0 0;font-size:27px;line-height:1.05}.dash-sub{margin-top:6px;color:var(--muted);font-size:13px}.dash-filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.dash-filters select{min-width:140px;border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fff;font:inherit}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.kpi{padding:13px 8px;text-align:center}.kpi b{display:block;font-size:25px;line-height:1}.kpi span{display:block;font-size:9px;font-weight:900;letter-spacing:.08em;color:var(--muted);margin-top:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.panel{padding:16px}.panel h2{font-size:17px;margin:0 0 12px}.muted{color:var(--muted)}.empty{padding:15px 0;color:var(--muted);font-size:13px}
+.formline{display:flex;gap:5px;align-items:center}.formDot{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:11px;font-weight:900}.formDot.w{background:#e7f5ec;color:#147a3e}.formDot.d{background:#eef1f5;color:#5d6977}.formDot.l{background:#fdeaea;color:#a42121}
+.rankRow{display:grid;grid-template-columns:minmax(0,1fr) 1fr 34px;gap:9px;align-items:center;padding:7px 0}.rankName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;font-weight:800}.track{height:9px;border-radius:999px;background:#eef2f5;overflow:hidden}.fill{height:100%;border-radius:999px;background:var(--blue)}.rankVal{text-align:right;font-weight:900;font-size:12px}
+.matchBars{display:flex;align-items:flex-end;gap:7px;height:180px;overflow-x:auto;padding:10px 2px 0}.matchBar{min-width:42px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}.barPair{height:132px;display:flex;align-items:flex-end;gap:3px}.bar{width:13px;border-radius:4px 4px 0 0;min-height:2px}.bar.gf{background:var(--blue)}.bar.ga{background:#d65a5a}.barLabel{font-size:8px;color:var(--muted);max-width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.barScore{font-size:9px;font-weight:900}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:9px}.splitCard{border:1px solid #e5ebf1;border-radius:12px;padding:12px}.splitCard b{font-size:22px}.splitCard small{display:block;color:var(--muted);font-weight:800;margin-top:3px}.miniStats{display:flex;gap:10px;margin-top:9px;font-size:11px;color:var(--muted);font-weight:800;flex-wrap:wrap}
+.contribRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px 0;border-top:1px solid #eef2f5}.contribRow:first-child{border-top:0}.contribRow strong{font-size:13px}.contribRow small{color:var(--muted)}.contribNum{font-size:13px;font-weight:900}
+.legend{display:flex;gap:12px;font-size:10px;color:var(--muted);font-weight:800;margin-top:-5px;margin-bottom:7px}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}.legend .g{background:var(--blue)}.legend .c{background:#d65a5a}
+@media(max-width:760px){.kpis{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr}.dash-title{font-size:24px}.panel{padding:14px}.kpi b{font-size:22px}}
+</style>
+</head>
+<body>
+<main class="fpa-page">
+<div id="loading" class="fpa-card" style="padding:28px;text-align:center">Loading team dashboard…</div>
+<div id="app" class="dashboard hidden">
+  <section class="fpa-card dash-hero">
+    <div class="dash-kicker">Team dashboard</div>
+    <h1 id="dashTitle" class="dash-title">Team data</h1>
+    <div id="dashSub" class="dash-sub"></div>
+    <div class="dash-filters"><select id="competitionFilter"><option value="all">All competitions</option></select><select id="venueFilter"><option value="all">All venues</option><option value="home">Home</option><option value="away">Away</option><option value="neutral">Neutral</option></select></div>
+  </section>
+
+  <section id="kpis" class="kpis"></section>
+
+  <section class="grid2">
+    <article class="fpa-card panel"><h2>Recent form</h2><div id="form"></div></article>
+    <article class="fpa-card panel"><h2>Home & away</h2><div id="venueSplit"></div></article>
+  </section>
+
+  <section class="fpa-card panel">
+    <h2>Goals vs conceded by match</h2>
+    <div class="legend"><span><i class="g"></i>Goals</span><span><i class="c"></i>Conceded</span></div>
+    <div id="matchBars" class="matchBars"></div>
+  </section>
+
+  <section class="grid2">
+    <article class="fpa-card panel"><h2>Top goalscorers</h2><div id="scorers"></div></article>
+    <article class="fpa-card panel"><h2>Top assists</h2><div id="assists"></div></article>
+  </section>
+
+  <section class="grid2">
+    <article class="fpa-card panel"><h2>Player appearances</h2><div id="appearances"></div></article>
+    <article class="fpa-card panel"><h2>Goal timing</h2><div id="goalTiming"></div></article>
+  </section>
+</div>
+</main>
+<script>
+const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW');
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ctx,fixtures=[],events=[],lineups=[],subs=[],players=[];
+const complete=f=>String(f.status||'').toLowerCase()==='completed';
+const ourScore=f=>String(f.venue||'').toLowerCase()==='away'?Number(f.away_score??0):Number(f.home_score??0);
+const oppScore=f=>String(f.venue||'').toLowerCase()==='away'?Number(f.home_score??0):Number(f.away_score??0);
+function activeFixtures(){const comp=$('competitionFilter').value,venue=$('venueFilter').value;return fixtures.filter(f=>complete(f)&&(comp==='all'||f.competition===comp)&&(venue==='all'||f.venue===venue))}
+function playerName(id){return players.find(p=>p.id===id)?.display_name||'Unknown player'}
+function rankHtml(rows,empty='No data yet.'){
+ if(!rows.length)return '<div class="empty">'+empty+'</div>';const max=Math.max(1,...rows.map(x=>x.value));
+ return rows.slice(0,8).map(x=>'<div class="rankRow"><div class="rankName">'+esc(x.name)+'</div><div class="track"><div class="fill" style="width:'+((x.value/max)*100)+'%"></div></div><div class="rankVal">'+x.value+'</div></div>').join('');
+}
+function render(){
+ const fs=activeFixtures(),ids=new Set(fs.map(f=>f.id)),ev=events.filter(e=>ids.has(e.fixture_id)),ln=lineups.filter(x=>ids.has(x.fixture_id)),sbx=subs.filter(x=>ids.has(x.fixture_id));
+ let w=0,d=0,l=0,gf=0,ga=0;
+ for(const f of fs){const a=ourScore(f),b=oppScore(f);gf+=a;ga+=b;if(a>b)w++;else if(a===b)d++;else l++}
+ const vals=[[fs.length,'PLAYED'],[w,'WINS'],[d,'DRAWS'],[l,'LOSSES'],[gf,'GOALS'],[ga,'CONCEDED']];
+ $('kpis').innerHTML=vals.map(v=>'<div class="fpa-card kpi"><b>'+v[0]+'</b><span>'+v[1]+'</span></div>').join('');
+
+ const recent=[...fs].sort((a,b)=>new Date(b.kick_off)-new Date(a.kick_off)).slice(0,8).reverse();
+ $('form').innerHTML=recent.length?'<div class="formline">'+recent.map(f=>{const a=ourScore(f),b=oppScore(f),r=a>b?'w':a===b?'d':'l';return '<div class="formDot '+r+'" title="'+esc(f.opponent)+' '+a+'-'+b+'">'+r.toUpperCase()+'</div>'}).join('')+'</div>':'<div class="empty">No completed matches yet.</div>';
+
+ const splitFor=v=>{const xs=fs.filter(f=>f.venue===v);let wins=0,goals=0;for(const f of xs){const a=ourScore(f),b=oppScore(f);goals+=a;if(a>b)wins++}return{p:xs.length,w:wins,g:goals}};
+ const h=splitFor('home'),a=splitFor('away');
+ $('venueSplit').innerHTML='<div class="split"><div class="splitCard"><b>'+h.p+'</b><small>HOME GAMES</small><div class="miniStats"><span>'+h.w+' wins</span><span>'+h.g+' goals</span></div></div><div class="splitCard"><b>'+a.p+'</b><small>AWAY GAMES</small><div class="miniStats"><span>'+a.w+' wins</span><span>'+a.g+' goals</span></div></div></div>';
+
+ const chrono=[...fs].sort((a,b)=>new Date(a.kick_off)-new Date(b.kick_off)),mx=Math.max(1,...chrono.map(f=>Math.max(ourScore(f),oppScore(f))));
+ $('matchBars').innerHTML=chrono.length?chrono.map(f=>{const x=ourScore(f),y=oppScore(f);return '<div class="matchBar" title="'+esc(f.opponent)+' '+x+'-'+y+'"><div class="barPair"><div class="bar gf" style="height:'+Math.max(2,(x/mx)*125)+'px"></div><div class="bar ga" style="height:'+Math.max(2,(y/mx)*125)+'px"></div></div><div class="barScore">'+x+'-'+y+'</div><div class="barLabel">'+esc(f.opponent)+'</div></div>'}).join(''):'<div class="empty">No completed matches yet.</div>';
+
+ const goalMap=new Map(),assistMap=new Map();
+ ev.filter(e=>e.event_type==='goal'&&e.team_side==='us').forEach(e=>{if(e.player_id)goalMap.set(e.player_id,(goalMap.get(e.player_id)||0)+1);if(e.related_player_id)assistMap.set(e.related_player_id,(assistMap.get(e.related_player_id)||0)+1)});
+ $('scorers').innerHTML=rankHtml([...goalMap].map(([id,value])=>({name:playerName(id),value})).sort((a,b)=>b.value-a.value),'No goalscorer data recorded yet.');
+ $('assists').innerHTML=rankHtml([...assistMap].map(([id,value])=>({name:playerName(id),value})).sort((a,b)=>b.value-a.value),'No assist data recorded yet.');
+
+ const apps=new Map();
+ ln.forEach(x=>{if(x.player_id)apps.set(x.player_id,(apps.get(x.player_id)||0)+1)});
+ sbx.forEach(x=>{if(x.player_on_id&&!ln.some(l=>l.fixture_id===x.fixture_id&&l.player_id===x.player_on_id))apps.set(x.player_on_id,(apps.get(x.player_on_id)||0)+1)});
+ $('appearances').innerHTML=rankHtml([...apps].map(([id,value])=>({name:playerName(id),value})).sort((a,b)=>b.value-a.value),'No lineup data recorded yet.');
+
+ const pc=Number(ctx.settings?.period_count||2),pm=Number(ctx.settings?.period_minutes||45),total=Math.max(1,pc*pm),bands=pc===4?['Q1','Q2','Q3','Q4']:pc===3?['P1','P2','P3']:['1st','2nd'],counts=new Array(pc).fill(0);
+ ev.filter(e=>e.event_type==='goal'&&e.team_side==='us').forEach(e=>{const m=Number(e.minute||0),idx=Math.min(pc-1,Math.max(0,Math.floor(m/pm)));counts[idx]++});
+ const mxBand=Math.max(1,...counts);
+ $('goalTiming').innerHTML=counts.some(Boolean)?counts.map((n,i)=>'<div class="rankRow"><div class="rankName">'+bands[i]+'</div><div class="track"><div class="fill" style="width:'+((n/mxBand)*100)+'%"></div></div><div class="rankVal">'+n+'</div></div>').join(''):'<div class="empty">No goal timing data recorded yet.</div>';
+}
+async function boot(){try{
+ ctx=await FootballPAContext.resolve();FootballPANav.mount({teamId:ctx.team.id});if(ctx.club.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
+ $('dashTitle').textContent=ctx.team.name;$('dashSub').textContent=(ctx.season?.label||ctx.team.season_label||'Current season')+' · '+ctx.club.name;
+ let fq=sb.from('fixtures').select('id,opponent,venue,competition,kick_off,status,home_score,away_score').eq('team_id',ctx.team.id).order('kick_off');if(ctx.season?.id)fq=fq.eq('season_id',ctx.season.id);
+ let pq=sb.from('team_players').select('players(id,display_name)').eq('team_id',ctx.team.id).eq('active',true);if(ctx.season?.id)pq=pq.eq('season_id',ctx.season.id);
+ const [fr,pr]=await Promise.all([fq,pq]);if(fr.error)throw fr.error;if(pr.error)throw pr.error;fixtures=fr.data||[];players=(pr.data||[]).map(x=>x.players).filter(Boolean);
+ const ids=fixtures.map(f=>f.id);
+ if(ids.length){
+   const [er,lr,sr]=await Promise.all([
+     sb.from('match_events').select('fixture_id,event_type,player_id,related_player_id,minute,team_side').in('fixture_id',ids),
+     sb.from('match_lineups').select('fixture_id,player_id,starter').in('fixture_id',ids),
+     sb.from('substitutions').select('fixture_id,player_on_id,player_off_id,minute').in('fixture_id',ids)
+   ]);
+   if(!er.error)events=er.data||[];if(!lr.error)lineups=lr.data||[];if(!sr.error)subs=sr.data||[];
+ }
+ const comps=[...new Set(fixtures.map(f=>f.competition).filter(Boolean))].sort();$('competitionFilter').innerHTML='<option value="all">All competitions</option>'+comps.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
+ $('competitionFilter').onchange=render;$('venueFilter').onchange=render;render();$('loading').classList.add('hidden');$('app').classList.remove('hidden');
+}catch(e){$('loading').innerHTML='<b>Could not load dashboard.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}}
+sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});boot();
+</script>
+</body></html>
