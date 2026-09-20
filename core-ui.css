@@ -9,3 +9,60 @@
 .fpa-page .btn,.fpa-page button.btn{border-radius:11px;min-height:42px}
 .fpa-page input,.fpa-page select{max-width:100%}
 @media(max-width:650px){.fpa-pagebar{padding:0 2px 10px!important}.fpa-section{padding:15px}.fpa-page h1{font-size:32px}.fpa-page .card{border-radius:16px}}
+
+/* Football PA unified team UI v3 */
+:root{
+  --fpa-blue:#1357A6;
+  --fpa-ink:#102033;
+  --fpa-muted:#6d7b8a;
+  --fpa-line:#d9e3ec;
+  --fpa-bg:#eef3f8;
+  --fpa-card:#fff;
+  --fpa-radius:17px;
+  --fpa-shadow:0 7px 20px #173d6810;
+}
+body{background:linear-gradient(180deg,#e7eef6,#f8fafc 42%,#edf2f7)!important;color:var(--fpa-ink)!important;font-family:Arial,Helvetica,sans-serif!important}
+.fpa-page{width:min(100% - 24px,1180px)!important;max-width:1180px!important;margin:0 auto!important;padding:18px 0 80px!important}
+.fpa-pagebar{
+  width:min(100% - 24px,1180px)!important;max-width:1180px!important;margin:0 auto 12px!important;
+  min-height:54px!important;padding:8px 0 10px!important;display:flex!important;align-items:center!important;
+  justify-content:space-between!important;gap:12px!important;background:transparent!important;color:var(--fpa-ink)!important;
+  border:0!important;border-bottom:1px solid #d9e3ec!important;border-radius:0!important;box-shadow:none!important
+}
+.fpa-pagebar a,.fpa-pagebar button{color:var(--fpa-ink)!important}
+.fpa-pagebar .muted,.fpa-pagebar small{color:var(--fpa-muted)!important}
+.fpa-page .card,.fpa-page .panel,.fpa-page .manage,.fpa-page .status,.fpa-page .empty{
+  background:var(--fpa-card)!important;border:1px solid var(--fpa-line)!important;border-radius:var(--fpa-radius)!important;
+  box-shadow:var(--fpa-shadow)!important
+}
+.fpa-page .card,.fpa-page .panel,.fpa-page .manage{padding:18px}
+.fpa-page h1{margin:4px 0 6px!important;font-size:clamp(30px,7vw,42px)!important;line-height:1.05!important;letter-spacing:-.025em!important;color:var(--fpa-ink)!important}
+.fpa-page h2{font-size:20px!important;line-height:1.15!important;color:var(--fpa-ink)!important}
+.fpa-page h3{color:var(--fpa-ink)!important}
+.fpa-page .muted,.fpa-page .note,.fpa-page small{color:var(--fpa-muted)}
+.fpa-page .btn,.fpa-page button:not(.fpa-nav-btn):not(.fpa-nav-close){
+  border-radius:12px;min-height:44px;font-weight:800
+}
+.fpa-page input:not([type="checkbox"]):not([type="radio"]),.fpa-page select,.fpa-page textarea{
+  max-width:100%;border:1px solid #cbd6e2!important;border-radius:12px!important;background:#fff!important;color:var(--fpa-ink)!important;
+  min-height:44px
+}
+.fpa-page .tabs{background:#e8eef5!important;border-radius:14px!important;padding:4px!important;gap:4px!important}
+.fpa-page .tabs button{border:0!important;border-radius:10px!important;min-height:42px!important;font-weight:900!important}
+.fpa-page .tabs button.active{background:var(--fpa-blue)!important;color:#fff!important}
+.fpa-page .back{
+  display:inline-flex!important;align-items:center!important;min-height:40px!important;padding:8px 11px!important;border:1px solid var(--fpa-line)!important;
+  border-radius:11px!important;background:#fff!important;color:var(--fpa-ink)!important;text-decoration:none!important;font-weight:800!important
+}
+.fpa-page .field label{color:var(--fpa-ink);font-weight:900}
+.fpa-page table{width:100%}
+.fpa-page .status{padding:12px 14px}
+.fpa-page .heroActions{display:none!important}
+.fpa-legacy-actions{display:none!important}
+@media(max-width:650px){
+  .fpa-page{width:calc(100% - 18px)!important;padding:12px 0 72px!important}
+  .fpa-pagebar{width:calc(100% - 18px)!important;min-height:52px!important;padding:7px 0 9px!important}
+  .fpa-page .card,.fpa-page .panel,.fpa-page .manage{padding:14px!important;border-radius:15px!important}
+  .fpa-page h1{font-size:31px!important}
+  .fpa-page h2{font-size:19px!important}
+}
