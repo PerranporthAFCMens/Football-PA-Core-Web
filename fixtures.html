@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eef3f8">
+<title>Fixtures · Football PA</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/core-context.js"></script>
+<script src="/core-nav.js"></script>
+<link rel="stylesheet" href="/core-ui.css">
+<style>
+.fixtures-page{display:grid;gap:12px}.toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.toolbar h1{margin:0;font-size:26px}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters select{min-width:130px}.fixture-card{padding:15px}.fixture-list{display:grid;gap:10px}.fixture-item{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid #e4ebf1;border-radius:14px;padding:12px;background:#fff}.fixture-date{text-align:center}.fixture-date b{display:block;font-size:20px;line-height:1}.fixture-date span{display:block;font-size:10px;color:var(--muted);font-weight:900;text-transform:uppercase;margin-top:4px}.fixture-main{min-width:0}.fixture-main strong{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fixture-main small{display:block;color:var(--muted);margin-top:4px}.fixture-side{text-align:right}.pill{display:inline-block;border-radius:999px;padding:5px 8px;background:#eef4fb;color:var(--blue);font-size:10px;font-weight:900}.score{font-weight:900;font-size:17px;margin-top:6px}.editBtn{margin-top:7px}.empty{padding:24px;text-align:center;color:var(--muted)}.editor{padding:16px}.editor h2{margin:0 0 12px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:grid;gap:5px}.field label{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.field input,.field select{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 12px;font:inherit;background:#fff}.field.full{grid-column:1/-1}.editor-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:13px}.statusline{font-size:12px;color:var(--muted);margin-top:8px}.section-title{font-size:15px;font-weight:900;margin:4px 0 8px}.hidden{display:none!important}
+@media(max-width:620px){.fixture-item{grid-template-columns:50px minmax(0,1fr)}.fixture-side{grid-column:2;text-align:left}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.toolbar{align-items:flex-start}.toolbar h1{font-size:23px}}
+</style>
+</head>
+<body>
+<main class="fpa-page">
+<div id="loading" class="fpa-card" style="padding:26px;text-align:center">Loading fixtures…</div>
+<div id="app" class="fixtures-page hidden">
+  <section class="fpa-card fixture-card">
+    <div class="toolbar">
+      <div><h1>Fixtures</h1><div id="subtitle" class="fpa-muted"></div></div>
+      <button id="addFixture" class="btn primary hidden">+ Add fixture</button>
+    </div>
+    <div class="filters" style="margin-top:12px">
+      <select id="statusFilter"><option value="all">All fixtures</option><option value="upcoming">Upcoming</option><option value="completed">Completed</option><option value="cancelled">Cancelled / postponed</option></select>
+      <select id="venueFilter"><option value="all">All venues</option><option value="home">Home</option><option value="away">Away</option><option value="neutral">Neutral</option></select>
+    </div>
+  </section>
+  <section class="fpa-card fixture-card"><div id="fixtureList" class="fixture-list"></div></section>
+  <section id="editor" class="fpa-card editor hidden">
+    <h2 id="editorTitle">Add fixture</h2>
+    <div class="form-grid">
+      <div class="field full"><label>Opponent</label><input id="opponent" type="text" placeholder="Opponent name"></div>
+      <div class="field"><label>Venue</label><select id="venue"><option value="home">Home</option><option value="away">Away</option><option value="neutral">Neutral</option></select></div>
+      <div class="field"><label>Competition</label><input id="competition" type="text" placeholder="League, Cup, Friendly…"></div>
+      <div class="field"><label>Date & time</label><input id="kickOff" type="datetime-local"></div>
+      <div class="field"><label>Status</label><select id="status"><option value="scheduled">Scheduled</option><option value="live">Live</option><option value="completed">Completed</option><option value="postponed">Postponed</option><option value="cancelled">Cancelled</option></select></div>
+      <div class="field"><label>Home score</label><input id="homeScore" type="number" min="0" inputmode="numeric"></div>
+      <div class="field"><label>Away score</label><input id="awayScore" type="number" min="0" inputmode="numeric"></div>
+    </div>
+    <div class="editor-actions"><button id="cancelEdit" class="btn">Cancel</button><button id="saveFixture" class="btn primary">Save fixture</button></div>
+    <div id="editStatus" class="statusline"></div>
+  </section>
+</div>
+</main>
+<script>
+const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW');
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ctx,fixtures=[],editingId=null;
+const final=f=>String(f.status||'').toLowerCase()==='completed';
+const localValue=iso=>{if(!iso)return'';const d=new Date(iso),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())};
+const prettyDate=iso=>{if(!iso)return{d:'—',m:''};const x=new Date(iso);return{d:x.getDate(),m:x.toLocaleDateString('en-GB',{month:'short'}),full:x.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' · '+x.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}};
+function filtered(){
+ const sf=$('statusFilter').value,vf=$('venueFilter').value,now=Date.now();
+ return fixtures.filter(f=>{
+  if(vf!=='all'&&f.venue!==vf)return false;
+  if(sf==='upcoming'&&(final(f)||new Date(f.kick_off).getTime()<now))return false;
+  if(sf==='completed'&&!final(f))return false;
+  if(sf==='cancelled'&&!['cancelled','postponed'].includes(f.status))return false;
+  return true;
+ });
+}
+function render(){
+ const rows=filtered().sort((a,b)=>new Date(a.kick_off||0)-new Date(b.kick_off||0));
+ $('fixtureList').innerHTML=rows.length?rows.map(f=>{
+  const dt=prettyDate(f.kick_off),score=final(f)&&f.home_score!=null&&f.away_score!=null?f.home_score+'–'+f.away_score:'';
+  return '<div class="fixture-item"><div class="fixture-date"><b>'+esc(dt.d)+'</b><span>'+esc(dt.m)+'</span></div><div class="fixture-main"><strong>'+esc(f.opponent)+'</strong><small>'+esc(dt.full)+(f.competition?' · '+esc(f.competition):'')+'</small></div><div class="fixture-side"><span class="pill">'+esc(String(f.venue||'').toUpperCase())+'</span>'+(score?'<div class="score">'+score+'</div>':'')+(ctx.canManage?'<button class="btn editBtn" data-edit="'+f.id+'">Edit</button>':'')+'</div></div>';
+ }).join(''):'<div class="empty">No fixtures match these filters.</div>';
+ document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));
+}
+function openEditor(id=null){
+ editingId=id;const f=id?fixtures.find(x=>x.id===id):null;
+ $('editorTitle').textContent=f?'Edit fixture':'Add fixture';
+ $('opponent').value=f?.opponent||'';$('venue').value=f?.venue||'home';$('competition').value=f?.competition||'';$('kickOff').value=localValue(f?.kick_off);$('status').value=f?.status||'scheduled';$('homeScore').value=f?.home_score??'';$('awayScore').value=f?.away_score??'';$('editStatus').textContent='';
+ $('editor').classList.remove('hidden');$('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeEditor(){editingId=null;$('editor').classList.add('hidden')}
+async function loadFixtures(){
+ let q=sb.from('fixtures').select('id,team_id,season_id,opponent,venue,competition,kick_off,status,home_score,away_score,external_source,external_id').eq('team_id',ctx.team.id).order('kick_off');
+ if(ctx.season?.id)q=q.eq('season_id',ctx.season.id);
+ const {data,error}=await q;if(error)throw error;fixtures=data||[];render();
+}
+async function save(){
+ if(!ctx.canManage)return;
+ const opponent=$('opponent').value.trim(),kick=$('kickOff').value;
+ if(!opponent){$('editStatus').textContent='Opponent is required.';return}
+ if(!kick){$('editStatus').textContent='Date and time are required.';return}
+ const payload={opponent,venue:$('venue').value,competition:$('competition').value.trim()||null,kick_off:new Date(kick).toISOString(),status:$('status').value,home_score:$('homeScore').value===''?null:Number($('homeScore').value),away_score:$('awayScore').value===''?null:Number($('awayScore').value),updated_at:new Date().toISOString()};
+ $('saveFixture').disabled=true;$('saveFixture').textContent='Saving…';$('editStatus').textContent='';
+ try{
+  let r;if(editingId)r=await sb.from('fixtures').update(payload).eq('id',editingId).eq('team_id',ctx.team.id);else r=await sb.from('fixtures').insert({...payload,team_id:ctx.team.id,season_id:ctx.season?.id||null});
+  if(r.error)throw r.error;await loadFixtures();closeEditor();
+ }catch(e){$('editStatus').textContent=e.message}finally{$('saveFixture').disabled=false;$('saveFixture').textContent='Save fixture'}
+}
+async function boot(){try{
+ ctx=await FootballPAContext.resolve();FootballPANav.mount({teamId:ctx.team.id});if(ctx.club.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
+ $('subtitle').textContent=(ctx.season?.label||ctx.team.season_label||'Current season');if(ctx.canManage)$('addFixture').classList.remove('hidden');
+ $('addFixture').onclick=()=>openEditor();$('cancelEdit').onclick=closeEditor;$('saveFixture').onclick=save;$('statusFilter').onchange=render;$('venueFilter').onchange=render;
+ await loadFixtures();$('loading').classList.add('hidden');$('app').classList.remove('hidden');
+}catch(e){$('loading').innerHTML='<b>Could not load fixtures.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}}
+sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});boot();
+</script>
+</body></html>
