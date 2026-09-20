@@ -16,11 +16,21 @@
     <div class="topBtns"><button class="btn secondary" onclick="location.href='/subs.html'">£ Subs</button><button class="btn secondary" onclick="location.href='/'">← Core</button></div>
   </div>
 
-  <div id="status" class="status">Loading Subs settings…</div>
+  <div id="status" class="status">Loading team setup…</div>
   <div id="app" class="hidden">
-    <section class="card hero"><div class="eyebrow muted">SUBS CONFIGURATION</div><h1 id="teamName">Team</h1><div id="clubLine" class="muted"></div><div class="dashboardLink"><div><strong>Subs dashboard</strong><div class="muted">Player balances, payments and outstanding amounts.</div></div><button class="btn primary" onclick="location.href='/subs.html'">Open Subs</button></div></section>
+    <section class="card hero"><div class="eyebrow muted">TEAM SETUP</div><h1 id="teamName">Team</h1><div id="clubLine" class="muted"></div><div class="dashboardLink"><div><strong>Subs dashboard</strong><div class="muted">Player balances, payments and outstanding amounts.</div></div><button class="btn primary" onclick="location.href='/subs.html'">Open Subs</button></div></section>
 
     <section class="card">
+      <div class="eyebrow muted">TEAM CONFIGURATION</div>
+      <div class="field"><label>Team</label><select id="teamSelect"></select></div>
+      <div class="field"><label>Age group</label><select id="ageGroup"><option>Open Age</option><option>U6</option><option>U7</option><option>U8</option><option>U9</option><option>U10</option><option>U11</option><option>U12</option><option>U13</option><option>U14</option><option>U15</option><option>U16</option><option>U17</option><option>U18</option></select></div>
+      <div class="field"><label>Category</label><select id="gender"><option>Mixed</option><option>Girls</option><option>Boys</option><option>Women</option><option>Men</option></select></div>
+      <div class="field"><label>Match format</label><select id="matchFormat"><option>5-a-side</option><option>7-a-side</option><option>9-a-side</option><option>11-a-side</option></select></div>
+      <button id="saveTeam" class="btn primary save">Save team setup</button>
+      <div class="note">These are core team settings. Football PA uses them throughout the app, including Match Centre and lineups.</div>
+    </section>
+    <section class="card">
+      <div class="eyebrow muted">SUBS CONFIGURATION</div>
       <div class="field"><label>Season</label><select id="season"></select></div>
 
       <div class="field"><label>How should players be charged?</label>
@@ -40,13 +50,16 @@
 </div>
 <script>
 const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW');
-const $=id=>document.getElementById(id);let club,team,seasons=[],model='per_game';
+const $=id=>document.getElementById(id);let club,team,teams=[],seasons=[],model='per_game';
 function setStatus(t,type=''){const el=$('status');el.textContent=t;el.className='status '+type}
 function money(pence){return new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format((pence||0)/100)}
 function syncButtons(){document.querySelectorAll('[data-model]').forEach(b=>b.classList.toggle('active',b.dataset.model===model));$('amountLabel').textContent=model==='per_game'?'Amount per game':'Annual amount';updateSummary()}
 function updateSummary(){const pennies=Math.round((Number($('amount').value)||0)*100);$('summary').textContent=model==='per_game'?`${money(pennies)} per played match`:`${money(pennies)} per season`}
 async function loadSetting(){const seasonId=$('season').value;const {data,error}=await sb.from('subs_settings').select('charge_model,amount_pence').eq('team_id',team.id).eq('season_id',seasonId).maybeSingle();if(error)throw error;if(data){model=data.charge_model;$('amount').value=(data.amount_pence/100).toFixed(2)}else{model='per_game';$('amount').value='0.00'}syncButtons()}
-async function boot(){const {data:{session}}=await sb.auth.getSession();if(!session){location.replace('/login.html');return}try{let r=await sb.from('clubs').select('id,name,short_name,primary_colour').limit(1);if(r.error)throw r.error;club=r.data?.[0];r=await sb.from('teams').select('id,name,club_id,season_label').limit(1);if(r.error)throw r.error;team=r.data?.[0];if(!club||!team)throw new Error('No club or team is available.');r=await sb.from('seasons').select('id,label,active').eq('club_id',club.id).order('starts_on',{ascending:false});if(r.error)throw r.error;seasons=r.data||[];const {data:allowed,error:permErr}=await sb.rpc('can_manage_subs',{p_team_id:team.id});if(permErr)throw permErr;if(!allowed)throw new Error('You do not have permission to manage Subs settings.');if(club.primary_colour)document.documentElement.style.setProperty('--blue',club.primary_colour);$('teamName').textContent=team.name;$('clubLine').textContent=club.name+' · Subs';$('season').innerHTML=seasons.map(s=>`<option value="${s.id}" ${s.active?'selected':''}>${s.label}</option>`).join('');await loadSetting();$('app').classList.remove('hidden');setStatus('Admin access confirmed.','ok')}catch(e){setStatus(e.message,'bad')}}
+async function boot(){const {data:{session}}=await sb.auth.getSession();if(!session){location.replace('/login.html');return}try{let r=await sb.from('clubs').select('id,name,short_name,primary_colour').limit(1);if(r.error)throw r.error;club=r.data?.[0];r=await sb.from('teams').select('id,name,club_id,season_label,age_group,gender,match_format').eq('club_id',club.id).order('name');if(r.error)throw r.error;teams=r.data||[];team=teams[0];if(!club||!team)throw new Error('No club or team is available.');r=await sb.from('seasons').select('id,label,active').eq('club_id',club.id).order('starts_on',{ascending:false});if(r.error)throw r.error;seasons=r.data||[];const {data:allowed,error:permErr}=await sb.rpc('can_manage_subs',{p_team_id:team.id});if(permErr)throw permErr;if(!allowed)throw new Error('You do not have permission to manage Subs settings.');if(club.primary_colour)document.documentElement.style.setProperty('--blue',club.primary_colour);$('teamSelect').innerHTML=teams.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');syncTeamSetup();$('teamName').textContent=team.name;$('clubLine').textContent=club.name+' · Subs';$('season').innerHTML=seasons.map(s=>`<option value="${s.id}" ${s.active?'selected':''}>${s.label}</option>`).join('');await loadSetting();$('app').classList.remove('hidden');setStatus('Admin access confirmed.','ok')}catch(e){setStatus(e.message,'bad')}}
+function syncTeamSetup(){if(!team)return;$('teamName').textContent=team.name;$('ageGroup').value=team.age_group||'Open Age';$('gender').value=team.gender||'Mixed';$('matchFormat').value=team.match_format||'11-a-side'}
+$('teamSelect').addEventListener('change',async()=>{team=teams.find(t=>t.id===$('teamSelect').value);syncTeamSetup();await loadSetting()});
+$('saveTeam').onclick=async()=>{const b=$('saveTeam');b.disabled=true;b.textContent='Saving…';const patch={age_group:$('ageGroup').value,gender:$('gender').value,match_format:$('matchFormat').value};const {data,error}=await sb.from('teams').update(patch).eq('id',team.id).select('id,name,club_id,season_label,age_group,gender,match_format').single();b.disabled=false;b.textContent='Save team setup';if(error){setStatus(error.message,'bad');return}team=data;teams=teams.map(t=>t.id===team.id?team:t);syncTeamSetup();setStatus('Team setup saved. Football PA will use these settings across the app.','ok')};
 document.addEventListener('click',e=>{const b=e.target.closest('[data-model]');if(!b)return;model=b.dataset.model;syncButtons()});$('amount').addEventListener('input',updateSummary);$('season').addEventListener('change',()=>loadSetting().catch(e=>setStatus(e.message,'bad')));$('save').onclick=async()=>{const amount=Number($('amount').value);if(!Number.isFinite(amount)||amount<0){setStatus('Enter a valid amount.','bad');return}const pence=Math.round(amount*100);$('save').disabled=true;$('save').textContent='Saving…';const {error}=await sb.rpc('save_subs_settings',{p_team_id:team.id,p_season_id:$('season').value,p_charge_model:model,p_amount_pence:pence});$('save').disabled=false;$('save').textContent='Save Subs settings';if(error){setStatus(error.message,'bad');return}setStatus('Subs settings saved.','ok');updateSummary()};sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});boot();
 </script>
 </body>
