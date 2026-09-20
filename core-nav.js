@@ -1,3 +1,4 @@
+/* deploy refresh */
 (function(){
 const STYLE=`
 .fpa-nav-btn{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:80;width:50px;height:50px;border:1px solid #ffffff55;border-radius:16px;background:#ffffffee;color:#102033;box-shadow:0 8px 24px #10203324;font-size:0;font-weight:900;cursor:pointer;display:grid;place-items:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}.fpa-nav-btn:before{content:"";width:22px;height:16px;background:linear-gradient(#102033 0 0) 0 0/100% 2px no-repeat,linear-gradient(#102033 0 0) 0 7px/72% 2px no-repeat,linear-gradient(#102033 0 0) 0 14px/100% 2px no-repeat}.fpa-nav-btn:active{transform:scale(.96)}
