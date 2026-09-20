@@ -8,7 +8,7 @@
 <script src="/core-nav.js"></script>
 <link rel="stylesheet" href="/core-ui.css">
 <style>
-.fixtures-page{display:grid;gap:12px}.toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.toolbar h1{margin:0;font-size:26px}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters select{min-width:130px}.fixture-card{padding:15px}.fixture-list{display:grid;gap:10px}.fixture-item{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid #e4ebf1;border-radius:14px;padding:12px;background:#fff}.fixture-date{text-align:center}.fixture-date b{display:block;font-size:20px;line-height:1}.fixture-date span{display:block;font-size:10px;color:var(--muted);font-weight:900;text-transform:uppercase;margin-top:4px}.fixture-main{min-width:0}.fixture-main strong{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fixture-main small{display:block;color:var(--muted);margin-top:4px}.fixture-side{text-align:right}.pill{display:inline-block;border-radius:999px;padding:5px 8px;background:#eef4fb;color:var(--blue);font-size:10px;font-weight:900}.score{font-weight:900;font-size:17px;margin-top:6px}.editBtn{margin-top:7px}.empty{padding:24px;text-align:center;color:var(--muted)}.editor{padding:16px}.editor h2{margin:0 0 12px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:grid;gap:5px}.field label{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.field input,.field select{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 12px;font:inherit;background:#fff}.field.full{grid-column:1/-1}.editor-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:13px}.statusline{font-size:12px;color:var(--muted);margin-top:8px}.section-title{font-size:15px;font-weight:900;margin:4px 0 8px}.hidden{display:none!important}
+.fixtures-page{display:grid;gap:12px}.toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.toolbar h1{margin:0;font-size:26px}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters select{min-width:130px}.fixture-card{padding:15px}.fixture-list{display:grid;gap:10px}.fixture-item{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid #e4ebf1;border-radius:14px;padding:12px;background:#fff}.fixture-date{text-align:center}.fixture-date b{display:block;font-size:20px;line-height:1}.fixture-date span{display:block;font-size:10px;color:var(--muted);font-weight:900;text-transform:uppercase;margin-top:4px}.fixture-main{min-width:0}.fixture-main strong{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fixture-main small{display:block;color:var(--muted);margin-top:4px}.fixture-side{text-align:right}.pill{display:inline-flex;align-items:center;justify-content:center;min-width:62px;border-radius:999px;padding:7px 10px;font-size:10px;font-weight:900;letter-spacing:.05em}.pill.home{background:#e7f5ec;color:#147a3e;border:1px solid #b9dfc7}.pill.away{background:#fff2df;color:#a25a00;border:1px solid #f1d09a}.pill.neutral{background:#eef1f5;color:#5d6977;border:1px solid #d7dee6}.score{font-weight:900;font-size:17px;margin-top:6px}.editBtn{margin-top:7px}.empty{padding:24px;text-align:center;color:var(--muted)}.editor{padding:16px}.editor h2{margin:0 0 12px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:grid;gap:5px}.field label{font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.field input,.field select{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 12px;font:inherit;background:#fff}.field.full{grid-column:1/-1}.editor-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:13px}.statusline{font-size:12px;color:var(--muted);margin-top:8px}.section-title{font-size:15px;font-weight:900;margin:4px 0 8px}.hidden{display:none!important}
 @media(max-width:620px){.fixture-item{grid-template-columns:50px minmax(0,1fr)}.fixture-side{grid-column:2;text-align:left}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.toolbar{align-items:flex-start}.toolbar h1{font-size:23px}}
 </style>
 </head>
@@ -67,7 +67,7 @@ function render(){
  const rows=filtered().sort((a,b)=>new Date(a.kick_off||0)-new Date(b.kick_off||0));
  $('fixtureList').innerHTML=rows.length?rows.map(f=>{
   const dt=prettyDate(f.kick_off),score=final(f)&&f.home_score!=null&&f.away_score!=null?f.home_score+'–'+f.away_score:'';
-  const place=[f.ground_name,f.ground_postcode].filter(Boolean).join(' · '),maps=(f.ground_address||f.ground_postcode||f.ground_name)?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent([f.ground_name,f.ground_address,f.ground_postcode].filter(Boolean).join(', ')):'';return '<div class="fixture-item"><div class="fixture-date"><b>'+esc(dt.d)+'</b><span>'+esc(dt.m)+'</span></div><div class="fixture-main"><strong>'+esc(f.opponent)+'</strong><small>'+esc(dt.full)+(f.competition?' · '+esc(f.competition):'')+'</small>'+(place?'<small>📍 '+esc(place)+'</small>':'')+'</div><div class="fixture-side"><span class="pill">'+esc(String(f.venue||'').toUpperCase())+'</span>'+(score?'<div class="score">'+score+'</div>':'')+(maps?'<a class="btn editBtn" href="'+maps+'" target="_blank" rel="noopener">Directions</a>':'')+(ctx.canManage?'<button class="btn editBtn" data-edit="'+f.id+'">Edit</button>':'')+'</div></div>';
+  const place=[f.ground_name,f.ground_postcode].filter(Boolean).join(' · '),maps=(f.ground_address||f.ground_postcode||f.ground_name)?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent([f.ground_name,f.ground_address,f.ground_postcode].filter(Boolean).join(', ')):'';return '<div class="fixture-item"><div class="fixture-date"><b>'+esc(dt.d)+'</b><span>'+esc(dt.m)+'</span></div><div class="fixture-main"><strong>'+esc(f.opponent)+'</strong><small>'+esc(dt.full)+(f.competition?' · '+esc(f.competition):'')+'</small>'+(place?'<small>📍 '+esc(place)+'</small>':'')+'</div><div class="fixture-side"><span class="pill '+esc(String(f.venue||'neutral').toLowerCase())+'">'+esc(String(f.venue||'').toUpperCase())+'</span>'+(score?'<div class="score">'+score+'</div>':'')+(maps?'<a class="btn editBtn" href="'+maps+'" target="_blank" rel="noopener">Directions</a>':'')+(ctx.canManage?'<button class="btn editBtn" data-edit="'+f.id+'">Edit</button>':'')+'</div></div>';
  }).join(''):'<div class="empty">No fixtures match these filters.</div>';
  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));
 }
@@ -78,10 +78,35 @@ function openEditor(id=null){
  $('editor').classList.remove('hidden');$('editor').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function closeEditor(){editingId=null;$('editor').classList.add('hidden')}
+async function enrichMissingGrounds(){
+ const missing=fixtures.filter(f=>f.external_source==='fa_full_time'&&f.external_id&&!(f.ground_name||f.ground_address||f.ground_postcode));
+ if(!ctx.canManage||!missing.length||!ctx.settings?.fixture_source_url)return false;
+ try{
+  const {data:{session}}=await sb.auth.getSession();if(!session)return false;
+  const resp=await fetch('https://hennzggqaquevqgiucqn.supabase.co/functions/v1/fa-fulltime-preview',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':'sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW'},body:JSON.stringify({url:ctx.settings.fixture_source_url,teamId:ctx.team.id})});
+  const data=await resp.json();if(!data.ok)return false;
+  const byId=new Map((data.rows||[]).map(r=>[String(r.externalId||r.id||''),r]));
+  let changed=false;
+  for(const f of missing){
+   const r=byId.get(String(f.external_id));if(!r)continue;
+   const patch={ground_name:r.groundName||r.venue||null,ground_address:r.groundAddress||null,ground_postcode:r.groundPostcode||null,updated_at:new Date().toISOString()};
+   if(!(patch.ground_name||patch.ground_address||patch.ground_postcode))continue;
+   const u=await sb.from('fixtures').update(patch).eq('id',f.id).eq('team_id',ctx.team.id);if(!u.error)changed=true;
+  }
+  return changed;
+ }catch{return false}
+}
 async function loadFixtures(){
  let q=sb.from('fixtures').select('id,team_id,season_id,opponent,venue,competition,kick_off,status,home_score,away_score,external_source,external_id,ground_name,ground_address,ground_postcode').eq('team_id',ctx.team.id).order('kick_off');
  if(ctx.season?.id)q=q.eq('season_id',ctx.season.id);
- const {data,error}=await q;if(error)throw error;fixtures=data||[];render();
+ const {data,error}=await q;if(error)throw error;fixtures=data||[];
+ const enriched=await enrichMissingGrounds();
+ if(enriched){
+   let q2=sb.from('fixtures').select('id,team_id,season_id,opponent,venue,competition,kick_off,status,home_score,away_score,external_source,external_id,ground_name,ground_address,ground_postcode').eq('team_id',ctx.team.id).order('kick_off');
+   if(ctx.season?.id)q2=q2.eq('season_id',ctx.season.id);
+   const r2=await q2;if(!r2.error)fixtures=r2.data||fixtures;
+ }
+ render();
 }
 async function save(){
  if(!ctx.canManage)return;
