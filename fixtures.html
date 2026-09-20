@@ -19,7 +19,7 @@
   <section class="fpa-card fixture-card">
     <div class="toolbar">
       <div><h1>Fixtures</h1><div id="subtitle" class="fpa-muted"></div></div>
-      <button id="addFixture" class="btn primary hidden">+ Add fixture</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="shareCalendar" class="btn">📅 Calendar link</button><button id="addFixture" class="btn primary hidden">+ Add fixture</button></div>
     </div>
     <div class="filters" style="margin-top:12px">
       <select id="statusFilter"><option value="all">All fixtures</option><option value="upcoming">Upcoming</option><option value="completed">Completed</option><option value="cancelled">Cancelled / postponed</option></select>
@@ -49,7 +49,7 @@
 <script>
 const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW');
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let ctx,fixtures=[],editingId=null;
+let ctx,fixtures=[],editingId=null,calendarUrl='';
 const final=f=>String(f.status||'').toLowerCase()==='completed';
 const localValue=iso=>{if(!iso)return'';const d=new Date(iso),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())};
 const prettyDate=iso=>{if(!iso)return{d:'—',m:''};const x=new Date(iso);return{d:x.getDate(),m:x.toLocaleDateString('en-GB',{month:'short'}),full:x.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' · '+x.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}};
@@ -124,7 +124,9 @@ async function save(){
 async function boot(){try{
  ctx=await FootballPAContext.resolve();FootballPANav.mount({teamId:ctx.team.id});if(ctx.club.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
  $('subtitle').textContent=(ctx.season?.label||ctx.team.season_label||'Current season');if(ctx.canManage)$('addFixture').classList.remove('hidden');
- $('addFixture').onclick=()=>openEditor();$('cancelEdit').onclick=closeEditor;$('saveFixture').onclick=save;$('statusFilter').onchange=render;$('venueFilter').onchange=render;
+ const {data:calSettings}=await sb.from('team_settings').select('fixture_calendar_token').eq('team_id',ctx.team.id).maybeSingle();
+ if(calSettings?.fixture_calendar_token)calendarUrl='https://hennzggqaquevqgiucqn.supabase.co/functions/v1/team-calendar?token='+encodeURIComponent(calSettings.fixture_calendar_token);
+ $('addFixture').onclick=()=>openEditor();$('shareCalendar').onclick=async()=>{if(!calendarUrl){alert('Calendar link is not available yet.');return}const name=(ctx.club?.name?ctx.club.name+' ':'')+(ctx.team?.name||'Football PA')+' fixtures';try{if(navigator.share){await navigator.share({title:name,text:'Subscribe to our Football PA fixtures calendar',url:calendarUrl});return}}catch(e){if(e?.name==='AbortError')return}try{await navigator.clipboard.writeText(calendarUrl);const b=$('shareCalendar'),old=b.textContent;b.textContent='✓ Link copied';setTimeout(()=>b.textContent=old,1800)}catch{prompt('Copy this calendar subscription link:',calendarUrl)}};$('cancelEdit').onclick=closeEditor;$('saveFixture').onclick=save;$('statusFilter').onchange=render;$('venueFilter').onchange=render;
  await loadFixtures();$('loading').classList.add('hidden');$('app').classList.remove('hidden');
 }catch(e){$('loading').innerHTML='<b>Could not load fixtures.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}}
 sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});boot();
