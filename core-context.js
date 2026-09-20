@@ -42,6 +42,16 @@ async function resolve(opts={}){
   const {data:club,error:clubError}=await sb.from('clubs').select('id,name,short_name,primary_colour').eq('id',team.club_id).single();
   if(clubError) throw clubError;
 
+  let season=null;
+  if(team.season_label){
+    const {data}=await sb.from('seasons').select('id,label,club_id,active,start_date,end_date').eq('club_id',team.club_id).eq('label',team.season_label).maybeSingle();
+    season=data||null;
+  }
+  if(!season){
+    const {data}=await sb.from('seasons').select('id,label,club_id,active,start_date,end_date').eq('club_id',team.club_id).eq('active',true).order('start_date',{ascending:false}).limit(1).maybeSingle();
+    season=data||null;
+  }
+
   const [featureRes,settingsRes,teamMemberRes,clubMemberRes,platformAdminRes]=await Promise.all([
     sb.from('team_features').select('*').eq('team_id',team.id).maybeSingle(),
     sb.from('team_settings').select('*').eq('team_id',team.id).maybeSingle(),
@@ -54,7 +64,7 @@ async function resolve(opts={}){
 
   const previewSuffix=preview?'&dev_preview=1':'';
   return {
-    session,team,club,preview,canManage,teamRole,clubRole,
+    session,team,club,season,preview,canManage,teamRole,clubRole,
     features:featureRes.data||{},
     settings:settingsRes.data||{},
     href(path,extra=''){
