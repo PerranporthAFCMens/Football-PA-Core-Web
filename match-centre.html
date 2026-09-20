@@ -82,6 +82,7 @@ function renderPitch(){
   const slots=formations[state.formation],
     primary=teamSettings.kit_primary_colour||club?.primary_colour||'#1357A6',
     secondary=teamSettings.kit_secondary_colour||club?.secondary_colour||'#FFFFFF',
+    numberColour=teamSettings.kit_number_colour||'#FFFFFF',
     striped=teamSettings.kit_pattern==='stripes';
 
   $('pitch').innerHTML='<div class="boxTop"></div><div class="boxBottom"></div>'+slots.map((s,i)=>{
@@ -109,7 +110,7 @@ function renderPitch(){
       <svg class="slot-shirt" viewBox="0 0 64 58" aria-hidden="true">
         ${stripeMarkup}
         <path class="shirt-trim" stroke="${esc(secondary)}" d="M25 4 Q32 12 39 4 M9 15 L18 20 M55 15 L46 20"></path>
-        <text class="shirt-number" fill="${striped?'#111827':esc(secondary)}" x="32" y="31">${esc(num)}</text>
+        <text class="shirt-number" fill="${esc(numberColour)}" stroke="${numberColour.toLowerCase()==='#ffffff'?'#111827':'#ffffff'}" stroke-width="1.2" paint-order="stroke" x="32" y="31">${esc(num)}</text>
       </svg>
       <span class="slot-name">${esc(label)}</span>
       <small class="slot-pos">${s.k.toUpperCase()}</small>
