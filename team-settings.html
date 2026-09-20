@@ -42,7 +42,7 @@ async function checkFullTime(){
  const countdown=setInterval(()=>{if(finished)return;secondsLeft--;if(secondsLeft<=0){finish(false,'The check did not complete within 15 seconds.');return}renderWait()},1000);
  function finish(ok,msg,data){
   if(finished)return;finished=true;clearInterval(countdown);btn.disabled=false;btn.textContent='Check now';
-  if(!ok){$('fixtureSourceStatus').innerHTML='<b>Full-Time check timed out.</b><br><span class="muted">'+esc(msg)+'</span>';status('Full-Time check stopped.','bad');return}
+  if(!ok){$('fixtureSourceStatus').innerHTML='<b>Full-Time check failed.</b><br><span class="muted">'+esc(msg)+'</span>';status('Full-Time check stopped.','bad');return}
   const now=new Date(),patch={fixture_last_checked_at:now.toISOString()};settings={...settings,...patch};sb.from('team_settings').update(patch).eq('team_id',team.id).then(()=>{});
   $('fixtureSourceStatus').textContent='Connected · Full-Time responded · '+data.rowCount+' dated fixture/result rows found · Last checked: '+now.toLocaleString('en-GB');
   const p=$('fixturePreview');p.style.display='block';p.className='sourceStatus';p.innerHTML='<b>Full-Time connection working</b><br>'+esc(data.title||'Team page')+'<br><span class="muted">Team ID '+esc(data.teamId)+' · '+data.rowCount+' fixture/result rows detected.</span>';status('FA Full-Time connection checked successfully.','ok');
@@ -50,7 +50,7 @@ async function checkFullTime(){
  try{
   const sessionResult=await Promise.race([sb.auth.getSession(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Session check timed out.')),5000))]);if(finished)return;
   const session=sessionResult?.data?.session;if(!session)throw new Error('Your session has expired. Sign in again.');
-  const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),11000);
+  const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),14000);
   const resp=await fetch('https://hennzggqaquevqgiucqn.supabase.co/functions/v1/fa-fulltime-preview',{method:'POST',signal:ctrl.signal,headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':'sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW'},body:JSON.stringify({url,teamId:team.id})});if(finished)return;
   let data;try{data=await resp.json()}catch(_){throw new Error('Sync service returned HTTP '+resp.status)}if(!resp.ok||!data?.ok)throw new Error(data?.error||('Sync service returned HTTP '+resp.status));finish(true,'',data);
  }catch(e){if(!finished)finish(false,e?.name==='AbortError'?'The Full-Time service did not respond in time.':(e?.message||String(e)))}
