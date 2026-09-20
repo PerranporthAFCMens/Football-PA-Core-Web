@@ -75,7 +75,10 @@ body{background:linear-gradient(180deg,#e7eef6,#f8fafc 42%,#edf2f7)!important;co
 
 /* Football PA subtle colour pass v1 */
 :root{
-  --fpa-accent:var(--blue,#1357A6);
+  --fpa-primary:var(--blue,#1357A6);
+  --fpa-secondary:#FFFFFF;
+  --fpa-header-text:#FFFFFF;
+  --fpa-accent:var(--fpa-primary);
   --fpa-accent-soft:#eaf3fc;
   --fpa-accent-softer:#f6faff;
   --fpa-accent-line:#c9ddf0;
@@ -164,8 +167,8 @@ body{
   content:"";
   position:absolute;
   left:0;right:0;top:0;height:4px;
-  background:var(--fpa-accent);
-  opacity:.72;
+  background:linear-gradient(90deg,var(--fpa-primary),var(--fpa-secondary));
+  opacity:.88;
 }
 .fixture-venue,
 .shirt{
@@ -175,3 +178,12 @@ body{
 @media(max-width:650px){
   .fpa-pagebar{padding:7px 10px!important;border-radius:12px!important}
 }
+
+/* secondary club colour accents */
+.fpa-page .tabs button.active,
+.fpa-page .btn.primary,
+.fpa-page button.primary,
+.fpa-page .accept{border-bottom:3px solid color-mix(in srgb,var(--fpa-secondary) 70%,transparent)!important}
+.fpa-page .fixture-venue,
+.fpa-page .shirt{box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--fpa-secondary) 60%,transparent)!important}
+.fpa-nav-badge{box-shadow:0 0 0 2px color-mix(in srgb,var(--fpa-secondary) 55%,transparent)}
