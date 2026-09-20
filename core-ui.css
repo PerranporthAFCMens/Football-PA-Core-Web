@@ -66,3 +66,8 @@ body{background:linear-gradient(180deg,#e7eef6,#f8fafc 42%,#edf2f7)!important;co
   .fpa-page h1{font-size:31px!important}
   .fpa-page h2{font-size:19px!important}
 }
+
+.fpa-shell-logo{width:40px;height:40px;object-fit:contain;border-radius:10px;flex:0 0 40px}
+.fpa-shell-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.fpa-shell-brand b{display:block;font-size:14px;font-weight:900}
+.fpa-shell-brand .muted{display:block;font-size:11px;margin-top:2px}
