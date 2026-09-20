@@ -136,7 +136,14 @@ function openBatchSubs(){
 function closeBatchSubs(){$('batchSubPicker').classList.add('hidden')}
 function updateBatchSummary(){
   const selects=[...document.querySelectorAll('[data-batch-select]')],chosen=selects.filter(x=>x.value);
-  const ids=chosen.map(x=>x.value),duplicate=ids.some((id,i)=>ids.indexOf(id)!==i);
+  const ids=chosen.map(x=>x.value);
+  selects.forEach(select=>{
+    [...select.options].forEach(opt=>{
+      if(!opt.value){opt.disabled=false;return}
+      opt.disabled=ids.includes(opt.value)&&select.value!==opt.value;
+    });
+  });
+  const duplicate=ids.some((id,i)=>ids.indexOf(id)!==i);
   $('batchSubSummary').textContent=duplicate?'Choose each incoming player only once.':chosen.length?(chosen.length+' substitution'+(chosen.length===1?'':'s')+' ready to make.'):'No changes selected.';
   $('applyBatchSubs').disabled=duplicate||!chosen.length;
 }
