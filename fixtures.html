@@ -35,6 +35,9 @@
       <div class="field"><label>Competition</label><input id="competition" type="text" placeholder="League, Cup, Friendly…"></div>
       <div class="field"><label>Date & time</label><input id="kickOff" type="datetime-local"></div>
       <div class="field"><label>Status</label><select id="status"><option value="scheduled">Scheduled</option><option value="live">Live</option><option value="completed">Completed</option><option value="postponed">Postponed</option><option value="cancelled">Cancelled</option></select></div>
+      <div class="field full"><label>Ground name</label><input id="groundName" type="text" placeholder="Ground or pitch name"></div>
+      <div class="field full"><label>Ground address</label><input id="groundAddress" type="text" placeholder="Address"></div>
+      <div class="field"><label>Postcode</label><input id="groundPostcode" type="text" placeholder="TR5 0XX"></div>
       <div class="field"><label>Home score</label><input id="homeScore" type="number" min="0" inputmode="numeric"></div>
       <div class="field"><label>Away score</label><input id="awayScore" type="number" min="0" inputmode="numeric"></div>
     </div>
@@ -64,19 +67,19 @@ function render(){
  const rows=filtered().sort((a,b)=>new Date(a.kick_off||0)-new Date(b.kick_off||0));
  $('fixtureList').innerHTML=rows.length?rows.map(f=>{
   const dt=prettyDate(f.kick_off),score=final(f)&&f.home_score!=null&&f.away_score!=null?f.home_score+'–'+f.away_score:'';
-  return '<div class="fixture-item"><div class="fixture-date"><b>'+esc(dt.d)+'</b><span>'+esc(dt.m)+'</span></div><div class="fixture-main"><strong>'+esc(f.opponent)+'</strong><small>'+esc(dt.full)+(f.competition?' · '+esc(f.competition):'')+'</small></div><div class="fixture-side"><span class="pill">'+esc(String(f.venue||'').toUpperCase())+'</span>'+(score?'<div class="score">'+score+'</div>':'')+(ctx.canManage?'<button class="btn editBtn" data-edit="'+f.id+'">Edit</button>':'')+'</div></div>';
+  const place=[f.ground_name,f.ground_postcode].filter(Boolean).join(' · '),maps=(f.ground_address||f.ground_postcode||f.ground_name)?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent([f.ground_name,f.ground_address,f.ground_postcode].filter(Boolean).join(', ')):'';return '<div class="fixture-item"><div class="fixture-date"><b>'+esc(dt.d)+'</b><span>'+esc(dt.m)+'</span></div><div class="fixture-main"><strong>'+esc(f.opponent)+'</strong><small>'+esc(dt.full)+(f.competition?' · '+esc(f.competition):'')+'</small>'+(place?'<small>📍 '+esc(place)+'</small>':'')+'</div><div class="fixture-side"><span class="pill">'+esc(String(f.venue||'').toUpperCase())+'</span>'+(score?'<div class="score">'+score+'</div>':'')+(maps?'<a class="btn editBtn" href="'+maps+'" target="_blank" rel="noopener">Directions</a>':'')+(ctx.canManage?'<button class="btn editBtn" data-edit="'+f.id+'">Edit</button>':'')+'</div></div>';
  }).join(''):'<div class="empty">No fixtures match these filters.</div>';
  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));
 }
 function openEditor(id=null){
  editingId=id;const f=id?fixtures.find(x=>x.id===id):null;
  $('editorTitle').textContent=f?'Edit fixture':'Add fixture';
- $('opponent').value=f?.opponent||'';$('venue').value=f?.venue||'home';$('competition').value=f?.competition||'';$('kickOff').value=localValue(f?.kick_off);$('status').value=f?.status||'scheduled';$('homeScore').value=f?.home_score??'';$('awayScore').value=f?.away_score??'';$('editStatus').textContent='';
+ $('opponent').value=f?.opponent||'';$('venue').value=f?.venue||'home';$('competition').value=f?.competition||'';$('kickOff').value=localValue(f?.kick_off);$('status').value=f?.status||'scheduled';$('groundName').value=f?.ground_name||'';$('groundAddress').value=f?.ground_address||'';$('groundPostcode').value=f?.ground_postcode||'';$('homeScore').value=f?.home_score??'';$('awayScore').value=f?.away_score??'';$('editStatus').textContent='';
  $('editor').classList.remove('hidden');$('editor').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function closeEditor(){editingId=null;$('editor').classList.add('hidden')}
 async function loadFixtures(){
- let q=sb.from('fixtures').select('id,team_id,season_id,opponent,venue,competition,kick_off,status,home_score,away_score,external_source,external_id').eq('team_id',ctx.team.id).order('kick_off');
+ let q=sb.from('fixtures').select('id,team_id,season_id,opponent,venue,competition,kick_off,status,home_score,away_score,external_source,external_id,ground_name,ground_address,ground_postcode').eq('team_id',ctx.team.id).order('kick_off');
  if(ctx.season?.id)q=q.eq('season_id',ctx.season.id);
  const {data,error}=await q;if(error)throw error;fixtures=data||[];render();
 }
@@ -85,7 +88,7 @@ async function save(){
  const opponent=$('opponent').value.trim(),kick=$('kickOff').value;
  if(!opponent){$('editStatus').textContent='Opponent is required.';return}
  if(!kick){$('editStatus').textContent='Date and time are required.';return}
- const payload={opponent,venue:$('venue').value,competition:$('competition').value.trim()||null,kick_off:new Date(kick).toISOString(),status:$('status').value,home_score:$('homeScore').value===''?null:Number($('homeScore').value),away_score:$('awayScore').value===''?null:Number($('awayScore').value),updated_at:new Date().toISOString()};
+ const payload={opponent,venue:$('venue').value,competition:$('competition').value.trim()||null,kick_off:new Date(kick).toISOString(),status:$('status').value,ground_name:$('groundName').value.trim()||null,ground_address:$('groundAddress').value.trim()||null,ground_postcode:$('groundPostcode').value.trim().toUpperCase()||null,home_score:$('homeScore').value===''?null:Number($('homeScore').value),away_score:$('awayScore').value===''?null:Number($('awayScore').value),updated_at:new Date().toISOString()};
  $('saveFixture').disabled=true;$('saveFixture').textContent='Saving…';$('editStatus').textContent='';
  try{
   let r;if(editingId)r=await sb.from('fixtures').update(payload).eq('id',editingId).eq('team_id',ctx.team.id);else r=await sb.from('fixtures').insert({...payload,team_id:ctx.team.id,season_id:ctx.season?.id||null});
