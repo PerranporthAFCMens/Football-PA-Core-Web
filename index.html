@@ -34,7 +34,30 @@ function ourScore(f){const v=String(f.venue||'').toLowerCase();if(v==='away'||v=
 function theirScore(f){const v=String(f.venue||'').toLowerCase();if(v==='away'||v==='a')return Number(f.home_score??0);return Number(f.away_score??0)}
 function venueLabel(v){v=String(v||'').toLowerCase();return v==='home'||v==='h'?'HOME':v==='away'||v==='a'?'AWAY':'NEUTRAL'}
 function sideInfo(row,team,club){const stop=/\b(u\d+|girls|boys|women|men|mixed|youth|afc|fc|first|team|reserves?|seconds?|thirds?)\b/g,norm=s=>String(s||'').toLowerCase().replace(stop,' ').replace(/[^a-z0-9]+/g,' ').trim(),tt=norm(team.name).split(' ').filter(Boolean),ct=norm(club.name).split(' ').filter(Boolean),score=s=>{const n=' '+norm(s)+' ';let z=0;for(const t of tt)if(n.includes(' '+t+' '))z+=4;for(const t of ct)if(n.includes(' '+t+' '))z+=1;return z},hs=score(row.home),as=score(row.away);return hs>as&&hs>0?{venue:'home',opponent:row.away}:as>hs&&as>0?{venue:'away',opponent:row.home}:{venue:'neutral',opponent:null}}
-async function checkFixtureUpdates(ctx){const s=ctx.settings||{};if(!s.fixture_sync_on_login||!s.fixture_source_url)return;try{const resp=await fetch('https://hennzggqaquevqgiucqn.supabase.co/functions/v1/fa-fulltime-preview',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ctx.session.access_token,'apikey':'sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW'},body:JSON.stringify({url:s.fixture_source_url,teamId:ctx.team.id})});const data=await resp.json();if(!data.ok)return;const {data:existing}=await sb.from('fixtures').select('external_id,opponent,venue,kick_off,status').eq('team_id',ctx.team.id).eq('external_source','fa_full_time'),map=new Map((existing||[]).map(x=>[String(x.external_id),x]));let changes=0;for(const r of data.rows||[]){const old=map.get(String(r.externalId||r.id));if(!old){changes++;continue}const side=(r.ourVenue&&r.opponent)?{venue:r.ourVenue,opponent:r.opponent}:sideInfo(r,ctx.team,ctx.club);const d=r.date?new Date(r.date+'T'+(r.time||'12:00')+':00'):null;if(side.opponent&&(old.opponent!==side.opponent||old.venue!==side.venue))changes++;else if(d&&!Number.isNaN(d.getTime())&&Math.abs(new Date(old.kick_off).getTime()-d.getTime())>60000)changes++;else if(/cancel/i.test(r.status||'')&&old.status!=='cancelled')changes++}await sb.from('team_settings').update({fixture_last_checked_at:new Date().toISOString()}).eq('team_id',ctx.team.id);if(changes){const n=$('fixtureNotice');n.innerHTML='<b>'+changes+' fixture update'+(changes===1?'':'s')+' found.</b> <a href="'+ctx.href('/fixture-sync.html')+'">Review changes</a>';n.classList.remove('hidden')}}catch(e){}}
+async function checkFixtureUpdates(ctx){
+ const s=ctx.settings||{};if(!s.fixture_sync_on_login||!s.fixture_source_url)return;
+ try{
+  const resp=await fetch('https://hennzggqaquevqgiucqn.supabase.co/functions/v1/fa-fulltime-preview',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ctx.session.access_token,'apikey':'sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW'},body:JSON.stringify({url:s.fixture_source_url,teamId:ctx.team.id})});
+  const data=await resp.json();if(!data.ok)return;
+  const {data:existing}=await sb.from('fixtures').select('external_id,opponent,venue,kick_off,status').eq('team_id',ctx.team.id).eq('external_source','fa_full_time');
+  const map=new Map((existing||[]).map(x=>[String(x.external_id),x])),seen=new Set();let changes=0;
+  for(const r of data.rows||[]){
+   const id=String(r.externalId||r.id||'');if(!id)continue;seen.add(id);
+   const old=map.get(id);if(!old){changes++;continue}
+   const side=(r.ourVenue&&r.opponent)?{venue:r.ourVenue,opponent:r.opponent}:sideInfo(r,ctx.team,ctx.club);
+   const d=r.date?new Date(r.date+'T'+(r.time||'12:00')+':00'):null;
+   let changed=false;
+   if(side.opponent&&(old.opponent!==side.opponent||old.venue!==side.venue))changed=true;
+   if(d&&!Number.isNaN(d.getTime())&&Math.abs(new Date(old.kick_off).getTime()-d.getTime())>60000)changed=true;
+   const extStatus=/cancel/i.test(r.status||'')?'cancelled':/postpon/i.test(r.status||'')?'postponed':'scheduled';
+   if(old.status!==extStatus)changed=true;
+   if(changed)changes++;
+  }
+  for(const old of existing||[])if(old.external_id&&!seen.has(String(old.external_id))&&old.status!=='cancelled')changes++;
+  await sb.from('team_settings').update({fixture_last_checked_at:new Date().toISOString()}).eq('team_id',ctx.team.id);
+  if(changes){const n=$('fixtureNotice');n.innerHTML='<b>'+changes+' fixture update'+(changes===1?'':'s')+' found.</b> <a href="'+ctx.href('/fixture-sync.html')+'">Review changes</a>';n.classList.remove('hidden')}
+ }catch(e){}
+}
 
 async function boot(){try{
  const ctx=await FootballPAContext.resolve();const {team,club}=ctx;
