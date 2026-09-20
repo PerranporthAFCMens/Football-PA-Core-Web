@@ -1,4 +1,15 @@
 (function(){
+function applyTheme(club){
+  const primary=club?.primary_colour||'#1357A6',secondary=club?.secondary_colour||'#FFFFFF';
+  const hex=s=>String(s||'').replace('#','');
+  const contrast=h=>{const x=hex(h);if(!/^[0-9a-f]{6}$/i.test(x))return '#FFFFFF';const r=parseInt(x.slice(0,2),16),g=parseInt(x.slice(2,4),16),b=parseInt(x.slice(4,6),16),y=(r*299+g*587+b*114)/1000;return y>165?'#102033':'#FFFFFF'};
+  const root=document.documentElement;
+  root.style.setProperty('--blue',primary);
+  root.style.setProperty('--fpa-primary',primary);
+  root.style.setProperty('--fpa-secondary',secondary);
+  root.style.setProperty('--fpa-accent',primary);
+  root.style.setProperty('--fpa-header-text',contrast(primary));
+}
 async function resolve(opts={}){
   const q=new URLSearchParams(location.search);
   const {data:{session},error:sessionError}=await sb.auth.getSession();
@@ -39,8 +50,9 @@ async function resolve(opts={}){
   if(!team) throw new Error('No Football PA team is available for this account.');
   localStorage.setItem('fpa_active_team_id',team.id);
 
-  const {data:club,error:clubError}=await sb.from('clubs').select('id,name,short_name,primary_colour').eq('id',team.club_id).single();
+  const {data:club,error:clubError}=await sb.from('clubs').select('id,name,short_name,primary_colour,secondary_colour').eq('id',team.club_id).single();
   if(clubError) throw clubError;
+  applyTheme(club);
 
   let season=null;
   if(team.season_label){
@@ -73,5 +85,5 @@ async function resolve(opts={}){
     }
   };
 }
-window.FootballPAContext={resolve};
+window.FootballPAContext={resolve,applyTheme};
 })();
