@@ -36,14 +36,24 @@ const formations7={
 '3-2-1':[{k:'gk',x:50,y:91},{k:'lb',x:22,y:70},{k:'cb',x:50,y:76},{k:'rb',x:78,y:70},{k:'lcm',x:34,y:47},{k:'rcm',x:66,y:47},{k:'st',x:50,y:18}],
 '2-2-2':[{k:'gk',x:50,y:91},{k:'lb',x:30,y:70},{k:'rb',x:70,y:70},{k:'lcm',x:34,y:48},{k:'rcm',x:66,y:48},{k:'lst',x:34,y:20},{k:'rst',x:66,y:20}]
 };
+const formations5={
+'1-2-1':[{k:'gk',x:50,y:91},{k:'lm',x:28,y:56},{k:'rm',x:72,y:56},{k:'st',x:50,y:20}],
+'2-1-1':[{k:'gk',x:50,y:91},{k:'lb',x:30,y:66},{k:'rb',x:70,y:66},{k:'st',x:50,y:22}],
+'1-1-2':[{k:'gk',x:50,y:91},{k:'cm',x:50,y:56},{k:'lst',x:34,y:22},{k:'rst',x:66,y:22}]
+};
+const formations9={
+'3-3-2':[{k:'gk',x:50,y:91},{k:'lb',x:22,y:70},{k:'cb',x:50,y:75},{k:'rb',x:78,y:70},{k:'lm',x:22,y:47},{k:'cm',x:50,y:52},{k:'rm',x:78,y:47},{k:'lst',x:38,y:20},{k:'rst',x:62,y:20}],
+'3-2-3':[{k:'gk',x:50,y:91},{k:'lb',x:22,y:71},{k:'cb',x:50,y:76},{k:'rb',x:78,y:71},{k:'lcm',x:36,y:51},{k:'rcm',x:64,y:51},{k:'lw',x:20,y:24},{k:'st',x:50,y:18},{k:'rw',x:80,y:24}],
+'2-3-3':[{k:'gk',x:50,y:91},{k:'lb',x:32,y:72},{k:'rb',x:68,y:72},{k:'lm',x:22,y:49},{k:'cm',x:50,y:54},{k:'rm',x:78,y:49},{k:'lw',x:20,y:24},{k:'st',x:50,y:18},{k:'rw',x:80,y:24}]
+};
 let formations=formations11;
 function configureMatchFormat(){
- const seven=String(team?.match_format||'').toLowerCase().includes('7');
- formations=seven?formations7:formations11;
+ const format=String(team?.match_format||'11-a-side').toLowerCase();
+ const size=format.includes('5')?5:format.includes('7')?7:format.includes('9')?9:11;
+ formations=size===5?formations5:size===7?formations7:size===9?formations9:formations11;
  const select=$('formationSelect');
  select.innerHTML=Object.keys(formations).map(f=>`<option value="${f}">${f}</option>`).join('');
- const label=seven?'Starting 7':'Starting XI';
- $('formationTitle').dataset.prefix=label;
+ $('formationTitle').dataset.prefix='Starting '+size;
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function playerById(id){return players.find(p=>p.id===id)}function time(){const m=Math.floor(state.seconds/60),s=state.seconds%60;return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}function minuteNow(){return Math.max(0,Math.floor(state.seconds/60))}function isFinal(f){return['ft','full_time','completed','complete','finished'].includes(String(f.status||'').toLowerCase())}function longDate(v){return v?new Date(v).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}):''}
 async function boot(){try{const ctx=await FootballPAContext.resolve();team=ctx.team;club=ctx.club;teamSettings=ctx.settings||{};configureMatchFormat();let r=await sb.from('team_players').select('players(id,display_name,shirt_number,preferred_position)').eq('team_id',team.id).eq('active',true);if(r.error)throw r.error;players=(r.data||[]).map(x=>x.players).filter(Boolean).sort((a,b)=>(a.shirt_number??999)-(b.shirt_number??999));r=await sb.from('fixtures').select('id,team_id,opponent,venue,competition,kick_off,status,home_score,away_score').eq('team_id',team.id).order('kick_off');if(r.error)throw r.error;fixtures=r.data||[];const q=new URLSearchParams(location.search),requestedFixture=q.get('fixture');fixture=fixtures.find(f=>f.id===requestedFixture)||fixtures.find(f=>!isFinal(f))||fixtures[fixtures.length-1];if(!fixture)throw new Error('No fixture is available.');$('fixtureSelect').innerHTML=fixtures.map(f=>'<option value="'+f.id+'">'+esc(longDate(f.kick_off))+' · '+esc(f.opponent)+' · '+(String(f.venue).toLowerCase()==='home'?'Home':String(f.venue).toLowerCase()==='away'?'Away':'Neutral')+'</option>').join('');$('fixtureSelect').value=fixture.id;FootballPANav.mount({teamId:team.id});await loadMatch();renderHeader();render();$('status').classList.add('hidden');$('app').classList.remove('hidden');startTimers()}catch(e){$('status').textContent='Could not load Match Centre: '+e.message;$('status').classList.add('bad')}}
