@@ -107,3 +107,37 @@ Verified:
 - newly introduced access helpers are not executable by the anonymous role
 
 Do not begin Recommendation 2/5 until Recommendation 1/5 has passed the dev-preview runtime check and has been promoted/verified according to the normal release discipline.
+
+
+## Recommendation 2/5 — Database integrity and RPC grants
+
+Completed on 21 September 2026.
+
+Supabase migration: `20260921184908_harden_database_integrity_and_rpc_grants`.
+
+Changes:
+
+- opted the project into explicit default grants for future public tables, sequences and functions rather than relying on automatic Data API exposure
+- removed anonymous execution from `update_club_branding` and `dev_create_team`
+- removed direct public/anon/authenticated execution from trigger-only functions `set_updated_at` and `prevent_locked_training_attendance_change`
+- preserved anonymous execution for the nine Player Portal RPCs that intentionally form the public PIN-session API
+- created a non-exposed `private` schema for integrity trigger functions
+- added 12 integrity guards covering fixtures, team players, linked membership players, match lineups, match squads, match events, substitutions, training attendance, voting events, Subs payments, Subs match statuses and Player Portal credentials
+- added a partial unique index preventing duplicate team/player roster links where `season_id` is null
+- remapped imported 2025/26 goal-zone data from the old 11-zone numbering to the approved 10-zone Core model
+- preserved every imported original goal zone as `details.legacy_goal_zone` before remapping
+- tightened `match_events.zone` to allow only 1–10 or null
+
+Validation:
+
+- all checked cross-club/team/season relationships currently report zero mismatches
+- an authenticated cross-club roster mutation is rejected by the new integrity guard
+- valid authenticated training-attendance writes still work with the locked-session trigger protected from direct RPC execution
+- Voting Centre writes still work after trigger-grant hardening
+- anonymous Player Portal player discovery still returns the expected 19 Perranporth portal players
+- anonymous `update_club_branding` execution is blocked
+- no event remains with goal zone 11
+- 151 imported historical goal zones were remapped and all 151 original values were retained in JSON
+- Supabase Security Advisor now reports anonymous SECURITY DEFINER warnings only for the nine deliberately public Player Portal RPCs
+
+The remaining authenticated SECURITY DEFINER warnings are the intentional signed-in Core RPC surface plus self-scoped authorisation helpers. They remain guarded inside the function bodies and will be revisited only if the API is later moved behind a dedicated exposed schema.
