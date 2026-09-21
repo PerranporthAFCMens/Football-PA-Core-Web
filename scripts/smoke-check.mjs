@@ -55,3 +55,8 @@ if(!playfulUi.includes('Football PA visual refresh v5')||!playfulUi.includes('MA
 if(failed)process.exit(1);
 
 if(!nav.includes('head.prepend(btn)')||!nav.includes('fpa-app-head-info'))fail('core-nav.js','hamburger/header identity swap missing');
+
+const subsFixture=fs.readFileSync('subs.html','utf8');
+if(!subsFixture.includes('Match subs')||!subsFixture.includes('matchPayFixture')||!subsFixture.includes('set_fixture_subs_paid'))fail('subs.html','pre-match fixture subs checklist missing');
+if(!subsFixture.includes("from('match_squads')")||!subsFixture.includes('No match squad is saved yet'))fail('subs.html','fixture subs squad fallback missing');
+if(failed)process.exit(1);

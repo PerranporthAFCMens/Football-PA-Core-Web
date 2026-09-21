@@ -313,3 +313,16 @@ The dev Pages workflow now triggers directly on every push to `dev`, checks out 
 
 ### Dev Pages deployment note
 GitHub Pages currently restricts the deployment environment to the default branch. The supported preview pattern is therefore: a successful `dev` smoke run triggers the `Dev preview` workflow from `main`, and that workflow explicitly checks out `dev` before publishing. Do not add a direct `push: dev` Pages deployment unless the environment protection rule is changed first.
+
+
+## Pre-match fixture subs — 21 September 2026
+
+Subs Tracker now supports collecting per-game subs before matchday.
+
+- `subs_payments.fixture_id` links a payment to a specific fixture.
+- The Match subs panel defaults to the next upcoming fixture.
+- Managers can mark a player Paid before the match and Undo a mistaken tick.
+- If a saved match squad exists, only those players are shown; otherwise all active players are available so collection can start before lineup/squad admin is complete.
+- A fixture-specific payment uses the configured per-game amount and is included in the normal season payment totals.
+- Future fixture duplicates are collapsed in the selector by opponent + kickoff, preferring the canonical `include_in_stats=true` row.
+- The write RPC is authenticated and permission-checked; anon/PUBLIC execution is revoked.
