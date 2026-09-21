@@ -388,3 +388,8 @@ The copied player voting link now targets Player Portal with `tab=vote`; player-
 - It does not create a substitution and does not rewrite `match_lineups` / the stored starting XI.
 - The formal substitution controls remain the only way to record substitutions.
 - 11-a-side shirt numbers were reduced again to 25 desktop / 16 mobile; 7-a-side sizing remains unchanged.
+
+
+## Voting match picker order — 21 September 2026
+- Voting match selector is chronological, earliest to latest.
+- Default selection remains the most recent completed match unless voting is currently open for another fixture.

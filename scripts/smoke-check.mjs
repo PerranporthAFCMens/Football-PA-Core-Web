@@ -84,3 +84,5 @@ const matchTactical=fs.readFileSync('match-centre.html','utf8');
 if(matchTactical.includes('function openPicker(slot){if(lineupSaved)return;'))fail('match-centre.html','saved lineup still blocks tactical player picker');
 if(!matchTactical.includes('.pitch.format-11 .slot-shirt .shirt-number{font-size:25px}')||!matchTactical.includes('.pitch.format-11 .slot-shirt .shirt-number{font-size:16px}'))fail('match-centre.html','reduced 11-a-side shirt numbers missing');
 if(failed)process.exit(1);
+
+const votingOrder=fs.readFileSync('voting.html','utf8');if(!votingOrder.includes(".order('kick_off',{ascending:true})"))fail('voting.html','Voting match picker must be chronological');if(failed)process.exit(1);

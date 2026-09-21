@@ -83,7 +83,7 @@ function renderStatus(){
 }
 async function loadCentre(){
   let r=await sb.rpc('get_voting_centre',{p_team_id:ctx.team.id,p_season_id:ctx.season.id});if(r.error)throw r.error;C=r.data||{events:[]};
-  r=await sb.from('fixtures').select('id,opponent,kick_off,status,venue,competition').eq('team_id',ctx.team.id).eq('season_id',ctx.season.id).neq('status','cancelled').order('kick_off',{ascending:false});if(r.error)throw r.error;fixtures=r.data||[];
+  r=await sb.from('fixtures').select('id,opponent,kick_off,status,venue,competition').eq('team_id',ctx.team.id).eq('season_id',ctx.season.id).neq('status','cancelled').order('kick_off',{ascending:true});if(r.error)throw r.error;fixtures=r.data||[];
   if(!selected||!fixtures.some(f=>f.id===selected))selected=defaultMatch();
   $('match').innerHTML=fixtures.map(f=>'<option value="'+f.id+'">'+esc(matchLabel(f))+'</option>').join('');
   if(selected)$('match').value=selected;
