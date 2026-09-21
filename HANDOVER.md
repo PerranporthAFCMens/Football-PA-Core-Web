@@ -467,3 +467,24 @@ Voting Centre keeps the original Perranporth management workflow but now uses th
 - Recent-result score blocks now use a wider non-wrapping layout so scores such as 0–2 stay visually centred.
 - Upcoming venue blocks use their own aligned treatment.
 - Shortcut icons were simplified to lighter circular outline icons.
+
+
+## Current release checkpoint — 21 September 2026
+
+This is the handover baseline at the end of the current development session.
+
+- Latest functional application commit: `8e6a6c0196afb009b54fdfe413520cebd74a5794` (`Fix Home shortcut smoke check`).
+- That functional commit contains the current Home Screen configurable shortcuts/polish, Voting Centre visual alignment, GitHub Pages route fixes and the previously restored Match Centre/Voting/Subs functionality documented above.
+- Core smoke checks passed for that exact functional commit.
+- The GitHub Pages Dev Preview workflow completed successfully after the smoke check.
+- The hourly production release promoted the same functional commit from `dev` to `main`.
+- Vercel reported a successful deployment for that exact functional commit. Production deployment target: `https://vercel.com/ajtbenanbar/football-pa-core-web/HPPDiAB6Xg8mTuF8mzFjaGM4Ard7`.
+- At this checkpoint there was no functional dev/main drift. Any newer commit that only updates this handover does not represent an application-code change.
+
+### Current Home Screen behaviour
+
+The two large Home shortcut cards are now team-configurable in Team Settings → Home Screen. Available choices respect enabled team features. Perranporth defaults to Subs Tracker + Dashboard; St Agnes defaults to Training Log + Dashboard. The latest Home polish also removes the unwanted decorative line from the Next Match card, improves score alignment and uses simplified shortcut icons.
+
+### Next-chat discipline
+
+Before changing anything, fetch the current `dev` branch and this handover. Do not recreate old fixes from memory. Verify whether a reported issue is on GitHub Pages dev preview or Vercel production, because the user actively tests both. Preserve the existing Perranporth workflows when moving them into the generic Core product rather than redesigning them without a request.
