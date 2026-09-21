@@ -13,9 +13,9 @@
 <body>
 <div class="wrap">
   <div class="club-head">
-    <div class="club-badge" aria-label="Harbour Athletic club badge">H</div>
-    <div class="club-name">Harbour Athletic FC</div>
-    <div class="club-sub">Football PA Core demo club</div>
+    <div class="club-badge" aria-label="Football PA">PA</div>
+    <div class="club-name">Football PA</div>
+    <div class="club-sub">Core development preview</div>
   </div>
 
   <div class="card" id="authCard">
@@ -24,15 +24,14 @@
     <div class="field"><label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
     <div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Minimum 6 characters"></div>
     <div class="row"><button class="btn primary" id="signIn">Sign in</button><button class="btn secondary" id="signUp">Create account</button></div>
-    <div id="status" class="status">Core test accounts are currently attached to Harbour Athletic automatically.</div>
+    <div id="status" class="status">Sign in with your Football PA account.</div>
   </div>
 
   <div class="card hidden" id="sessionCard">
     <div class="topline"><div><div class="tiny"><b>SIGNED IN</b></div><div id="who" class="muted"></div></div><button class="btn secondary" id="signOut">Sign out</button></div>
     <h1>You're in</h1>
-    <div class="muted">Your authenticated Core data is loading from Supabase.</div>
-    <div id="data" class="data"></div>
-    <div class="row"><a class="btn primary" style="text-decoration:none;text-align:center" href="/">Open Core app</a><button class="btn secondary" id="refresh">Refresh data</button></div>
+    <div class="muted">You are signed in to Football PA Core.</div>
+    <div class="row" style="grid-template-columns:1fr"><a id="openCore" class="btn primary" style="text-decoration:none;text-align:center" href="/">Open Core app</a></div>
   </div>
 
   <div class="fpa-footer">
@@ -54,7 +53,7 @@ async function loadData(){
 }
 async function renderSession(){const {data:{session}}=await sb.auth.getSession();if(session){$('authCard').classList.add('hidden');$('sessionCard').classList.remove('hidden');$('who').textContent=session.user.email;try{await loadData()}catch(err){$('data').innerHTML=`<div class="item bad"><b>Signed in, but data could not load.</b><span class="tiny">${err.message}</span></div>`}}else{$('authCard').classList.remove('hidden');$('sessionCard').classList.add('hidden')}}
 $('signIn').onclick=async()=>{msg('Signing in…');const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)return msg(error.message,true);await renderSession()};
-$('signUp').onclick=async()=>{msg('Creating account…');const {data,error}=await sb.auth.signUp({email:$('email').value.trim(),password:$('password').value,options:{emailRedirectTo:'https://core.footballpa.com/login.html'}});if(error)return msg(error.message,true);if(data.session){await renderSession()}else msg('Account created. Check your email to confirm it, then return here and sign in.')};
-$('signOut').onclick=async()=>{await sb.auth.signOut();await renderSession()};$('refresh').onclick=loadData;sb.auth.onAuthStateChange(()=>setTimeout(renderSession,0));renderSession();
+$('signUp').onclick=async()=>{msg('Creating account…');const {data,error}=await sb.auth.signUp({email:$('email').value.trim(),password:$('password').value,options:{emailRedirectTo:location.origin+location.pathname}});if(error)return msg(error.message,true);if(data.session){await renderSession()}else msg('Account created. Check your email to confirm it, then return here and sign in.')};
+$('signOut').onclick=async()=>{await sb.auth.signOut();await renderSession()};sb.auth.onAuthStateChange(()=>setTimeout(renderSession,0));renderSession();
 </script>
 </body></html>

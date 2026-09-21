@@ -14,7 +14,7 @@ async function resolve(opts={}){
   const q=new URLSearchParams(location.search);
   const {data:{session},error:sessionError}=await sb.auth.getSession();
   if(sessionError) throw sessionError;
-  if(!session){ location.replace('/login.html'); throw new Error('Not signed in'); }
+  if(!session){ const back=location.pathname+location.search; location.replace('/login.html?return='+encodeURIComponent(back)); throw new Error('Not signed in'); }
 
   const requested=opts.teamId||q.get('team')||q.get('id')||localStorage.getItem('fpa_active_team_id');
   const preview=q.get('dev_preview')==='1';
