@@ -453,3 +453,17 @@ Voting Centre keeps the original Perranporth management workflow but now uses th
 - standard Football PA page width, background, cards, spacing and typography
 - match picker, Open/Close voting, player voting link, Top 3, DOD reasons, Who's voted, Still to vote and private Season Voting Table are unchanged functionally
 - old standalone Perranporth-specific header/Home/refresh chrome removed
+
+
+## Configurable Home shortcuts + Home visual polish — 21 September 2026
+
+- Team Settings now includes Home Screen selectors for the two Home shortcut cards.
+- Shortcut options are filtered by team features.
+- Supported shortcuts: Training Log, Dashboard, Subs Tracker, Fixtures, Players, Match Centre and Voting Centre.
+- Perranporth defaults to Subs Tracker + Dashboard.
+- St Agnes defaults to Training Log + Dashboard.
+- Home renders shortcut labels, descriptions, routes and clean outline icons dynamically from saved team settings.
+- Removed the accidental decorative line across the Next Match card while retaining the MATCHDAY treatment.
+- Recent-result score blocks now use a wider non-wrapping layout so scores such as 0–2 stay visually centred.
+- Upcoming venue blocks use their own aligned treatment.
+- Shortcut icons were simplified to lighter circular outline icons.

@@ -11,7 +11,7 @@ const live=fs.readFileSync('live-score.html','utf8');if(!live.includes('team-sco
 if(!playerHtml.includes('Save & lock session'))fail('players.html','training session lock control missing');
 if(!playerHtml.includes('Surname A–Z'))fail('players.html','player surname sort control missing');
 const sync=fs.readFileSync('fixture-sync.html','utf8');if(!sync.includes('fixtureDateHasPassed'))fail('fixture-sync.html','past missing fixtures are not protected');if(!sync.includes('fixture_sync_ignored_updates')||!sync.includes('ignoreChange'))fail('fixture-sync.html','ignored fixture updates are not persisted');
-const home=fs.readFileSync('index.html','utf8');if(!home.includes('Coming up'))fail('index.html','Coming up Home card missing');if(/More tools|ACTIVE PLAYERS|Voting|Subs Admin/.test(home))fail('index.html','unsupported or old Home card content remains');if(!home.includes('data-upcoming'))fail('index.html','Coming up fixtures are not rendered');if(!home.includes('trainingShortcut')||!home.includes('dashboardShortcut'))fail('index.html','Home training/dashboard shortcuts missing');if(!home.includes('fixture_sync_ignored_updates'))fail('index.html','Home fixture notice does not respect ignored updates');
+const home=fs.readFileSync('index.html','utf8');if(!home.includes('Coming up'))fail('index.html','Coming up Home card missing');if(/More tools|ACTIVE PLAYERS|Voting|Subs Admin/.test(home))fail('index.html','unsupported or old Home card content remains');if(!home.includes('data-upcoming'))fail('index.html','Coming up fixtures are not rendered');if(!home.includes('homeShortcut1')||!home.includes('homeShortcut2')||!home.includes('renderHomeShortcut'))fail('index.html','configurable Home shortcuts missing');if(!home.includes('fixture_sync_ignored_updates'))fail('index.html','Home fixture notice does not respect ignored updates');
 if(failed)process.exit(1);console.log('Football PA Core smoke checks passed.');
 const portal=fs.readFileSync('player-portal.html','utf8');
 for(const rpc of ['player_portal_list_players','player_portal_login','player_portal_first_time_setup','player_portal_change_pin','player_portal_data_v2','player_portal_submit_vote'])if(!portal.includes(rpc))fail('player-portal.html','missing PIN portal RPC '+rpc);
@@ -45,7 +45,7 @@ if(!nav.includes("teamHref('/voting.html')")||!nav.includes("teamHref('/subs.htm
 if(failed)process.exit(1);
 
 const homeDesign=fs.readFileSync('index.html','utf8');
-if(!homeDesign.includes('Season at a glance')||!homeDesign.includes('home-shortcut')||!homeDesign.includes('Training Log')||!homeDesign.includes('Dashboard'))fail('index.html','refreshed Home dashboard actions missing');
+if(!homeDesign.includes('Season at a glance')||!homeDesign.includes('home-shortcut')||!homeDesign.includes('HOME_SHORTCUTS'))fail('index.html','refreshed configurable Home actions missing');
 const sharedUi=fs.readFileSync('core-ui.css','utf8');
 if(!sharedUi.includes('Football PA visual refresh v4')||!sharedUi.includes('.home-shortcut')||!sharedUi.includes('--fpa-radius-lg'))fail('core-ui.css','shared visual refresh missing');
 if(failed)process.exit(1);
@@ -119,4 +119,10 @@ const contextRouting=fs.readFileSync('core-context.js','utf8');
 if(!contextRouting.includes("location.hostname.endsWith('.github.io')")||!contextRouting.includes('const route=routedPath(path)'))fail('core-context.js','GitHub Pages project-path routing missing');
 const navRouting=fs.readFileSync('core-nav.js','utf8');
 if(!navRouting.includes("location.hostname.endsWith('.github.io')")||!navRouting.includes('const route=routedPath(path)'))fail('core-nav.js','GitHub Pages project-path routing missing');
+if(failed)process.exit(1);
+
+const homeSettings=fs.readFileSync('team-settings.html','utf8');
+if(!homeSettings.includes('id="homeShortcut1"')||!homeSettings.includes('id="homeShortcut2"')||!homeSettings.includes('home_shortcut_1')||!homeSettings.includes('home_shortcut_2'))fail('team-settings.html','Home shortcut settings missing');
+if(!home.includes('result-score')||!home.includes('venue-result'))fail('index.html','Home score/venue layout classes missing');
+if(!sharedUi.includes('Home polish v6')||!sharedUi.includes('.result-score')||!sharedUi.includes('.hero-match:before'))fail('core-ui.css','Home visual polish missing');
 if(failed)process.exit(1);
