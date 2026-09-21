@@ -10,23 +10,57 @@ Repository: `PerranporthAFCMens/Football-PA-Core-Web`
 Supabase project: `hennzggqaquevqgiucqn`  
 Primary site: `https://core.footballpa.com`
 
-First read `README.md`, `HANDOVER.md`, `CODE-AUDIT.md` and `scripts/smoke-check.mjs` from the current `main` branch. Treat them as the current source of truth.
+Before changing anything, read these files from the current `main` branch:
+- `README.md`
+- `HANDOVER.md`
+- `CODE-AUDIT.md`
+- `CHAT-RESUME.md`
+- `scripts/smoke-check.mjs`
 
-Rules:
-- Perranporth is the UX reference. Core must stay generic/configurable.
-- Do not modify the separate live Perranporth app unless explicitly asked.
-- Inspect exact code/schema before editing.
-- Do not claim a fix is done until it is pushed/applied and checked.
-- Batch changes because Vercel has been hitting build-rate limits.
-- GitHub main may be ahead of Vercel, so check deployment status separately.
+Treat those files as the current source of truth.
+
+Important product rules:
+- Perranporth is the UX reference, but Core must stay generic and configurable for any club/team.
+- Do not modify the separate live Perranporth app unless I explicitly ask.
+- Inspect exact code/schema before editing. Do not guess.
+- Do not say a fix is complete until it is actually pushed/applied and checked.
+- Check GitHub deployment status separately from code state because Vercel has previously hit build-rate limits.
 - Use British English and avoid em dashes.
 
-Current QA team: St Agnes Dynamos Girls U10  
-Team ID: `5337936a-5db7-4447-ac4a-d50323eb0715`  
-Season ID: `f8ef6074-d483-4dd1-b15c-1957305469d3`
+Current QA team:
+- St Agnes Dynamos Girls U10
+- team ID: `5337936a-5db7-4447-ac4a-d50323eb0715`
+- season ID: `f8ef6074-d483-4dd1-b15c-1957305469d3`
+- 7-a-side
+- four x 12 minute periods
 
-The highest-priority known technical issue is match-lineup history. Normal Match Centre saves currently replace `match_lineups` with the current XI. Read the handover before changing that architecture.
+Current main navigation:
+Home → Fixtures → Match Centre → Live Score → Dashboard → Players & Training → Voting → Subs Admin → Settings.
 
-Continue from current `main`, not from assumptions based on an older deployed page.
+Recent completed work you need to preserve:
+- Players & Training is admin/tools only, not a player performance dashboard.
+- Players defaults to surname A–Z and can sort by surname, shirt number or first name.
+- Training sessions can be Save & locked, then explicitly unlocked for corrections.
+- Live Score is a spectator-safe tokenised public page using the `team-scoreboard` Edge Function. It refreshes from Match Centre and has a Share button.
+- Match Centre uses one period button that changes Start/End state for each configured period.
+- Saved starting lineup is reversible with **Edit starting lineup**.
+- Goal logging uses the approved 10-zone half-pitch map.
+- `match_events.zone` is integer. The Supabase save RPC was fixed to convert incoming values like `Zone 1` into numeric zone `1`.
+- Dashboard mobile overflow has been fixed.
+- Dashboard Player data scrolls horizontally inside its card. The Player column stays sticky and displays first name + surname initial, for example `Olivia T.`.
+
+The highest-priority known architectural issue is still match-lineup history:
+`save_match_centre_state` currently deletes/recreates `match_lineups` from the current XI on routine saves, so after substitutions it can overwrite the real starting XI and distort starts/minutes analytics.
+
+Recommended direction:
+- persist current tactical XI separately, ideally on `match_states.current_xi`
+- write historical starter rows only when starting lineup is confirmed
+- never overwrite starter history during routine autosaves
+- load current tactical XI from the dedicated current-XI state
+
+Second known issue:
+substitution records survive reload, but substitution feed entries are not reconstructed into the visible event feed after reload.
+
+Continue from the current `main` branch. Do not infer state from an older Vercel page without checking the current commit/deployment.
 
 ---
