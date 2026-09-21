@@ -75,21 +75,23 @@ async function resolve(opts={}){
     season=data||null;
   }
 
-  const [featureRes,settingsRes,teamMemberRes,clubMemberRes,platformAdminRes]=await Promise.all([
+  const [featureRes,settingsRes,accessRes]=await Promise.all([
     sb.from('team_features').select('*').eq('team_id',team.id).maybeSingle(),
     sb.from('team_settings').select('*').eq('team_id',team.id).maybeSingle(),
-    sb.from('team_memberships').select('role,permissions').eq('team_id',team.id).eq('user_id',session.user.id).eq('active',true).maybeSingle(),
-    sb.from('club_memberships').select('role,permissions').eq('club_id',team.club_id).eq('user_id',session.user.id).eq('active',true).maybeSingle(),
-    sb.from('platform_admins').select('user_id').eq('user_id',session.user.id).eq('active',true).maybeSingle()
+    sb.rpc('get_team_access_context',{p_team_id:team.id})
   ]);
-  const teamRole=teamMemberRes.data?.role||null,clubRole=clubMemberRes.data?.role||null;
-  const canManage=!!platformAdminRes.data||['team_admin','manager','coach'].includes(teamRole)||['owner','club_admin'].includes(clubRole);
+  if(featureRes.error)throw featureRes.error;
+  if(settingsRes.error)throw settingsRes.error;
+  if(accessRes.error)throw accessRes.error;
+  const access=accessRes.data||{};
+  const teamRole=access.team_role||null,clubRole=access.club_role||null;
+  const canManage=!!access.can_manage_team;
 
   const previewSuffix=preview?'&dev_preview=1':'';
   const pagesBase=location.hostname.endsWith('.github.io')?('/'+location.pathname.split('/').filter(Boolean)[0]):'';
   const routedPath=path=>pagesBase&&String(path).startsWith('/')?pagesBase+path:path;
   return {
-    session,team,club,season,preview,canManage,teamRole,clubRole,domain,
+    session,team,club,season,preview,canManage,teamRole,clubRole,domain,access,capabilities:access,
     features:featureRes.data||{},
     settings:settingsRes.data||{},
     href(path,extra=''){
