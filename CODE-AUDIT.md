@@ -74,3 +74,36 @@ Resolved in the 21 September persistence follow-up:
 
 Still unresolved:
 - broader fixture/front-end permission alignment review
+
+
+## Recommendation 1/5 — Core authorisation and RLS model
+
+Implementation completed on `dev` on 21 September 2026. Production promotion is deliberately held until the GitHub Pages dev preview is runtime-checked.
+
+Completed:
+
+- added one database capability contract for team/club access
+- added `get_team_access_context(team_id)` for frontend capability resolution
+- aligned Core Context and shared navigation with the database contract
+- aligned Match Centre, Players/Training, Fixtures, Fixture Sync, Team Settings, Voting and Subs management paths with their specific capabilities
+- corrected team-only manager RLS so club, season and roster data resolve correctly
+- aligned primary fixture, team settings, team features, player, training, match and voting-event RLS policies
+- aligned Match Centre, Subs and Voting runtime RPC authorisation with the shared helpers
+- aligned the FA Full-Time preview Edge Function with `can_manage_fixtures`
+- documented the permanent contract in `ACCESS-CONTROL.md`
+- expanded smoke checks so capability wiring is regression-tested
+
+Database validation used simulated authenticated JWT contexts inside rolled-back transactions.
+
+Verified:
+
+- the existing Perranporth team-only manager now sees the required club, two seasons, 34 club players, 19 active roster players and 64 fixtures
+- the same manager can manage Match Centre, Players, Fixtures, Voting and Subs
+- a plain team member sees club/season/team context and the 19-player roster but receives no management capabilities
+- a plain member cannot update a fixture
+- a club owner with no team membership can manage the team
+- a delegated `match` permission grants Match management without granting unrelated capabilities
+- the Perranporth manager can retrieve Voting Centre and voting snapshot RPC output through the unified model
+- newly introduced access helpers are not executable by the anonymous role
+
+Do not begin Recommendation 2/5 until Recommendation 1/5 has passed the dev-preview runtime check and has been promoted/verified according to the normal release discipline.
