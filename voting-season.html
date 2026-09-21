@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Football PA Season Voting Table</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--blue:#1357A6;--ink:#102033;--muted:#6d7b8a;--line:#d9e3ec;--bg:#eef3f8;--purple:#7142cf;--bad:#b42318}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:var(--bg);color:var(--ink);font:15px Arial,sans-serif}.wrap{width:min(100% - 24px,920px);margin:auto;padding:14px 0 60px}.hidden{display:none!important}
+.card,.status{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 6px 20px #173d6810}.card{padding:16px;margin-bottom:12px}.status{padding:13px}.status.bad{color:var(--bad)}
+.eyebrow{font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--purple)}h1{font-size:25px;margin:4px 0 5px}.muted{font-size:12px;color:var(--muted);line-height:1.45}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}.summaryBox{padding:12px;text-align:center;border:1px solid var(--line);border-radius:13px;background:#f7f9fb}.summaryBox b{display:block;font-size:22px}.summaryBox span{font-size:9px;text-transform:uppercase;color:var(--muted);font-weight:850}
+.back{display:inline-block;text-decoration:none;color:var(--blue);font-weight:850;margin-top:12px}
+.tableWrap{overflow:auto;border:1px solid var(--line);border-radius:14px;margin-top:12px}table{width:100%;border-collapse:separate;border-spacing:0;min-width:620px}th,td{padding:11px 10px;border-bottom:1px solid #edf1f4;text-align:right;white-space:nowrap}th{font-size:9px;text-transform:uppercase;color:var(--muted);background:#f6f9fb;position:sticky;top:0;z-index:2}td{font-size:13px}th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1}th:first-child{background:#f6f9fb;z-index:3}tbody tr:last-child td{border-bottom:0}.rank{display:inline-flex;width:25px;height:25px;align-items:center;justify-content:center;border-radius:50%;background:#edf3f8;font-size:10px;font-weight:900;margin-right:8px}.pts{font-weight:900;font-size:16px}.award{font-weight:900;color:var(--purple)}
+.note{margin-top:10px;padding:11px;border-radius:11px;background:#f7f3ff;border:1px solid #e1d6f7;font-size:11px;color:#66547b}
+@media(max-width:560px){.wrap{width:100%;padding:9px 7px 36px}.card{padding:13px;border-radius:15px}h1{font-size:22px}}
+</style>
+<script src="/core-context.js"></script>
+<script src="/core-nav.js"></script>
+<link rel="stylesheet" href="/core-ui.css">
+</head>
+<body>
+<div class="wrap fpa-page">
+  <div id="loading" class="status">Loading private season voting table…</div>
+  <div id="app" class="hidden">
+    <section class="card">
+      <div class="eyebrow">Private report</div>
+      <h1>Season Voting Table</h1>
+      <div id="seasonLabel" class="muted"></div>
+      <div id="summary" class="summary"></div>
+      <a id="backLink" class="back" href="#">‹ Back to Voting Centre</a>
+    </section>
+    <section class="card">
+      <div class="muted">Total Points are the 3/2/1 Player of the Match points. Pts/Game is Total Points divided by recorded appearances.</div>
+      <div class="tableWrap">
+        <table>
+          <thead><tr><th>Player</th><th>Games</th><th>Points</th><th>Pts/Game</th><th>MOTM</th><th>DOD</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="note">This report is restricted to the configured private-report account. Other team users cannot retrieve the data through the page or the database RPC.</div>
+    </section>
+  </div>
+</div>
+<script>
+const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW');
+const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));let ctx;
+async function boot(){
+  try{
+    ctx=await FootballPAContext.resolve();FootballPANav.mount({teamId:ctx.team.id});
+    $('backLink').href=ctx.href('/voting.html');
+    const r=await sb.rpc('get_private_voting_season_report',{p_team_id:ctx.team.id,p_season_id:ctx.season.id});
+    if(r.error)throw r.error;const d=r.data||{},players=d.players||[];
+    $('seasonLabel').textContent=(d.season?.label||ctx.season?.label||'Current season')+' · '+ctx.team.name;
+    $('summary').innerHTML='<div class="summaryBox"><b>'+esc(d.matches_with_votes||0)+'</b><span>Matches with votes</span></div><div class="summaryBox"><b>'+esc(d.ballots||0)+'</b><span>Ballots</span></div>';
+    $('rows').innerHTML=players.map(function(p,i){return '<tr><td><span class="rank">'+(i+1)+'</span><b>'+esc(p.name)+'</b></td><td>'+esc(p.games_played)+'</td><td class="pts">'+esc(p.total_points)+'</td><td>'+Number(p.points_per_game||0).toFixed(2)+'</td><td class="award">'+esc(p.motm_awards)+'</td><td class="award">'+esc(p.dotd_awards)+'</td></tr>';}).join('');
+    $('loading').classList.add('hidden');$('app').classList.remove('hidden');
+  }catch(e){$('loading').textContent=e.message;$('loading').classList.add('bad')}
+}
+sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});boot();
+</script>
+</body>
+</html>

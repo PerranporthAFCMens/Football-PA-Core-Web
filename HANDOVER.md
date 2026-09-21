@@ -340,3 +340,20 @@ The earlier Core Subs page was too flat and did not preserve the Perranporth wor
 - Received / Not received / N/A are managed against the selected fixture
 - pre-match payments are supported: if a saved squad exists it is used; before a squad is saved all active players can still be marked paid without automatically treating everyone as owing
 - original Perranporth 2026/27 statuses were remigrated from the legacy source of truth
+
+
+## Voting Centre history + private season table — 21 September 2026
+
+Voting Centre is now a results/history surface rather than disappearing when no vote is open.
+
+- Previous matches are shown newest first with ballot count, MOTM and DOD winners.
+- Each match expands to the full Player of the Match points table and DOD vote table.
+- If a vote is currently open, the existing authenticated vote form remains available on the same page.
+- Perranporth Dropship voting was remigrated from the legacy source: 15 ballots, 45 ranked selections and 15 DOD selections.
+- Perranporth now has three voting events for the three retained matches: Illogan, Wendron and Dropship.
+- A separate `voting-season.html` report shows Player, Games, Total Points, Points/Game, MOTM awards and DOD awards.
+- Total Points uses only the 3/2/1 Player of the Match points. DOD votes do not add positive performance points.
+- Points/Game uses recorded match appearances, not number of voting events.
+- The Season Voting Table is protected by `team_settings.voting_private_report_user_id`; Perranporth is currently assigned to the sole platform-admin account.
+- The private-report RPC rejects every other authenticated user even if they guess the URL.
+- Dropship was corrected to completed, Perranporth 0–2 Dropship, with 11 starters, three recorded substitutions and a 15-player squad from the legacy match source.
