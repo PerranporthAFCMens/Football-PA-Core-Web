@@ -92,3 +92,8 @@ if(!matchEventsEdit.includes('data-edit-event')||!matchEventsEdit.includes('save
 if(!matchEventsEdit.includes('Share result')||!matchEventsEdit.includes('FA Full-Time events')||!matchEventsEdit.includes('navigator.share'))fail('match-centre.html','completed-match share tools missing');
 if(!matchEventsEdit.includes("String(ev.team_side||'us')!=='opponent'"))fail('match-centre.html','goal score side-aware delete/edit logic missing');
 if(failed)process.exit(1);
+
+const matchDeps=fs.readFileSync('match-centre.html','utf8');
+if(!matchDeps.includes('src="./core-context.js"')||!matchDeps.includes('src="./core-nav.js"'))fail('match-centre.html','relative Core dependencies missing');
+if(!matchDeps.includes("ensureCoreDependency('FootballPAContext'")||!matchDeps.includes("ensureCoreDependency('FootballPANav'"))fail('match-centre.html','Core dependency fallback loader missing');
+if(failed)process.exit(1);

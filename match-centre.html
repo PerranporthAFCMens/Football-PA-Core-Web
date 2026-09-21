@@ -9,7 +9,7 @@
 .pitch.format-11 .slot{width:144px;min-height:135px}.pitch.format-11 .slot-shirt{width:119px;height:110px}.pitch.format-11 .slot-shirt .shirt-number{font-size:25px}.pitch.format-11 .slot-name{max-width:135px;font-size:14.5px;padding:7px 13px}.pitch.format-11 .slot-pos{font-size:6.3px}
 @media(max-width:820px){.grid{grid-template-columns:1fr}.controls{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.wrap{width:100%;padding:8px 8px 42px}.brand .muted{display:none}.match{padding:13px}.match h1{font-size:19px}.score{font-size:30px}.clock{font-size:24px}.slot{width:106px;min-height:99px}.slot-shirt{width:86px;height:80px}.slot-shirt .shirt-number{font-size:22px}.slot-name{max-width:101px;font-size:11px;padding:5px 8px}.slot-pos{font-size:6px}.pitch.format-11 .slot{width:95px;min-height:89px}.pitch.format-11 .slot-shirt{width:77px;height:72px}.pitch.format-11 .slot-shirt .shirt-number{font-size:16px}.pitch.format-11 .slot-name{max-width:91px;font-size:10px;padding:4.5px 7px}.pitch.format-11 .slot-pos{font-size:5.4px}.sectionHead{align-items:flex-start;flex-direction:column}.formation{width:100%}.panel{padding:11px}.eventBtns{grid-template-columns:1fr}.top{padding:0 2px}.picker{align-items:end;padding:8px}.pickerCard{width:100%;max-height:82vh}}
 </style>
-<script src="/core-context.js"></script><script src="/core-nav.js"></script><link rel="stylesheet" href="/core-ui.css"></head>
+<script src="./core-context.js"></script><script src="./core-nav.js"></script><link rel="stylesheet" href="./core-ui.css"></head>
 <body>
 <div class="wrap fpa-page">
 <div id="status" class="card status">Loading Match Centre…</div>
@@ -407,6 +407,30 @@ $('eventFeed').addEventListener('click',async e=>{
    state.events.splice(i,1);render();await requestSave()
  }finally{actionBusy=false}
 });
-sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});window.addEventListener('beforeunload',()=>{if(state)requestSave()});boot();
+sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('./login.html')});window.addEventListener('beforeunload',()=>{if(state)requestSave()});
+async function ensureCoreDependency(globalName,src){
+  if(window[globalName])return;
+  await new Promise((resolve,reject)=>{
+    const existing=[...document.scripts].find(s=>s.src&&s.src.endsWith('/'+src.replace(/^\.\//,'')));
+    if(existing){
+      existing.addEventListener('load',resolve,{once:true});
+      existing.addEventListener('error',()=>reject(new Error(src+' failed to load')),{once:true});
+      if(window[globalName])resolve();
+      return;
+    }
+    const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error(src+' failed to load'));document.head.appendChild(s);
+  });
+  if(!window[globalName])throw new Error(globalName+' failed to initialise');
+}
+(async()=>{
+  try{
+    await ensureCoreDependency('FootballPAContext','./core-context.js');
+    await ensureCoreDependency('FootballPANav','./core-nav.js');
+    await boot();
+  }catch(e){
+    $('status').textContent='Could not load Match Centre: '+e.message;
+    $('status').classList.add('bad');
+  }
+})();
 </script>
 </body></html>

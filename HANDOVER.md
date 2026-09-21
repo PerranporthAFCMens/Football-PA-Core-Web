@@ -408,3 +408,10 @@ Restores matchday functionality that existed in the original Perranporth Match C
 - Native Web Share is used when available, with clipboard fallback.
 - FA Full-Time Events produces a chronological event list and appends the MOTM winner from Voting Centre when available.
 - Share buttons remain hidden until the match is completed.
+
+
+## Match Centre Core dependency hardening — 21 September 2026
+
+- Match Centre now loads core-context.js/core-nav.js/core-ui.css with relative paths so the same HTML works on GitHub Pages project URLs and root/custom domains.
+- Startup explicitly verifies FootballPAContext and FootballPANav and retries loading the local dependency before booting.
+- This prevents the page from failing with "FootballPAContext is not defined" if a root-relative dependency path is missed/cached incorrectly.
