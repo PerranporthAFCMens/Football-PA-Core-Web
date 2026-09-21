@@ -124,7 +124,7 @@ function render(){
    const assists=ev.filter(e=>e.event_type==='goal'&&e.team_side==='us'&&e.related_player_id===p.id).length;
    const trained=attendance.filter(a=>a.player_id===p.id&&a.status==='present').length;
    const training=sessions.length?trained+'/'+sessions.length:'0/0';
-   return '<tr><td class="playerCol" style="padding:9px 8px;border-bottom:1px solid #eef2f5;font-weight:800">'+esc(p.first_name||String(p.display_name||'').split(' ')[0]||'Player')+'</td><td style="text-align:center">'+appsCount+'</td><td style="text-align:center">'+startsCount+'</td><td style="text-align:center">'+mins+'</td><td style="text-align:center">'+goals+'</td><td style="text-align:center">'+assists+'</td><td style="text-align:center">'+training+'</td></tr>';
+   const first=p.first_name||String(p.display_name||'').split(' ')[0]||'Player',last=p.last_name||String(p.display_name||'').trim().split(' ').slice(1).join(' '),shortName=first+(last?' '+last.trim().charAt(0).toUpperCase()+'.':'');return '<tr><td class="playerCol" style="padding:9px 8px;border-bottom:1px solid #eef2f5;font-weight:800">'+esc(shortName)+'</td><td style="text-align:center">'+appsCount+'</td><td style="text-align:center">'+startsCount+'</td><td style="text-align:center">'+mins+'</td><td style="text-align:center">'+goals+'</td><td style="text-align:center">'+assists+'</td><td style="text-align:center">'+training+'</td></tr>';
  });
  $('playerDataRows').innerHTML=playerRows.join('')||'<tr><td colspan="7" class="empty">No player data yet.</td></tr>';
 }
@@ -132,7 +132,7 @@ async function boot(){try{
  ctx=await FootballPAContext.resolve();FootballPANav.mount({teamId:ctx.team.id});if(ctx.club.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
  $('dashTitle').textContent=ctx.team.name;$('dashSub').textContent=(ctx.season?.label||ctx.team.season_label||'Current season')+' · '+ctx.club.name;
  let fq=sb.from('fixtures').select('id,opponent,venue,competition,kick_off,status,home_score,away_score').eq('team_id',ctx.team.id).order('kick_off');if(ctx.season?.id)fq=fq.eq('season_id',ctx.season.id);
- let pq=sb.from('team_players').select('players(id,display_name,first_name,shirt_number)').eq('team_id',ctx.team.id).eq('active',true);if(ctx.season?.id)pq=pq.eq('season_id',ctx.season.id);
+ let pq=sb.from('team_players').select('players(id,display_name,first_name,last_name,shirt_number)').eq('team_id',ctx.team.id).eq('active',true);if(ctx.season?.id)pq=pq.eq('season_id',ctx.season.id);
  const [fr,pr,tr]=await Promise.all([fq,pq,sb.from('training_sessions').select('id,session_date').eq('team_id',ctx.team.id)]);if(fr.error)throw fr.error;if(pr.error)throw pr.error;if(tr.error)throw tr.error;fixtures=fr.data||[];players=(pr.data||[]).map(x=>x.players).filter(Boolean);sessions=tr.data||[];
  const ids=fixtures.map(f=>f.id);
  if(ids.length){
