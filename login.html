@@ -28,7 +28,7 @@
 </div>
 <script>
 const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW');const $=id=>document.getElementById(id),q=new URLSearchParams(location.search);
-const target=q.get('return')||'/';
+const target=q.get('return')||'./index.html';
 function msg(t,bad=false){$('status').textContent=t;$('status').className='status'+(bad?' bad':'')}
 async function loadBrand(){
   const host=String(location.hostname||'').toLowerCase();
@@ -41,6 +41,6 @@ async function loadBrand(){
 }
 async function existing(){const {data:{session}}=await sb.auth.getSession();if(session)location.replace(target)}
 $('signIn').onclick=async()=>{const b=$('signIn');b.disabled=true;b.textContent='Signing in…';msg('Checking your account…');const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});b.disabled=false;b.textContent='Sign in';if(error)return msg('Login failed. Check your email and password.',true);location.replace(target)};
-$('signUp').onclick=async()=>{const b=$('signUp');b.disabled=true;b.textContent='Creating…';const returnUrl=location.origin+'/login.html?return='+encodeURIComponent(target);const {data,error}=await sb.auth.signUp({email:$('email').value.trim(),password:$('password').value,options:{emailRedirectTo:returnUrl}});b.disabled=false;b.textContent='Create account';if(error)return msg(error.message,true);if(data.session)location.replace(target);else msg('Account created. Check your email to confirm it, then return here and sign in.')};
+$('signUp').onclick=async()=>{const b=$('signUp');b.disabled=true;b.textContent='Creating…';const returnUrl=new URL('./login.html',location.href).href+'?return='+encodeURIComponent(target);const {data,error}=await sb.auth.signUp({email:$('email').value.trim(),password:$('password').value,options:{emailRedirectTo:returnUrl}});b.disabled=false;b.textContent='Create account';if(error)return msg(error.message,true);if(data.session)location.replace(target);else msg('Account created. Check your email to confirm it, then return here and sign in.')};
 loadBrand();existing();
 </script></body></html>
