@@ -172,7 +172,7 @@ Completed on main:
 - Dashboard Player data uses a narrow sticky first-name + surname-initial column
 - smoke checks expanded around regressions already seen in testing
 
-The remaining high-priority work is architectural rather than cosmetic: starting-lineup history/current-XI persistence and substitution-feed reconstruction.
+The starting-lineup/current-XI persistence split and substitution-feed reconstruction are now complete. The next architectural review area is broader fixture/front-end permission alignment.
 
 ## Validation discipline
 
