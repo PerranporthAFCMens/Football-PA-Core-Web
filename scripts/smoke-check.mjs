@@ -104,5 +104,5 @@ for(const file of rootHtmlFiles){
   if(html.includes('src="/core-context.js"')||html.includes('src="/core-nav.js"')||html.includes('href="/core-ui.css"'))fail(file,'root-relative shared Core dependency remains');
 }
 const forcedNumbers=fs.readFileSync('match-centre.html','utf8');
-if(!forcedNumbers.includes('style="font-size:${matchSize()===11?24:34}px"'))fail('match-centre.html','inline format-aware SVG shirt number size missing');
+if(!forcedNumbers.includes("String(team?.match_format||'11-a-side').toLowerCase().includes('11')?24:34"))fail('match-centre.html','inline format-aware SVG shirt number size missing');
 if(failed)process.exit(1);
