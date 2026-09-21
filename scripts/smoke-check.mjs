@@ -57,6 +57,7 @@ if(failed)process.exit(1);
 if(!nav.includes('head.prepend(btn)')||!nav.includes('fpa-app-head-info'))fail('core-nav.js','hamburger/header identity swap missing');
 
 const subsFixture=fs.readFileSync('subs.html','utf8');
-if(!subsFixture.includes('Match subs')||!subsFixture.includes('matchPayFixture')||!subsFixture.includes('set_fixture_subs_paid'))fail('subs.html','pre-match fixture subs checklist missing');
-if(!subsFixture.includes("from('match_squads')")||!subsFixture.includes('No match squad is saved yet'))fail('subs.html','fixture subs squad fallback missing');
+if(!subsFixture.includes('Select player…')||!subsFixture.includes('Select match…')||!subsFixture.includes('get_subs_tracker_v2'))fail('subs.html','player/match picker subs UX missing');
+if(!subsFixture.includes('Copy matches + payment link')||!subsFixture.includes('set_subs_match_status'))fail('subs.html','full player subs file workflow missing');
+if(!subsFixture.includes('No squad has been saved for this fixture yet'))fail('subs.html','pre-match fixture fallback missing');
 if(failed)process.exit(1);

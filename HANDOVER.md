@@ -326,3 +326,17 @@ Subs Tracker now supports collecting per-game subs before matchday.
 - A fixture-specific payment uses the configured per-game amount and is included in the normal season payment totals.
 - Future fixture duplicates are collapsed in the selector by opponent + kickoff, preferring the canonical `include_in_stats=true` row.
 - The write RPC is authenticated and permission-checked; anon/PUBLIC execution is revoked.
+
+
+## Full Subs Tracker workflow restored — 21 September 2026
+
+The earlier Core Subs page was too flat and did not preserve the Perranporth workflow. It has been replaced.
+
+- default opening view is Summary: outstanding, received, players owing
+- By Player opens with a player picker and then a dedicated player file
+- player file lists match-by-match payment state and one combined payment link for all genuinely unpaid matches
+- payment details can be copied as a ready-to-send message
+- By Match opens with a match picker and only renders the selected match
+- Received / Not received / N/A are managed against the selected fixture
+- pre-match payments are supported: if a saved squad exists it is used; before a squad is saved all active players can still be marked paid without automatically treating everyone as owing
+- original Perranporth 2026/27 statuses were remigrated from the legacy source of truth
