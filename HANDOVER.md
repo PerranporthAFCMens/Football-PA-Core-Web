@@ -15,16 +15,14 @@ Do not modify the separate live Perranporth app unless explicitly asked.
 ## Intended navigation
 
 1. Home
-2. Fixtures
-3. Match Centre
-4. Live Score
+2. Match Centre
+3. Players
+4. Fixtures
 5. Dashboard
-6. Players & Training
-7. Voting
-8. Subs Admin
-9. Settings
+6. Live Score
+7. Settings
 
-Dashboard sits directly below Match Centre with no special Dashboard heading.
+Voting, Subs Admin and Fixture Sync remain available from the Home screen **More tools** card rather than the main navigation.
 
 ## Dashboard
 
@@ -110,6 +108,13 @@ Training attendance is still saved as it is changed, but a manager can now use *
 `fixtures.html` supports active-season fixtures, filters, manager add/edit, completed scores, ground details, directions and calendar subscription.
 
 Full-Time sync uses `fixture-sync.html` and Edge Function `fa-fulltime-preview`. Ground/address extraction is best-effort because Full-Time detail HTML can vary.
+
+Full-Time disappearance rules:
+- if a fixture disappears from Full-Time after its scheduled calendar date has passed, do not treat that disappearance as a cancellation/update
+- future fixtures that disappear can still be offered as a possible cancellation
+- ignored sync updates are persisted in `team_settings.fixture_sync_ignored_updates`
+- an ignored update stays hidden unless the proposed change itself later changes
+- the Home fixture-update notice uses the same ignore and past-fixture rules
 
 Calendar subscriptions use Edge Function `team-calendar` and a per-team UUID token.
 
