@@ -1,9 +1,8 @@
 name: Dev preview
 
 on:
-  workflow_run:
-    workflows: ["Core smoke checks"]
-    types: [completed]
+  push:
+    branches: [dev]
   workflow_dispatch:
 
 permissions:
@@ -17,16 +16,23 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.head_branch == 'dev' && github.event.workflow_run.conclusion == 'success')
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout dev
+      - name: Checkout exact dev commit
         uses: actions/checkout@v6
         with:
-          ref: dev
+          ref: ${{ github.sha }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Smoke check exact preview commit
+        run: node scripts/smoke-check.mjs
 
       - name: Prepare static preview
         run: |

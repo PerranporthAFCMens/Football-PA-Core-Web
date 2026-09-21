@@ -53,3 +53,5 @@ if(failed)process.exit(1);
 const playfulUi=fs.readFileSync('core-ui.css','utf8');
 if(!playfulUi.includes('Football PA visual refresh v5')||!playfulUi.includes('MATCHDAY')||!playfulUi.includes('--fpa-fun-shadow'))fail('core-ui.css','football-focused visual refresh missing');
 if(failed)process.exit(1);
+
+if(!nav.includes('head.prepend(btn)')||!nav.includes('fpa-app-head-info'))fail('core-nav.js','hamburger/header identity swap missing');

@@ -298,3 +298,14 @@ The v5 visual layer deliberately moves away from a clinical SaaS feel.
 - more personality in results, stats and navigation
 - still generic across clubs because all accents derive from each club's configured colours
 - avoids structural changes to functional screens
+
+
+## Header layout + reliable dev preview — 21 September 2026
+
+The team header now follows the same spatial direction as the drawer:
+- hamburger/menu trigger on the left
+- club/team identity on the right
+- club badge at the far right
+- left-side drawer unchanged
+
+The dev Pages workflow now triggers directly on every push to `dev`, checks out the exact pushed SHA, runs the smoke checker on that exact commit, and only then publishes the preview. This replaces the previous indirect `workflow_run` trigger which could leave the visible preview behind the current dev branch.
