@@ -2,6 +2,7 @@ import fs from 'node:fs';
 const pages=['index.html','dashboard.html','players.html','match-centre.html','team-settings.html','fixture-sync.html','fixtures.html','voting.html','subs.html','player-portal.html'];
 let failed=false;const fail=(file,msg)=>{failed=true;console.error(`FAIL ${file}: ${msg}`)};
 for(const file of pages){const html=fs.readFileSync(file,'utf8');const ids=[...html.matchAll(/\bid=["']([^"']+)["']/g)].map(m=>m[1]);const seen=new Set();for(const id of ids){if(seen.has(id))fail(file,`duplicate id "${id}"`);seen.add(id)}const refs=[...html.matchAll(/\$\('([^']+)'\)/g)].map(m=>m[1]);for(const id of new Set(refs)){if(!seen.has(id))fail(file,`JavaScript references missing element #${id}`)}for(const m of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)){try{new Function(m[1])}catch(e){fail(file,`inline JavaScript syntax error: ${e.message}`)}}if(!html.includes('/core-ui.css'))fail(file,'missing shared /core-ui.css');if(!html.includes('/core-nav.js'))fail(file,'missing shared /core-nav.js');const visible=html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');for(const phrase of ['Saved to Supabase','Synced from Supabase','Core test','browser-only','secure Dev access'])if(visible.toLowerCase().includes(phrase.toLowerCase()))fail(file,`customer-facing debug wording: "${phrase}"`);if(/Club_Logo\.png/i.test(html))fail(file,'hardcoded club logo found');if((html.match(/FootballPANav\.mount/g)||[]).length>1)fail(file,'shared navigation mounted more than once')}
+const coreClient=fs.readFileSync('core-client.js','utf8');try{new Function(coreClient)}catch(e){fail('core-client.js',`syntax error: ${e.message}`)}if((coreClient.match(/supabase\.createClient\(/g)||[]).length!==1)fail('core-client.js','shared Supabase client should be created exactly once');if(!coreClient.includes('FootballPAClient'))fail('core-client.js','shared FootballPAClient global missing');
 const context=fs.readFileSync('core-context.js','utf8');try{new Function(context)}catch(e){fail('core-context.js',`syntax error: ${e.message}`)}if(!context.includes("get_team_access_context")||!context.includes("capabilities:access"))fail('core-context.js','authoritative team access context is not wired in');
 const nav=fs.readFileSync('core-nav.js','utf8');try{new Function(nav)}catch(e){fail('core-nav.js',`syntax error: ${e.message}`)}if(/deploy refresh/i.test(nav))fail('core-nav.js','temporary deployment marker still present');if(!nav.includes("get_team_access_context")||!nav.includes('access.can_manage_match')||!nav.includes('access.can_manage_voting')||!nav.includes('access.can_manage_subs')||!nav.includes('access.can_manage_team'))fail('core-nav.js','capability-based navigation access is missing');if(!nav.includes("select('scoreboard_token,nav_order')")||!nav.includes('teamItems.sort'))fail('core-nav.js','saved team navigation order is not applied');if(!nav.includes("['voting','Voting'")||!nav.includes('access.can_manage_voting'))fail('core-nav.js','feature-gated Voting navigation missing');if(!nav.includes("['subs','Subs Tracker'")||!nav.includes('access.can_manage_subs'))fail('core-nav.js','feature-gated Subs Tracker navigation missing');
 const playersAccess=fs.readFileSync('players.html','utf8');if(!playersAccess.includes('can_manage_players'))fail('players.html','Players does not use the shared players capability');
@@ -104,8 +105,15 @@ if(!matchDeps.includes("ensureCoreDependency('FootballPAContext'")||!matchDeps.i
 if(failed)process.exit(1);
 
 const rootHtmlFiles=fs.readdirSync('.').filter(f=>f.endsWith('.html'));
+
 for(const file of rootHtmlFiles){
   const html=fs.readFileSync(file,'utf8');
+  if(html.includes('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2')){
+    if(!html.includes('src="./core-client.js"'))fail(file,'Supabase page is missing shared core-client.js');
+    if(html.includes('supabase.createClient('))fail(file,'page still creates its own Supabase client');
+    const cdnPos=html.indexOf('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'),clientPos=html.indexOf('src="./core-client.js"');
+    if(clientPos<cdnPos)fail(file,'core-client.js loads before the Supabase library');
+  }
   if(html.includes('src="/core-context.js"')||html.includes('src="/core-nav.js"')||html.includes('href="/core-ui.css"'))fail(file,'root-relative shared Core dependency remains');
   for(const m of html.matchAll(/(?:href|action)=["']\/(?!\/)[^"']*\.html[^"']*["']/g))fail(file,'unsafe root-relative HTML navigation: '+m[0]);
   for(const m of html.matchAll(/(?:location(?:\.href|\.replace)?|window\.location(?:\.href)?)\s*(?:=|\()\s*["']\/(?!\/)/g))fail(file,'unsafe root-relative JavaScript navigation: '+m[0]);
