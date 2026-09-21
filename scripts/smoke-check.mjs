@@ -39,3 +39,7 @@ const keeperSettings=fs.readFileSync('team-settings.html','utf8');
 if(!keeperSettings.includes('goalkeeperKitColour')||!keeperSettings.includes('goalkeeper_kit_colour'))fail('team-settings.html','goalkeeper kit colour setting missing');
 if(!match.includes('goalkeeper_kit_colour')||!match.includes("toLowerCase()==='gk'")||!match.includes('shirtStriped=!isKeeper&&striped'))fail('match-centre.html','goalkeeper block-colour rendering missing');
 if(failed)process.exit(1);
+
+if(!nav.includes("from('team_domains')")||!nav.includes('domainMode=true'))fail('core-nav.js','team-subdomain navigation resolver missing');
+if(!nav.includes("teamHref('/voting.html')")||!nav.includes("teamHref('/subs.html')"))fail('core-nav.js','team-aware Voting/Subs links missing');
+if(failed)process.exit(1);

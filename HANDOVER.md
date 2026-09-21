@@ -260,3 +260,16 @@ Team Settings → Match Kit includes a separate goalkeeper colour.
 - Outfield shirt pattern/colours remain unchanged.
 - The goalkeeper is determined by the formation's `gk` slot, so tactical player changes do not change the kit rule.
 - Goalkeeper shirt-number colour is chosen automatically for contrast.
+
+
+## Team-subdomain navigation fix — 21 September 2026
+
+The shared navigation resolves the active team from `team_domains` when running on a mapped team hostname.
+
+This is required for clean URLs such as `perranporth.footballpa.com`, where there may be no `?team=` query parameter.
+
+- mapped hostname → team ID
+- feature flags are loaded for that team
+- Voting/Subs gating therefore works on clean team subdomains
+- links remain on the team hostname without adding `?team=`
+- generic Core/dev URLs still use explicit team query parameters
