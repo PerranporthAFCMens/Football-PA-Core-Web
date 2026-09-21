@@ -442,3 +442,14 @@ Fix:
 - core-nav and core-context both explicitly add the GitHub Pages project prefix when hosted on *.github.io
 - custom/root domains are unchanged
 - nav and context-generated URLs on the dev preview now resolve to `/Football-PA-Core-Web/<page>.html`
+
+
+## Voting Centre visual alignment — 21 September 2026
+
+Voting Centre keeps the original Perranporth management workflow but now uses the same Football PA visual shell as Home, Fixtures, Subs and Match Centre.
+
+- shared core-ui.css and core-nav.js restored
+- standard team header / hamburger navigation
+- standard Football PA page width, background, cards, spacing and typography
+- match picker, Open/Close voting, player voting link, Top 3, DOD reasons, Who's voted, Still to vote and private Season Voting Table are unchanged functionally
+- old standalone Perranporth-specific header/Home/refresh chrome removed

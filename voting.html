@@ -3,61 +3,76 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0d5cab">
-<title>Football PA Voting Centre</title>
+<meta name="theme-color" content="#eef3f8">
+<title>Voting Centre · Football PA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-:root{--blue:#0d5cab;--dark:#17212b;--muted:#6f7e8b;--line:#dce5ec;--bg:#f2f5f7;--green:#218b22;--red:#c62828}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);font:15px Arial,sans-serif;color:var(--dark)}.wrap{max-width:760px;margin:auto;padding:max(10px,env(safe-area-inset-top)) 10px 40px}
-.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:16px;margin-bottom:11px;box-shadow:0 4px 14px #173a5010}
-.hero{display:flex;align-items:center;gap:11px}.badge{width:56px;height:56px;border-radius:50%;object-fit:contain}.actions{margin-left:auto;display:flex;gap:7px}
-.iconBtn{border:1px solid var(--line);background:#e8eef3;color:var(--dark);border-radius:11px;padding:10px 12px;text-decoration:none;font-weight:800;cursor:pointer}.hidden{display:none!important}
-.muted{color:var(--muted);font-size:13px}h1{font-size:22px;margin:0 0 3px}h2{font-size:18px;margin:0 0 11px}h3{font-size:15px;margin:16px 0 7px}
-input,select{width:100%;min-height:46px;border:1px solid #ccd8e2;border-radius:10px;background:#fff;padding:10px;font-size:15px}
-.btn{border:0;border-radius:10px;min-height:46px;padding:10px 13px;background:var(--blue);color:#fff;font-weight:800;font-size:15px;cursor:pointer}.btn.full{width:100%}.btn.secondary{background:#e6edf3;color:var(--dark)}.btn.green{background:var(--green)}.btn.red{background:var(--red)}.btn:disabled{opacity:.5}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #edf1f4}.row:last-child{border:0}
-.pill{display:inline-block;background:#edf2f6;border-radius:999px;padding:5px 8px;margin:2px;font-size:12px}.pill.open{background:#e6f6e9;color:#17682a}.pill.closed{background:#fdeaea;color:#9e2020}
-.dotd{border:1px solid #eceff2;border-radius:10px;padding:10px;margin:7px 0}.reason{font-size:13px;color:var(--muted);padding-top:5px}.topline{display:flex;align-items:center;gap:10px}.topline .seasonLink{margin-left:auto;text-decoration:none;font-size:12px;font-weight:800;color:var(--blue)}
-.statusCard{max-width:760px;margin:12px auto;padding:13px 16px}.bad{color:#b42318}
-@media(max-width:600px){.grid2{grid-template-columns:1fr}.actions{gap:4px}.iconBtn{padding:9px}.topline{align-items:flex-start}.topline .seasonLink{white-space:nowrap}}
-</style>
 <script src="./core-context.js"></script>
+<script src="./core-nav.js"></script>
+<link rel="stylesheet" href="./core-ui.css">
+<style>
+.voting-page{display:grid;gap:12px}
+.voting-card{padding:18px}
+.voting-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.voting-head h1{margin:0!important;font-size:30px!important}
+.voting-head .fpa-muted{margin-top:5px;font-size:12px}
+.seasonLink{display:inline-flex;align-items:center;min-height:40px;padding:8px 12px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--blue);font-size:12px;font-weight:900;text-decoration:none;white-space:nowrap}
+.section-title{margin:0 0 11px;font-size:20px;font-weight:900}
+.match-select{width:100%;min-height:48px;padding:10px 12px}
+.vote-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:11px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{border:1px solid var(--line);border-radius:11px;min-height:44px;padding:10px 13px;background:#fff;color:var(--ink);font-weight:850;cursor:pointer}
+.btn.full{width:100%}.btn.secondary{background:#edf2f7}.btn.green{background:#218b22;color:#fff;border-color:#218b22}.btn.red{background:#c62828;color:#fff;border-color:#c62828}.btn:disabled{opacity:.5}
+.vote-link{width:100%;padding:11px 12px}
+.pill{display:inline-flex;align-items:center;border-radius:999px;padding:6px 9px;margin:2px;font-size:11px;font-weight:850;background:#edf2f6;color:#425466}
+.pill.open{background:#e5f6ea;color:#17682a;border:1px solid #c6e8d0}.pill.closed{background:#fdeaea;color:#9e2020;border:1px solid #f2c7c7}
+.result-block{margin-top:14px}.result-block h3{font-size:16px;margin:18px 0 8px}
+.result-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #edf1f4}
+.result-row:last-child{border-bottom:0}.result-row .score{font-weight:900;text-align:right}.result-row .breakdown{font-size:12px;color:var(--muted);font-weight:600}
+.dotd{border:1px solid #e1e8ee;border-radius:13px;padding:12px;margin:8px 0;background:#fbfcfd}.dotd b{font-size:14px}.reason{font-size:12px;color:var(--muted);padding-top:5px;line-height:1.4}
+.voter-list{display:flex;flex-wrap:wrap;gap:4px}
+.hidden{display:none!important}.bad{color:#b42318}
+@media(max-width:650px){
+  .voting-card{padding:14px}.voting-head h1{font-size:27px!important}.grid2{grid-template-columns:1fr}.result-row{align-items:flex-start}.result-row .score{max-width:145px}.seasonLink{width:100%;justify-content:center}
+}
+</style>
 </head>
 <body>
-<div class="wrap">
-  <div id="loading" class="card">Loading Voting Centre…</div>
-  <div id="app" class="hidden">
-    <div class="card hero">
-      <img id="badge" class="badge" alt="Club badge">
-      <div><h1>Voting Centre</h1><div id="teamLabel" class="muted"></div></div>
-      <div class="actions"><a id="homeBtn" class="iconBtn" href="#">Home</a><button class="iconBtn" onclick="location.reload()">↻</button></div>
-    </div>
+<main class="fpa-page">
+  <div id="loading" class="fpa-card voting-card">Loading Voting Centre…</div>
+  <div id="app" class="voting-page hidden">
+    <section class="fpa-card voting-card">
+      <div class="voting-head">
+        <div>
+          <h1>Voting Centre</h1>
+          <div id="teamLabel" class="fpa-muted"></div>
+        </div>
+        <a id="seasonLink" class="seasonLink hidden" href="#">Season Voting Table ›</a>
+      </div>
+    </section>
 
-    <div class="card">
-      <h2>Voting match</h2>
-      <select id="match"></select>
-      <div id="status" style="margin:11px 0"></div>
+    <section class="fpa-card voting-card">
+      <h2 class="section-title">Voting match</h2>
+      <select id="match" class="match-select"></select>
+      <div id="status" class="vote-status"></div>
       <div class="grid2">
         <button id="openBtn" class="btn green">Open voting</button>
         <button id="closeBtn" class="btn red">Close voting</button>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <h2>Player voting link</h2>
-      <input id="link" readonly>
+    <section class="fpa-card voting-card">
+      <h2 class="section-title">Player voting link</h2>
+      <input id="link" class="vote-link" readonly>
       <button id="copyBtn" class="btn secondary full" style="margin-top:8px">Copy voting link</button>
-    </div>
+    </section>
 
-    <div class="card">
-      <div class="topline">
-        <div><h2 style="margin-bottom:3px">Voting information</h2><div id="ballots" class="muted">Loading…</div></div>
-        <a id="seasonLink" class="seasonLink hidden" href="#">Season Voting Table ›</a>
-      </div>
-      <div id="results"></div>
-    </div>
+    <section class="fpa-card voting-card">
+      <h2 class="section-title" style="margin-bottom:3px">Voting information</h2>
+      <div id="ballots" class="fpa-muted">Loading…</div>
+      <div id="results" class="result-block"></div>
+    </section>
   </div>
-</div>
+</main>
 <script>
 const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW');
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -77,7 +92,7 @@ function renderStatus(){
   const openId=openFixtureId(),same=openId&&openId===selected;
   if(openId){
     const f=fixtures.find(x=>x.id===openId),name=f?.opponent||'current match';
-    $('status').innerHTML=same?'<span class="pill open">Voting OPEN</span> <span class="muted">This is the current voting match.</span>':'<span class="pill open">Voting OPEN</span> <span class="muted">Currently open for '+esc(name)+'. The dropdown is showing a different match.</span>';
+    $('status').innerHTML=same?'<span class="pill open">Voting OPEN</span> <span class="fpa-muted">This is the current voting match.</span>':'<span class="pill open">Voting OPEN</span> <span class="fpa-muted">Currently open for '+esc(name)+'. The dropdown is showing a different match.</span>';
   }else $('status').innerHTML='<span class="pill closed">Voting CLOSED</span>';
   $('closeBtn').disabled=!openId;
 }
@@ -94,16 +109,17 @@ async function results(){
   if(!selected){$('ballots').textContent='No match selected';$('results').innerHTML='';return}
   $('ballots').textContent='Loading…';
   const r=await sb.rpc('get_voting_match_snapshot',{p_team_id:ctx.team.id,p_season_id:ctx.season.id,p_fixture_id:selected});
-  if(r.error){$('ballots').textContent='Could not load voting information';$('results').innerHTML='<div class="muted">'+esc(r.error.message)+'</div>';return}
+  if(r.error){$('ballots').textContent='Could not load voting information';$('results').innerHTML='<div class="fpa-muted">'+esc(r.error.message)+'</div>';return}
   const s=r.data||{},medals={1:'🥇',2:'🥈',3:'🥉'};
   const f=fixtures.find(x=>x.id===selected);
   $('ballots').textContent=(s.ballots||0)+' ballot'+((s.ballots||0)===1?'':'s')+' · '+(s.event_title||((f?.opponent||'')+' ('+((venueLabel(f?.venue)||'').charAt(0)||'')+')'));
-  $('results').innerHTML='<h3>Top 3</h3>'+
-    (s.top3?.length?s.top3.map(x=>'<div class="row"><span>'+medals[x.rank]+' '+(x.joint?'Joint ':'')+x.rank+' — '+esc(x.player)+'</span><span><b>'+esc(x.score)+'</b> <span class="muted">('+esc(x.three)+'×3, '+esc(x.two)+'×2, '+esc(x.one)+'×1)</span></span></div>').join(''):'<div class="muted">No votes yet.</div>')+
+  $('results').innerHTML=
+    '<h3>Top 3</h3>'+
+    (s.top3?.length?s.top3.map(x=>'<div class="result-row"><span>'+medals[x.rank]+' '+(x.joint?'Joint ':'')+x.rank+' — <b>'+esc(x.player)+'</b></span><span class="score">'+esc(x.score)+' <span class="breakdown">('+esc(x.three)+'×3, '+esc(x.two)+'×2, '+esc(x.one)+'×1)</span></span></div>').join(''):'<div class="fpa-muted">No votes yet.</div>')+
     '<h3>Dick of the Day</h3>'+
-    (s.dotd?.length?s.dotd.map(x=>'<div class="dotd"><b>'+esc(x.player)+' — '+esc(x.votes)+'</b>'+(x.reasons||[]).map(reason=>'<div class="reason">'+esc(reason)+'</div>').join('')+'</div>').join(''):'<div class="muted">No votes yet.</div>')+
-    '<h3>Who\'s voted</h3><div>'+(s.voters?.length?s.voters.map(x=>'<span class="pill">'+esc(x)+'</span>').join(''):'<span class="muted">None yet</span>')+'</div>'+
-    '<h3>Still to vote</h3><div>'+(s.still_to_vote?.length?s.still_to_vote.map(x=>'<span class="pill">'+esc(x)+'</span>').join(''):'<span class="muted">Everyone has voted</span>')+'</div>';
+    (s.dotd?.length?s.dotd.map(x=>'<div class="dotd"><b>'+esc(x.player)+' — '+esc(x.votes)+'</b>'+(x.reasons||[]).map(reason=>'<div class="reason">'+esc(reason)+'</div>').join('')+'</div>').join(''):'<div class="fpa-muted">No votes yet.</div>')+
+    '<h3>Who\'s voted</h3><div class="voter-list">'+(s.voters?.length?s.voters.map(x=>'<span class="pill">'+esc(x)+'</span>').join(''):'<span class="fpa-muted">None yet</span>')+'</div>'+
+    '<h3>Still to vote</h3><div class="voter-list">'+(s.still_to_vote?.length?s.still_to_vote.map(x=>'<span class="pill">'+esc(x)+'</span>').join(''):'<span class="fpa-muted">Everyone has voted</span>')+'</div>';
 }
 async function setOpen(open){
   if(!selected||busy)return;busy=true;
@@ -115,10 +131,8 @@ async function setOpen(open){
 async function boot(){
   try{
     ctx=await FootballPAContext.resolve();
-    const badge=ctx.team.badge_url||ctx.club.badge_url||'';
-    if(badge)$('badge').src=badge;else $('badge').style.visibility='hidden';
-    $('teamLabel').textContent=(ctx.club.name||'Football PA')+' · '+(ctx.season?.label||ctx.team.season_label||'');
-    $('homeBtn').href=ctx.href('/');
+    FootballPANav.mount({teamId:ctx.team.id});
+    $('teamLabel').textContent=(ctx.club.name||'Football PA')+' · '+(ctx.team.name||'')+' · '+(ctx.season?.label||ctx.team.season_label||'');
     $('link').value=location.origin+ctx.href('/player-portal.html','pin=1&tab=vote');
     await loadCentre();await results();
     $('loading').classList.add('hidden');$('app').classList.remove('hidden');
