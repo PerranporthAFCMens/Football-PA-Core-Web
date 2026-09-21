@@ -379,3 +379,12 @@ The page uses Core/Supabase underneath but deliberately does not mount the share
 A generic team-player `voting_alias` field now supports legacy voter names such as Gilby/Piran/Badger when resolving Who's voted vs Still to vote.
 
 The copied player voting link now targets Player Portal with `tab=vote`; player-portal.html honours this parameter after login.
+
+
+## Match Centre tactical editing after lineup save — 21 September 2026
+
+- Saving the starting lineup no longer disables tap-to-change on pitch players.
+- A player selected through the pitch popup changes only `match_states.current_xi`.
+- It does not create a substitution and does not rewrite `match_lineups` / the stored starting XI.
+- The formal substitution controls remain the only way to record substitutions.
+- 11-a-side shirt numbers were reduced again to 25 desktop / 16 mobile; 7-a-side sizing remains unchanged.
