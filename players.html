@@ -7,9 +7,9 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>Players & Training · Football PA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/core-context.js"></script>
-<script src="/core-nav.js"></script>
-<link rel="stylesheet" href="/core-ui.css">
+<script src="./core-context.js"></script>
+<script src="./core-nav.js"></script>
+<link rel="stylesheet" href="./core-ui.css">
 <style>
 .page{display:grid;gap:12px}.hero{padding:17px}.hero h1{margin:0;font-size:25px}.sub{margin-top:5px;color:var(--muted);font-size:12px}
 .tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:14px;padding:4px;border-radius:12px;background:#e8eef4}
@@ -260,7 +260,7 @@ $('regBody').onchange=async e=>{
   e.target.disabled=false;renderTraining();
 };
 
-sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||!session)location.replace('/login.html')});
+sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||!session)location.replace('./login.html')});
 load().catch(e=>{$('loading').innerHTML='<b>Could not load Players & Training.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'});
 </script>
 </body>
