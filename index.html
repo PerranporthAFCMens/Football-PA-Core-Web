@@ -22,7 +22,7 @@
   <section class="fpa-card record-card"><div id="stats" class="record-strip"></div></section>
   <section class="home-lower">
     <article class="fpa-card home-panel"><div class="panel-head"><h2>Recent results</h2></div><div id="recent"></div></article>
-    <article class="fpa-card home-panel"><div class="panel-head"><h2>Team</h2></div><div id="teamSummary" class="team-card"></div></article>
+    <article class="fpa-card home-panel"><div class="panel-head"><h2>More tools</h2></div><div id="teamSummary" class="team-card"></div></article>
   </section>
 </div>
 </div>
@@ -32,6 +32,9 @@ const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_pu
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const final=f=>['ft','full_time','completed','complete','finished'].includes(String(f.status||'').toLowerCase());
 const fmtDate=v=>v?new Date(v).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+const fmtKick=v=>{if(!v)return'Not set';const d=new Date(v);return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})};
+function fixtureDateHasPassed(v){if(!v)return false;const d=new Date(v);if(Number.isNaN(d.getTime()))return false;d.setHours(23,59,59,999);return d.getTime()<Date.now()}
+function fixtureChangeKey(id,kind,changes){return String(id||'')+'|'+String(kind||'changed')+'|'+JSON.stringify(changes||[])}
 function ourScore(f){const v=String(f.venue||'').toLowerCase();if(v==='away'||v==='a')return Number(f.away_score??0);return Number(f.home_score??0)}
 function theirScore(f){const v=String(f.venue||'').toLowerCase();if(v==='away'||v==='a')return Number(f.home_score??0);return Number(f.away_score??0)}
 function venueLabel(v){v=String(v||'').toLowerCase();return v==='home'||v==='h'?'HOME':v==='away'||v==='a'?'AWAY':'NEUTRAL'}
@@ -42,22 +45,23 @@ async function checkFixtureUpdates(ctx){
   const resp=await fetch('https://hennzggqaquevqgiucqn.supabase.co/functions/v1/fa-fulltime-preview',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ctx.session.access_token,'apikey':'sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW'},body:JSON.stringify({url:s.fixture_source_url,teamId:ctx.team.id})});
   const data=await resp.json();if(!data.ok)return;
   const {data:existing}=await sb.from('fixtures').select('external_id,opponent,venue,kick_off,status').eq('team_id',ctx.team.id).eq('external_source','fa_full_time');
-  const map=new Map((existing||[]).map(x=>[String(x.external_id),x])),seen=new Set();let changes=0;
+  const map=new Map((existing||[]).map(x=>[String(x.external_id),x])),seen=new Set(),ignored=new Set(Array.isArray(s.fixture_sync_ignored_updates)?s.fixture_sync_ignored_updates:[]);let changes=0;
+  const countIfNew=(id,kind,diffs)=>{if(!ignored.has(fixtureChangeKey(id,kind,diffs)))changes++};
   for(const r of data.rows||[]){
    const id=String(r.externalId||r.id||'');if(!id)continue;seen.add(id);
-   const old=map.get(id);if(!old){changes++;continue}
-   const side=(r.ourVenue&&r.opponent)?{venue:r.ourVenue,opponent:r.opponent}:sideInfo(r,ctx.team,ctx.club);
-   const d=r.date?new Date(r.date+'T'+(r.time||'12:00')+':00'):null;
-   let changed=false;
-   if(side.opponent&&(old.opponent!==side.opponent||old.venue!==side.venue))changed=true;
-   if(d&&!Number.isNaN(d.getTime())&&Math.abs(new Date(old.kick_off).getTime()-d.getTime())>60000)changed=true;
-   const extStatus=/cancel/i.test(r.status||'')?'cancelled':/postpon/i.test(r.status||'')?'postponed':'scheduled';
-   if(old.status!==extStatus)changed=true;
-   if(changed)changes++;
+   const old=map.get(id);
+   if(!old){countIfNew(id,'new',[{old:'Not in Football PA',new:[r.date||'',r.time||''].filter(Boolean).join(' ')}]);continue}
+   const side=(r.ourVenue&&r.opponent)?{venue:r.ourVenue,opponent:r.opponent}:sideInfo(r,ctx.team,ctx.club),d=r.date?new Date(r.date+'T'+(r.time||'12:00')+':00'):null,diffs=[];
+   if(d&&!Number.isNaN(d.getTime())){const od=new Date(old.kick_off);if(od.toDateString()!==d.toDateString())diffs.push({old:'Date: '+fmtKick(old.kick_off).split(' ').slice(0,3).join(' '),new:'Date: '+fmtKick(d).split(' ').slice(0,3).join(' ')});if(od.getHours()!==d.getHours()||od.getMinutes()!==d.getMinutes())diffs.push({old:'Time: '+od.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),new:'Time: '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})})}
+   if(side.opponent&&old.opponent!==side.opponent)diffs.push({old:'Opponent: '+old.opponent,new:'Opponent: '+side.opponent});
+   if(side.opponent&&old.venue!==side.venue)diffs.push({old:'Venue: '+old.venue,new:'Venue: '+side.venue});
+   if(old.status==='cancelled'&&!/cancel/i.test(r.status||''))diffs.push({old:'Status: Cancelled',new:'Status: Scheduled'});
+   if(old.status!=='cancelled'&&/cancel/i.test(r.status||''))diffs.push({old:'Status: '+old.status,new:'Status: Cancelled'});
+   if(diffs.length)countIfNew(id,'changed',diffs);
   }
-  for(const old of existing||[])if(old.external_id&&!seen.has(String(old.external_id))&&old.status!=='cancelled')changes++;
+  for(const old of existing||[])if(old.external_id&&!seen.has(String(old.external_id))&&old.status!=='cancelled'&&!fixtureDateHasPassed(old.kick_off)){const diffs=[{old:fmtKick(old.kick_off)+' · '+old.opponent,new:'Mark as cancelled'}];countIfNew(old.external_id,'missing',diffs)}
   await sb.from('team_settings').update({fixture_last_checked_at:new Date().toISOString()}).eq('team_id',ctx.team.id);
-  if(changes){const n=$('fixtureNotice');n.innerHTML='<b>'+changes+' fixture update'+(changes===1?'':'s')+' found.</b> <a href="'+ctx.href('/fixture-sync.html')+'">Review changes</a>';n.classList.remove('hidden')}
+  const n=$('fixtureNotice');if(changes){n.innerHTML='<b>'+changes+' fixture update'+(changes===1?'':'s')+' found.</b> <a href="'+ctx.href('/fixture-sync.html')+'">Review changes</a>';n.classList.remove('hidden')}else n.classList.add('hidden');
  }catch(e){}
 }
 
@@ -67,10 +71,9 @@ async function boot(){try{
  if(club.primary_colour)document.documentElement.style.setProperty('--blue',club.primary_colour);
  if(ctx.preview){$('preview').classList.remove('hidden');$('exitPreview').onclick=()=>location.href='/dev-team.html?id='+encodeURIComponent(team.id)}
  let fixtureQuery=sb.from('fixtures').select('id,opponent,venue,competition,status,home_score,away_score,kick_off').eq('team_id',team.id).order('kick_off');if(ctx.season?.id)fixtureQuery=fixtureQuery.eq('season_id',ctx.season.id);
- let playerQuery=sb.from('team_players').select('players(id,display_name,preferred_position,shirt_number)').eq('team_id',team.id).eq('active',true);if(ctx.season?.id)playerQuery=playerQuery.eq('season_id',ctx.season.id);
- const [fr,pr]=await Promise.all([fixtureQuery,playerQuery]);
- if(fr.error)throw fr.error;if(pr.error)throw pr.error;
- const fixtures=fr.data||[],players=(pr.data||[]).map(x=>x.players).filter(Boolean),done=fixtures.filter(final);
+ const fr=await fixtureQuery;
+ if(fr.error)throw fr.error;
+ const fixtures=fr.data||[],done=fixtures.filter(final);
  let w=0,d=0,gf=0,ga=0;for(const f of done){const a=ourScore(f),b=theirScore(f);gf+=a;ga+=b;if(a>b)w++;else if(a===b)d++}
  const vals=[[done.length,'P'],[w,'W'],[d,'D'],[gf,'GF'],[ga,'GA'],[(gf-ga>0?'+':'')+(gf-ga),'GD']];
  $('stats').innerHTML=vals.map(v=>'<div class="record-item"><b>'+v[0]+'</b><span>'+v[1]+'</span></div>').join('');
@@ -86,7 +89,7 @@ async function boot(){try{
  const recent=[...done].sort((a,b)=>new Date(b.kick_off)-new Date(a.kick_off)).slice(0,3);
  $('recent').innerHTML=recent.length?recent.map(f=>'<div class="match-row" data-fixture="'+f.id+'"><div class="match-result">'+ourScore(f)+'–'+theirScore(f)+'<small>FT</small></div><div><strong>'+esc(f.opponent)+'</strong><small>'+esc(f.competition||'Fixture')+' · '+venueLabel(f.venue)+'</small></div><div class="mini-date">'+fmtDate(f.kick_off)+'</div></div>').join(''):'<div class="empty">No completed matches yet.</div>';
  document.querySelectorAll('[data-fixture]').forEach(r=>r.onclick=()=>location.href=ctx.href('/match-centre.html','fixture='+encodeURIComponent(r.dataset.fixture)));
- $('teamSummary').innerHTML='<div><div class="team-big">'+players.length+'</div><div class="team-label">ACTIVE PLAYERS</div></div><div class="team-actions"><a class="btn" href="'+ctx.href('/players.html')+'">Players</a><a class="btn" href="'+ctx.href('/fixtures.html')+'">Fixtures</a></div>';
+ const tools=[['Voting',ctx.href('/voting.html')]];if(ctx.canManage){tools.push(['Subs Admin',ctx.href('/subs.html')],['Fixture Sync',ctx.href('/fixture-sync.html')])}$('teamSummary').innerHTML='<div class="team-label">QUICK ACCESS</div><div class="team-actions">'+tools.map(t=>'<a class="btn" href="'+t[1]+'">'+t[0]+'</a>').join('')+'</div>';
  $('loading').classList.add('hidden');$('app').classList.remove('hidden');checkFixtureUpdates(ctx);
 }catch(e){$('loading').innerHTML='<b>Could not load Football PA.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}}
 sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});boot();
