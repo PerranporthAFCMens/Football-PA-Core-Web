@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Football PA Season Voting Table</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./core-client.js"></script>
 <style>
 :root{--blue:#1357A6;--ink:#102033;--muted:#6d7b8a;--line:#d9e3ec;--bg:#eef3f8;--purple:#7142cf;--bad:#b42318}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:var(--bg);color:var(--ink);font:15px Arial,sans-serif}.wrap{width:min(100% - 24px,920px);margin:auto;padding:14px 0 60px}.hidden{display:none!important}
@@ -44,7 +45,7 @@
   </div>
 </div>
 <script>
-const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW');
+const sb=FootballPAClient;
 const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));let ctx;
 async function boot(){
   try{
