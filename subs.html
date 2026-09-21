@@ -125,7 +125,8 @@ function matchPlayers(m){
     const have=new Set(arr.map(p=>p.player_id));
     for(const r of (D.roster||[]))if(!have.has(r.player_id))arr.push({player_id:r.player_id,name:r.name,shirt_number:r.shirt_number,status:'Not selected yet',fallback:true});
   }
-  return arr.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const rank=s=>({'Not Paid':0,'Unconfirmed':0,'Claims Paid':1,'Not selected yet':2,'Confirmed Paid':3,'N/A':4}[s]??5);
+  return arr.sort((a,b)=>rank(a.status)-rank(b.status)||String(a.name).localeCompare(String(b.name)));
 }
 function renderMatch(){
   const host=$('matchFile');if(!selectedMatch){host.innerHTML='';return}
