@@ -187,7 +187,7 @@ function renderPitch(){
       <svg class="slot-shirt" viewBox="0 0 64 58" aria-hidden="true">
         ${stripeMarkup}
         <path class="shirt-trim" stroke="${esc(shirtSecondary)}" d="M25 4 Q32 12 39 4 M9 15 L18 20 M55 15 L46 20"></path>
-        <text class="shirt-number" fill="${esc(shirtNumberColour)}" stroke="${shirtNumberColour.toLowerCase()==='#ffffff'?'#111827':'#ffffff'}" stroke-width="1.2" paint-order="stroke" x="32" y="31">${esc(num)}</text>
+        <text class="shirt-number" style="font-size:${matchSize()===11?24:34}px" fill="${esc(shirtNumberColour)}" stroke="${shirtNumberColour.toLowerCase()==='#ffffff'?'#111827':'#ffffff'}" stroke-width="1.2" paint-order="stroke" x="32" y="31">${esc(num)}</text>
       </svg>
       <span class="slot-name">${esc(label)}</span>
       <small class="slot-pos">${s.k.toUpperCase()}</small>
