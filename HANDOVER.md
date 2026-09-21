@@ -273,3 +273,15 @@ This is required for clean URLs such as `perranporth.footballpa.com`, where ther
 - Voting/Subs gating therefore works on clean team subdomains
 - links remain on the team hostname without adding `?team=`
 - generic Core/dev URLs still use explicit team query parameters
+
+
+## Shared visual refresh — 21 September 2026
+
+Core now uses a slightly richer shared visual language without changing page architecture.
+
+- cards use softer team-tinted surfaces, larger radii and more consistent elevation
+- buttons/forms/tabs have consistent touch sizing and states
+- Home is structured as Next Match → Season at a glance → Quick actions → Recent results / Coming up
+- Training Log and Dashboard are proper shortcut tiles rather than plain text links
+- the shared team header/menu styling is slightly refined while retaining team colours
+- functional layouts such as Match Centre pitch, dashboard tables and settings forms were deliberately not structurally rewritten

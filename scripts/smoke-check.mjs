@@ -43,3 +43,9 @@ if(failed)process.exit(1);
 if(!nav.includes("from('team_domains')")||!nav.includes('domainMode=true'))fail('core-nav.js','team-subdomain navigation resolver missing');
 if(!nav.includes("teamHref('/voting.html')")||!nav.includes("teamHref('/subs.html')"))fail('core-nav.js','team-aware Voting/Subs links missing');
 if(failed)process.exit(1);
+
+const homeDesign=fs.readFileSync('index.html','utf8');
+if(!homeDesign.includes('Season at a glance')||!homeDesign.includes('home-shortcut')||!homeDesign.includes('Training Log')||!homeDesign.includes('Dashboard'))fail('index.html','refreshed Home dashboard actions missing');
+const sharedUi=fs.readFileSync('core-ui.css','utf8');
+if(!sharedUi.includes('Football PA visual refresh v4')||!sharedUi.includes('.home-shortcut')||!sharedUi.includes('--fpa-radius-lg'))fail('core-ui.css','shared visual refresh missing');
+if(failed)process.exit(1);
