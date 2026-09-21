@@ -21,7 +21,7 @@ input,select{width:100%;min-height:46px;border:1px solid #ccd8e2;border-radius:1
 .statusCard{max-width:760px;margin:12px auto;padding:13px 16px}.bad{color:#b42318}
 @media(max-width:600px){.grid2{grid-template-columns:1fr}.actions{gap:4px}.iconBtn{padding:9px}.topline{align-items:flex-start}.topline .seasonLink{white-space:nowrap}}
 </style>
-<script src="/core-context.js"></script>
+<script src="./core-context.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -127,7 +127,7 @@ async function boot(){
 $('match').onchange=async()=>{selected=$('match').value;renderStatus();await results()};
 $('openBtn').onclick=()=>setOpen(true);$('closeBtn').onclick=()=>setOpen(false);
 $('copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText($('link').value);alert('Voting link copied')}catch(e){$('link').select();document.execCommand('copy');alert('Voting link copied')}};
-sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});
+sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('./login.html')});
 boot();
 </script>
 </body>
