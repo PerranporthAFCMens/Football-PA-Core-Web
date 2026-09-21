@@ -16,9 +16,9 @@
 .note{margin-top:10px;padding:11px;border-radius:11px;background:#f7f3ff;border:1px solid #e1d6f7;font-size:11px;color:#66547b}
 @media(max-width:560px){.wrap{width:100%;padding:9px 7px 36px}.card{padding:13px;border-radius:15px}h1{font-size:22px}}
 </style>
-<script src="/core-context.js"></script>
-<script src="/core-nav.js"></script>
-<link rel="stylesheet" href="/core-ui.css">
+<script src="./core-context.js"></script>
+<script src="./core-nav.js"></script>
+<link rel="stylesheet" href="./core-ui.css">
 </head>
 <body>
 <div class="wrap fpa-page">
@@ -58,7 +58,7 @@ async function boot(){
     $('loading').classList.add('hidden');$('app').classList.remove('hidden');
   }catch(e){$('loading').textContent=e.message;$('loading').classList.add('bad')}
 }
-sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});boot();
+sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('./login.html')});boot();
 </script>
 </body>
 </html>
