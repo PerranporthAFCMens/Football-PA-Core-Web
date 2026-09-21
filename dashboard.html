@@ -8,16 +8,16 @@
 <script src="/core-nav.js"></script>
 <link rel="stylesheet" href="/core-ui.css">
 <style>
-.dashboard{display:grid;gap:12px}.dash-hero{padding:18px;position:relative;overflow:hidden}.dash-hero:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:-85px;top:-85px;background:color-mix(in srgb,var(--blue) 11%,transparent)}.dash-kicker{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.dash-title{margin:4px 0 0;font-size:27px;line-height:1.05}.dash-sub{margin-top:6px;color:var(--muted);font-size:13px}.dash-filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.dash-filters select{min-width:140px;border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fff;font:inherit}
+html,body{width:100%;max-width:100%;overflow-x:hidden}.fpa-page{min-width:0!important;max-width:100%!important}.dashboard{display:grid;gap:12px;min-width:0;width:100%;max-width:100%}.dashboard>*{min-width:0;max-width:100%}.dash-hero{padding:18px;position:relative;overflow:hidden}.dash-hero:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:-85px;top:-85px;background:color-mix(in srgb,var(--blue) 11%,transparent)}.dash-kicker{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.dash-title{margin:4px 0 0;font-size:27px;line-height:1.05}.dash-sub{margin-top:6px;color:var(--muted);font-size:13px}.dash-filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.dash-filters select{min-width:140px;border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fff;font:inherit}
 .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.kpi{padding:13px 8px;text-align:center}.kpi b{display:block;font-size:25px;line-height:1}.kpi span{display:block;font-size:9px;font-weight:900;letter-spacing:.08em;color:var(--muted);margin-top:5px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.panel{padding:16px}.panel h2{font-size:17px;margin:0 0 12px}.muted{color:var(--muted)}.empty{padding:15px 0;color:var(--muted);font-size:13px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;min-width:0}.panel{padding:16px;min-width:0;max-width:100%}.panel h2{font-size:17px;margin:0 0 12px}.muted{color:var(--muted)}.empty{padding:15px 0;color:var(--muted);font-size:13px}
 .formline{display:flex;gap:5px;align-items:center}.formDot{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:11px;font-weight:900}.formDot.w{background:#e7f5ec;color:#147a3e}.formDot.d{background:#eef1f5;color:#5d6977}.formDot.l{background:#fdeaea;color:#a42121}
 .rankRow{display:grid;grid-template-columns:minmax(0,1fr) 1fr 34px;gap:9px;align-items:center;padding:7px 0}.rankName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;font-weight:800}.track{height:9px;border-radius:999px;background:#eef2f5;overflow:hidden}.fill{height:100%;border-radius:999px;background:var(--blue)}.rankVal{text-align:right;font-weight:900;font-size:12px}
 .matchBars{display:flex;align-items:flex-end;gap:7px;height:180px;overflow-x:auto;padding:10px 2px 0}.matchBar{min-width:42px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}.barPair{height:132px;display:flex;align-items:flex-end;gap:3px}.bar{width:13px;border-radius:4px 4px 0 0;min-height:2px}.bar.gf{background:var(--blue)}.bar.ga{background:#d65a5a}.barLabel{font-size:8px;color:var(--muted);max-width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.barScore{font-size:9px;font-weight:900}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:9px}.splitCard{border:1px solid #e5ebf1;border-radius:12px;padding:12px}.splitCard b{font-size:22px}.splitCard small{display:block;color:var(--muted);font-weight:800;margin-top:3px}.miniStats{display:flex;gap:10px;margin-top:9px;font-size:11px;color:var(--muted);font-weight:800;flex-wrap:wrap}
 .contribRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px 0;border-top:1px solid #eef2f5}.contribRow:first-child{border-top:0}.contribRow strong{font-size:13px}.contribRow small{color:var(--muted)}.contribNum{font-size:13px;font-weight:900}
 .legend{display:flex;gap:12px;font-size:10px;color:var(--muted);font-weight:800;margin-top:-5px;margin-bottom:7px}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}.legend .g{background:var(--blue)}.legend .c{background:#d65a5a}
-@media(max-width:760px){.kpis{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr}.dash-title{font-size:24px}.panel{padding:14px}.kpi b{font-size:22px}}
+@media(max-width:760px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid2{grid-template-columns:minmax(0,1fr)}.dash-title{font-size:24px}.panel{padding:14px}.kpi b{font-size:22px}.dash-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.dash-filters select{width:100%;min-width:0}.playerTableWrap{max-width:calc(100vw - 46px)}}
 </style>
 </head>
 <body>
@@ -56,7 +56,7 @@
 
   <section class="fpa-card panel">
     <h2>Player data</h2>
-    <div style="overflow:auto">
+    <div class="playerTableWrap" style="width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch">
       <table style="width:100%;border-collapse:collapse;min-width:660px">
         <thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid #e8eef4">Player</th><th>Apps</th><th>Starts</th><th>Minutes</th><th>Goals</th><th>Assists</th><th>Training</th></tr></thead>
         <tbody id="playerDataRows"></tbody>
