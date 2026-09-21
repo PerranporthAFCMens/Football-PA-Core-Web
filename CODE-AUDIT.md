@@ -10,12 +10,10 @@ Reviewed repository structure, shared context/navigation, Dashboard, Players, Tr
 
 ### High priority
 
-**Match lineup history is overwritten by autosave.**  
-`save_match_centre_state` deletes and recreates `match_lineups` from the current XI. This is unsafe for historical starts/minutes after substitutions.
+No unresolved high-priority persistence issue remains from this audit.
 
 ### Medium priority
 
-- substitution feed is not reconstructed after reload
 - Players currently contains legacy/dead analytical and training code after recent navigation changes
 - a second standalone Training implementation duplicates the combined Players/Training direction
 - Team Settings still loads unused feature-state data after Features UI removal
@@ -68,7 +66,11 @@ Additional completed cleanup and UX fixes:
 - sticky Dashboard player names shortened to first name + surname initial
 - Live Score and training-session locking are now part of the documented core product state
 
+Resolved in the 21 September persistence follow-up:
+- current tactical XI moved to `match_states.current_xi`
+- routine autosaves no longer rewrite historical starter rows
+- explicit starting-lineup saves use a dedicated RPC
+- substitution feed entries are reconstructed after reload
+
 Still unresolved:
-- historical starting lineup vs current tactical XI persistence
-- substitution feed reconstruction after reload
 - broader fixture/front-end permission alignment review
