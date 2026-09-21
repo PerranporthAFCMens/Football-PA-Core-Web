@@ -97,3 +97,12 @@ const matchDeps=fs.readFileSync('match-centre.html','utf8');
 if(!matchDeps.includes('src="./core-context.js"')||!matchDeps.includes('src="./core-nav.js"'))fail('match-centre.html','relative Core dependencies missing');
 if(!matchDeps.includes("ensureCoreDependency('FootballPAContext'")||!matchDeps.includes("ensureCoreDependency('FootballPANav'"))fail('match-centre.html','Core dependency fallback loader missing');
 if(failed)process.exit(1);
+
+const rootHtmlFiles=fs.readdirSync('.').filter(f=>f.endsWith('.html'));
+for(const file of rootHtmlFiles){
+  const html=fs.readFileSync(file,'utf8');
+  if(html.includes('src="/core-context.js"')||html.includes('src="/core-nav.js"')||html.includes('href="/core-ui.css"'))fail(file,'root-relative shared Core dependency remains');
+}
+const forcedNumbers=fs.readFileSync('match-centre.html','utf8');
+if(!forcedNumbers.includes('style="font-size:${matchSize()===11?24:34}px"'))fail('match-centre.html','inline format-aware SVG shirt number size missing');
+if(failed)process.exit(1);
