@@ -125,7 +125,7 @@ function resetPlayerForm(){
 function renderRoster(){
   const comparator=playerSort==='shirt'?byShirt:playerSort==='first'?(a,b)=>firstKey(a).localeCompare(firstKey(b),'en-GB',{sensitivity:'base'})||surnameKey(a).localeCompare(surnameKey(b),'en-GB',{sensitivity:'base'}):(a,b)=>surnameKey(a).localeCompare(surnameKey(b),'en-GB',{sensitivity:'base'})||firstKey(a).localeCompare(firstKey(b),'en-GB',{sensitivity:'base'});
   const rows=[...players].sort(comparator);
-  $('roster').innerHTML=rows.length?rows.map(p=>'<div class="playerRow"><div><div class="playerName">'+esc(p.display_name)+'</div><div class="playerMeta">#'+esc(p.shirt_number??'–')+(p.preferred_position?' · '+esc(p.preferred_position):'')+'</div></div><div class="rowActions">'+(ctx.canManage?'<button class="btn" data-edit="'+p.id+'">Edit</button><button class="btn danger" data-remove="'+p.id+'">Remove</button>':'')+'</div></div>').join(''):'<div class="empty">No players in this squad yet.</div>';
+  $('roster').innerHTML=rows.length?rows.map(p=>'<div class="playerRow"><div><div class="playerName">'+esc(p.display_name)+'</div><div class="playerMeta">#'+esc(p.shirt_number??'–')+(p.preferred_position?' · '+esc(p.preferred_position):'')+'</div></div><div class="rowActions">'+((ctx.access?.can_manage_players??ctx.canManage)?'<button class="btn" data-edit="'+p.id+'">Edit</button><button class="btn danger" data-remove="'+p.id+'">Remove</button>':'')+'</div></div>').join(''):'<div class="empty">No players in this squad yet.</div>';
 }
 function renderTraining(){
   if(!sessions.length){
@@ -141,8 +141,8 @@ function renderTraining(){
   const rows=[...players].sort(byShirt);
   const present=new Set(attendance.filter(a=>a.session_id===session.id&&a.status==='present').map(a=>a.player_id));
   $('summary').innerHTML='<div><b>'+rows.length+'</b><span>SQUAD</span></div><div><b>'+present.size+'</b><span>PRESENT</span></div><div><b>'+Math.max(0,rows.length-present.size)+'</b><span>NOT MARKED</span></div>';
-  $('regBody').innerHTML=rows.map(p=>'<tr><td><span class="shirt">#'+esc(p.shirt_number??'–')+'</span><b>'+esc(p.display_name)+'</b></td><td><label class="att"><input type="checkbox" data-session="'+session.id+'" data-player="'+p.id+'" '+(present.has(p.id)?'checked':'')+' '+((!ctx.canManage||locked)?'disabled':'')+'><span>✓</span></label></td></tr>').join('');
-  $('reviewActions').classList.toggle('hidden',!ctx.canManage);
+  $('regBody').innerHTML=rows.map(p=>'<tr><td><span class="shirt">#'+esc(p.shirt_number??'–')+'</span><b>'+esc(p.display_name)+'</b></td><td><label class="att"><input type="checkbox" data-session="'+session.id+'" data-player="'+p.id+'" '+(present.has(p.id)?'checked':'')+' '+((!(ctx.access?.can_manage_players??ctx.canManage)||locked)?'disabled':'')+'><span>✓</span></label></td></tr>').join('');
+  $('reviewActions').classList.toggle('hidden',!(ctx.access?.can_manage_players??ctx.canManage));
   $('sessionLockNote').textContent=locked?'Session locked. Attendance is protected from accidental changes.':'Session open. Save & lock it when attendance is complete.';
   $('lockSession').textContent=locked?'Unlock session':'Save & lock session';
   $('lockSession').classList.toggle('primary',!locked);
@@ -152,7 +152,7 @@ async function load(){
   ctx=await FootballPAContext.resolve();
   FootballPANav.mount({teamId:ctx.team.id});
   $('teamLabel').textContent=ctx.club.name+' · '+ctx.team.name+' · '+(ctx.season?.label||ctx.team.season_label||'Current season');
-  $('toggleAdd').classList.toggle('hidden',!ctx.canManage);$('sessionCreate').classList.toggle('hidden',!ctx.canManage);
+  $('toggleAdd').classList.toggle('hidden',!(ctx.access?.can_manage_players??ctx.canManage));$('sessionCreate').classList.toggle('hidden',!(ctx.access?.can_manage_players??ctx.canManage));
 
   let pq=sb.from('team_players').select('players(id,display_name,first_name,last_name,preferred_position,shirt_number)').eq('team_id',ctx.team.id).eq('active',true);
   if(ctx.season?.id)pq=pq.eq('season_id',ctx.season.id);
@@ -173,7 +173,7 @@ $('playersTab').onclick=()=>setTab('players');$('playerSort').onchange=e=>{playe
 $('trainingTab').onclick=()=>setTab('training');
 $('toggleAdd').onclick=()=>{$('playerForm').classList.toggle('hidden');if(!$('playerForm').classList.contains('hidden'))$('firstName').focus()};
 $('savePlayer').onclick=async()=>{
-  if(!ctx.canManage)return;
+  if(!(ctx.access?.can_manage_players??ctx.canManage))return;
   const first=$('firstName').value.trim(),last=$('lastName').value.trim();
   if(!first||!last){showStatus('Enter the player’s first name and surname.','bad');return}
   const btn=$('savePlayer'),name=(first+' '+last).trim(),position=$('position').value.trim()||null,number=$('shirtNumber').value===''?null:Number($('shirtNumber').value);
@@ -218,7 +218,7 @@ function weeklyDates(start,end){
 $('sessionRepeat').onchange=syncTrainingRepeat;
 $('sessionDate').onchange=syncTrainingRepeat;
 $('addSession').onclick=async()=>{
-  if(!ctx.canManage)return;
+  if(!(ctx.access?.can_manage_players??ctx.canManage))return;
   const start=$('sessionDate').value,t=$('sessionTitle').value.trim()||'Training',weekly=$('sessionRepeat').value==='weekly',end=$('sessionEndDate').value;
   if(!start){showStatus('Choose a training date first.','bad');return}
   if(weekly&&!end){showStatus('Choose when the recurring training should stop.','bad');return}
@@ -238,9 +238,9 @@ $('addSession').onclick=async()=>{
   renderTraining();
 };
 $('reviewSession').onchange=renderTraining;
-$('lockSession').onclick=async()=>{if(!ctx.canManage)return;const s=activeSession();if(!s)return;const locked=!!s.locked_at,b=$('lockSession');b.disabled=true;b.textContent=locked?'Unlocking…':'Locking…';const {data:{user}}=await sb.auth.getUser();const patch=locked?{locked_at:null,locked_by:null,updated_at:new Date().toISOString()}:{locked_at:new Date().toISOString(),locked_by:user.id,updated_at:new Date().toISOString()};const {data,error}=await sb.from('training_sessions').update(patch).eq('id',s.id).eq('team_id',ctx.team.id).select().single();b.disabled=false;if(error){showStatus(error.message,'bad');renderTraining();return}sessions=sessions.map(x=>x.id===data.id?data:x);showStatus(locked?'Training session unlocked.':'Training session saved and locked.','ok');renderTraining()};
+$('lockSession').onclick=async()=>{if(!(ctx.access?.can_manage_players??ctx.canManage))return;const s=activeSession();if(!s)return;const locked=!!s.locked_at,b=$('lockSession');b.disabled=true;b.textContent=locked?'Unlocking…':'Locking…';const {data:{user}}=await sb.auth.getUser();const patch=locked?{locked_at:null,locked_by:null,updated_at:new Date().toISOString()}:{locked_at:new Date().toISOString(),locked_by:user.id,updated_at:new Date().toISOString()};const {data,error}=await sb.from('training_sessions').update(patch).eq('id',s.id).eq('team_id',ctx.team.id).select().single();b.disabled=false;if(error){showStatus(error.message,'bad');renderTraining();return}sessions=sessions.map(x=>x.id===data.id?data:x);showStatus(locked?'Training session unlocked.':'Training session saved and locked.','ok');renderTraining()};
 $('selectAll').onclick=async()=>{
-  if(!ctx.canManage)return;const s=activeSession();if(!s||!players.length)return;
+  if(!(ctx.access?.can_manage_players??ctx.canManage))return;const s=activeSession();if(!s||!players.length)return;
   const b=$('selectAll');b.disabled=true;b.textContent='Saving…';const {data:{user}}=await sb.auth.getUser();
   const payload=players.map(p=>({session_id:s.id,player_id:p.id,status:'present',updated_by:user.id}));
   const {data,error}=await sb.from('training_attendance').upsert(payload).select();
@@ -248,12 +248,12 @@ $('selectAll').onclick=async()=>{
   attendance=attendance.filter(a=>a.session_id!==s.id).concat(data||payload);showStatus('Everyone marked present.','ok');renderTraining();
 };
 $('deleteSession').onclick=async()=>{
-  if(!ctx.canManage)return;const s=activeSession();if(!s||!confirm('Delete '+fmt(s.session_date)+' · '+(s.title||'Training')+'? This also removes its attendance records.'))return;
+  if(!(ctx.access?.can_manage_players??ctx.canManage))return;const s=activeSession();if(!s||!confirm('Delete '+fmt(s.session_date)+' · '+(s.title||'Training')+'? This also removes its attendance records.'))return;
   const b=$('deleteSession');b.disabled=true;let r=await sb.from('training_attendance').delete().eq('session_id',s.id);if(!r.error)r=await sb.from('training_sessions').delete().eq('id',s.id).eq('team_id',ctx.team.id);b.disabled=false;
   if(r.error){showStatus(r.error.message,'bad');return}sessions=sessions.filter(x=>x.id!==s.id);attendance=attendance.filter(x=>x.session_id!==s.id);showStatus('Training session deleted.','ok');renderTraining();
 };
 $('regBody').onchange=async e=>{
-  if(e.target.type!=='checkbox'||!ctx.canManage)return;
+  if(e.target.type!=='checkbox'||!(ctx.access?.can_manage_players??ctx.canManage))return;
   const s=e.target.dataset.session,p=e.target.dataset.player,checked=e.target.checked;e.target.disabled=true;
   if(checked){const {data:{user}}=await sb.auth.getUser();const {data,error}=await sb.from('training_attendance').upsert({session_id:s,player_id:p,status:'present',updated_by:user.id}).select().single();if(error){e.target.checked=false;showStatus(error.message,'bad')}else{attendance=attendance.filter(a=>!(a.session_id===s&&a.player_id===p));attendance.push(data)}}
   else{const {error}=await sb.from('training_attendance').delete().eq('session_id',s).eq('player_id',p);if(error){e.target.checked=true;showStatus(error.message,'bad')}else attendance=attendance.filter(a=>!(a.session_id===s&&a.player_id===p))}
