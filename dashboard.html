@@ -47,9 +47,9 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.fpa-page{min-width:0!impo
       <div id="matchBars" class="matchBars"></div>
     </section>
 
-    <section class="grid2">
+    <section id="scorerAssistGrid" class="grid2">
       <article class="fpa-card panel"><h2>Top goalscorers</h2><div id="scorers"></div></article>
-      <article class="fpa-card panel"><h2>Top assists</h2><div id="assists"></div></article>
+      <article id="teamAssistsPanel" class="fpa-card panel assistOnly"><h2>Top assists</h2><div id="assists"></div></article>
     </section>
 
     <section class="grid2">
@@ -57,9 +57,9 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.fpa-page{min-width:0!impo
       <article class="fpa-card panel"><h2>Goal timing</h2><div id="goalTiming"></div></article>
     </section>
 
-    <section class="grid2">
+    <section id="teamZoneGrid" class="grid2">
       <article class="fpa-card panel"><h2>Goal Locations</h2><div id="teamGoalZones"></div></article>
-      <article class="fpa-card panel"><h2>Assist Locations</h2><div id="teamAssistZones"></div></article>
+      <article id="teamAssistZonesPanel" class="fpa-card panel assistOnly"><h2>Assist Locations</h2><div id="teamAssistZones"></div></article>
     </section>
     <section class="fpa-card panel"><h2>Goal Type</h2><div id="teamGoalTypes"></div></section>
   </div>
@@ -69,7 +69,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.fpa-page{min-width:0!impo
       <div class="player-tools"><h2 style="margin:0">Players</h2><label class="muted">Training attendance <select id="trainingWindow"><option value="season">Season</option><option value="4">Last 4</option><option value="6">Last 6</option><option value="8">Last 8</option></select></label></div>
       <div class="playerTableWrap" style="width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch">
         <table class="playerTable">
-          <thead><tr><th class="playerCol" style="padding:8px;border-bottom:1px solid #e8eef4">Player</th><th>Apps</th><th>Starts</th><th>Minutes</th><th>Goals</th><th>Assists</th><th>Training %</th></tr></thead>
+          <thead><tr><th class="playerCol" style="padding:8px;border-bottom:1px solid #e8eef4">Player</th><th>Apps</th><th>Starts</th><th>Minutes</th><th>Goals</th><th class="assistOnly">Assists</th><th>Training %</th></tr></thead>
           <tbody id="playerDataRows"></tbody>
         </table>
       </div>
@@ -82,9 +82,9 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.fpa-page{min-width:0!impo
     <div class="playerModalHead"><button id="closePlayerModal" class="playerModalClose" aria-label="Close player stats">×</button></div>
     <div class="playerModalGrid">
       <section id="playerDetail" class="fpa-card panel"></section>
-      <section class="grid2">
+      <section id="playerZoneGrid" class="grid2">
         <article class="fpa-card panel"><h2>Goal Locations</h2><div id="playerGoalZones"></div></article>
-        <article class="fpa-card panel"><h2>Assist Locations</h2><div id="playerAssistZones"></div></article>
+        <article id="playerAssistZonesPanel" class="fpa-card panel assistOnly"><h2>Assist Locations</h2><div id="playerAssistZones"></div></article>
       </section>
       <section class="grid2">
         <article class="fpa-card panel"><h2>Minutes of Goals</h2><div id="playerGoalTiming"></div></article>
@@ -116,9 +116,10 @@ function trainingSessionsForWindow(){const sorted=[...sessions].sort((a,b)=>new 
 function trainingPercent(playerId){const chosen=trainingSessionsForWindow(),ids=new Set(chosen.map(s=>s.id));if(!chosen.length)return null;const present=new Set(attendance.filter(a=>a.player_id===playerId&&a.status==='present'&&ids.has(a.session_id)).map(a=>a.session_id)).size;return Math.round((present/chosen.length)*100)}
 function playerMetrics(p,ln,sbx,ev){const totalMins=Math.max(1,Number(ctx.settings?.period_count||2)*Number(ctx.settings?.period_minutes||45)),starts=new Set(ln.filter(x=>x.player_id===p.id&&x.starter).map(x=>x.fixture_id)),subOns=sbx.filter(x=>x.player_on_id===p.id),appearanceIds=new Set([...starts,...subOns.map(x=>x.fixture_id)]);let mins=0;for(const fixtureId of appearanceIds){let start=starts.has(fixtureId)?0:null,end=totalMins;const on=sbx.filter(s=>s.fixture_id===fixtureId&&s.player_on_id===p.id).sort((a,b)=>a.minute-b.minute)[0],off=sbx.filter(s=>s.fixture_id===fixtureId&&s.player_off_id===p.id).sort((a,b)=>a.minute-b.minute)[0];if(start===null&&on)start=Number(on.minute||0);if(off)end=Number(off.minute||0);if(start!==null)mins+=Math.max(0,end-start)}const goals=ev.filter(e=>e.event_type==='goal'&&e.team_side==='us'&&e.player_id===p.id).length,assists=ev.filter(e=>e.event_type==='goal'&&e.team_side==='us'&&e.related_player_id===p.id).length;return{apps:appearanceIds.size,starts:starts.size,mins,goals,assists,trainingPct:trainingPercent(p.id)}}
 function closePlayerModal(){$('playerModal').classList.add('hidden');selectedPlayerId=null}
-function renderPlayerDetail(ln,sbx,ev){const p=players.find(x=>x.id===selectedPlayerId);if(!p)return;const m=playerMetrics(p,ln,sbx,ev),goals=ev.filter(e=>e.event_type==='goal'&&e.team_side==='us'&&e.player_id===p.id),assists=ev.filter(e=>e.event_type==='goal'&&e.team_side==='us'&&e.related_player_id===p.id),training=m.trainingPct===null?'—':m.trainingPct+'%';$('playerDetail').innerHTML='<div class="player-detail-head"><div><div class="dash-kicker">Player dashboard</div><div id="playerModalName" class="player-detail-name">'+esc(p.display_name)+'</div></div></div><div class="player-kpis">'+[['Apps',m.apps],['Starts',m.starts],['Minutes',m.mins],['Goals',m.goals],['Assists',m.assists],['Training',training]].map(x=>'<div class="player-kpi"><b>'+x[1]+'</b><span>'+x[0].toUpperCase()+'</span></div>').join('')+'</div>';$('playerGoalZones').innerHTML=zonePitchHtml(goals,false);$('playerAssistZones').innerHTML=zonePitchHtml(assists,true);$('playerGoalTiming').innerHTML=timingHtml(goals);$('playerGoalTypes').innerHTML=goalTypeHtml(goals);$('playerModal').classList.remove('hidden')}
+function renderPlayerDetail(ln,sbx,ev){const p=players.find(x=>x.id===selectedPlayerId);if(!p)return;const captureAssists=ctx.settings?.capture_assists!==false,m=playerMetrics(p,ln,sbx,ev),goals=ev.filter(e=>e.event_type==='goal'&&e.team_side==='us'&&e.player_id===p.id),assists=ev.filter(e=>e.event_type==='goal'&&e.team_side==='us'&&e.related_player_id===p.id),training=m.trainingPct===null?'—':m.trainingPct+'%',stats=[['Apps',m.apps],['Starts',m.starts],['Minutes',m.mins],['Goals',m.goals]];if(captureAssists)stats.push(['Assists',m.assists]);stats.push(['Training',training]);$('playerDetail').innerHTML='<div class="player-detail-head"><div><div class="dash-kicker">Player dashboard</div><div id="playerModalName" class="player-detail-name">'+esc(p.display_name)+'</div></div></div><div class="player-kpis">'+stats.map(x=>'<div class="player-kpi"><b>'+x[1]+'</b><span>'+x[0].toUpperCase()+'</span></div>').join('')+'</div>';$('playerGoalZones').innerHTML=zonePitchHtml(goals,false);if(captureAssists)$('playerAssistZones').innerHTML=zonePitchHtml(assists,true);$('playerAssistZonesPanel').classList.toggle('hidden',!captureAssists);$('playerZoneGrid').style.gridTemplateColumns=captureAssists?'':'1fr';$('playerGoalTiming').innerHTML=timingHtml(goals);$('playerGoalTypes').innerHTML=goalTypeHtml(goals);$('playerModal').classList.remove('hidden')}
 function render(){
- const fs=activeFixtures(),ids=new Set(fs.map(f=>f.id)),ev=events.filter(e=>ids.has(e.fixture_id)),ln=lineups.filter(x=>ids.has(x.fixture_id)),sbx=subs.filter(x=>ids.has(x.fixture_id));
+ const captureAssists=ctx.settings?.capture_assists!==false,fs=activeFixtures(),ids=new Set(fs.map(f=>f.id)),ev=events.filter(e=>ids.has(e.fixture_id)),ln=lineups.filter(x=>ids.has(x.fixture_id)),sbx=subs.filter(x=>ids.has(x.fixture_id));
+ document.querySelectorAll('.assistOnly').forEach(el=>el.classList.toggle('hidden',!captureAssists));$('scorerAssistGrid').style.gridTemplateColumns=captureAssists?'':'1fr';$('teamZoneGrid').style.gridTemplateColumns=captureAssists?'':'1fr';
  let w=0,d=0,l=0,gf=0,ga=0;
  for(const f of fs){const a=ourScore(f),b=oppScore(f);gf+=a;ga+=b;if(a>b)w++;else if(a===b)d++;else l++}
  const vals=[[fs.length,'PLAYED'],[w,'WINS'],[d,'DRAWS'],[l,'LOSSES'],[gf,'GOALS'],[ga,'CONCEDED']];
@@ -147,11 +148,11 @@ function render(){
  const teamGoals=ev.filter(e=>e.event_type==='goal'&&e.team_side==='us');
  $('goalTiming').innerHTML=timingHtml(teamGoals);
  $('teamGoalZones').innerHTML=zonePitchHtml(teamGoals,false);
- $('teamAssistZones').innerHTML=zonePitchHtml(teamGoals,true);
+ if(captureAssists)$('teamAssistZones').innerHTML=zonePitchHtml(teamGoals,true);
  $('teamGoalTypes').innerHTML=goalTypeHtml(teamGoals);
 
- const playerRows=[...players].sort((a,b)=>(a.shirt_number??999)-(b.shirt_number??999)).map(p=>{const m=playerMetrics(p,ln,sbx,ev),first=p.first_name||String(p.display_name||'').split(' ')[0]||'Player',last=p.last_name||String(p.display_name||'').trim().split(' ').slice(1).join(' '),shortName=first+(last?' '+last.trim().charAt(0).toUpperCase()+'.':''),training=m.trainingPct===null?'—':m.trainingPct+'%';return '<tr data-player-id="'+p.id+'"><td class="playerCol" style="padding:9px 8px;border-bottom:1px solid #eef2f5;font-weight:800">'+esc(shortName)+'</td><td style="text-align:center">'+m.apps+'</td><td style="text-align:center">'+m.starts+'</td><td style="text-align:center">'+m.mins+'</td><td style="text-align:center">'+m.goals+'</td><td style="text-align:center">'+m.assists+'</td><td style="text-align:center">'+training+'</td></tr>'});
- $('playerDataRows').innerHTML=playerRows.join('')||'<tr><td colspan="7" class="empty">No player data yet.</td></tr>';
+ const playerRows=[...players].sort((a,b)=>(a.shirt_number??999)-(b.shirt_number??999)).map(p=>{const m=playerMetrics(p,ln,sbx,ev),first=p.first_name||String(p.display_name||'').split(' ')[0]||'Player',last=p.last_name||String(p.display_name||'').trim().split(' ').slice(1).join(' '),shortName=first+(last?' '+last.trim().charAt(0).toUpperCase()+'.':''),training=m.trainingPct===null?'—':m.trainingPct+'%',assistCell=captureAssists?'<td style="text-align:center">'+m.assists+'</td>':'';return '<tr data-player-id="'+p.id+'"><td class="playerCol" style="padding:9px 8px;border-bottom:1px solid #eef2f5;font-weight:800">'+esc(shortName)+'</td><td style="text-align:center">'+m.apps+'</td><td style="text-align:center">'+m.starts+'</td><td style="text-align:center">'+m.mins+'</td><td style="text-align:center">'+m.goals+'</td>'+assistCell+'<td style="text-align:center">'+training+'</td></tr>'});
+ $('playerDataRows').innerHTML=playerRows.join('')||'<tr><td colspan="'+(captureAssists?7:6)+'" class="empty">No player data yet.</td></tr>';
  document.querySelectorAll('[data-player-id]').forEach(r=>r.onclick=()=>{selectedPlayerId=r.dataset.playerId;renderPlayerDetail(ln,sbx,ev)});
 }
 async function boot(){try{
