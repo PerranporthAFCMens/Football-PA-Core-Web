@@ -86,7 +86,7 @@ async function boot(){try{
  if(club.primary_colour)document.documentElement.style.setProperty('--blue',club.primary_colour);
  renderHomeShortcut($('homeShortcut1'),ctx.settings?.home_shortcut_1||'training',ctx,'training');
  renderHomeShortcut($('homeShortcut2'),ctx.settings?.home_shortcut_2||'dashboard',ctx,'dashboard');
- if(ctx.preview){$('preview').classList.remove('hidden');$('exitPreview').onclick=()=>location.href='/dev-team.html?id='+encodeURIComponent(team.id)}
+ if(ctx.preview){$('preview').classList.remove('hidden');$('exitPreview').onclick=()=>location.href='./dev-team.html?id='+encodeURIComponent(team.id)}
  let fixtureQuery=sb.from('fixtures').select('id,opponent,venue,competition,status,home_score,away_score,kick_off,include_in_stats').eq('team_id',team.id).order('kick_off');if(ctx.season?.id)fixtureQuery=fixtureQuery.eq('season_id',ctx.season.id);
  const fr=await fixtureQuery;
  if(fr.error)throw fr.error;
