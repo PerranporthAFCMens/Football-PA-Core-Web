@@ -106,3 +106,8 @@ for(const file of rootHtmlFiles){
 const forcedNumbers=fs.readFileSync('match-centre.html','utf8');
 if(!forcedNumbers.includes("String(team?.match_format||'11-a-side').toLowerCase().includes('11')?24:34"))fail('match-centre.html','inline format-aware SVG shirt number size missing');
 if(failed)process.exit(1);
+
+const navPathSafe=fs.readFileSync('core-nav.js','utf8');
+if(!navPathSafe.includes("location.hostname.endsWith('.github.io')")||!navPathSafe.includes("const routedPath=path=>pagesBase"))fail('core-nav.js','GitHub Pages project-path routing missing');
+if(!navPathSafe.includes("const route=routedPath(path)"))fail('core-nav.js','teamHref does not use project-path routing');
+if(failed)process.exit(1);

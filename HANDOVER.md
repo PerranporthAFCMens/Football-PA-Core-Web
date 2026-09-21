@@ -422,3 +422,11 @@ Restores matchday functionality that existed in the original Perranporth Match C
 Core customer/admin pages no longer rely on root-relative /core-context.js, /core-nav.js or /core-ui.css references. Relevant pages now use relative paths so they work consistently on both custom domains and GitHub Pages project-path previews. Shared login redirects are also relative-path safe.
 
 11-a-side shirt numbers are now forced inline on the SVG text element at 24 units, while 7-a-side keeps the 34-unit baseline. Inline SVG styling is authoritative, so stylesheet specificity can no longer mask the 11-a-side number-size change.
+
+
+## GitHub Pages nav routing — 21 September 2026
+
+- Shared nav now detects GitHub Pages project-path hosting.
+- On `*.github.io/Football-PA-Core-Web/`, nav routes keep the `/Football-PA-Core-Web` prefix instead of incorrectly linking to the domain root.
+- This applies to Match Centre, Players, Fixtures, Dashboard, Voting, Subs, Live Score and Settings.
+- Custom/root domains continue using root-relative routes as before.
