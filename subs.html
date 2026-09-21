@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Football PA Subs Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./core-client.js"></script>
 <style>
 :root{--blue:#1357A6;--green:#218a35;--red:#b42318;--purple:#6f42c1;--ink:#17212b;--muted:#708090;--line:#dce5ec;--bg:#eef3f7}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -62,7 +63,7 @@ h2,h3{margin:0}h2{font-size:20px}.muted{color:var(--muted);font-size:12px;line-h
 </div>
 <div id="toast" class="toast"></div>
 <script>
-const sb=supabase.createClient('https://hennzggqaquevqgiucqn.supabase.co','sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW');
+const sb=FootballPAClient;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=p=>'£'+((Number(p)||0)/100).toFixed(2);
