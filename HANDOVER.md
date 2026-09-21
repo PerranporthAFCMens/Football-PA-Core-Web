@@ -357,3 +357,25 @@ Voting Centre is now a results/history surface rather than disappearing when no 
 - The Season Voting Table is protected by `team_settings.voting_private_report_user_id`; Perranporth is currently assigned to the sole platform-admin account.
 - The private-report RPC rejects every other authenticated user even if they guess the URL.
 - Dropship was corrected to completed, Perranporth 0–2 Dropship, with 11 starters, three recorded substitutions and a 15-player squad from the legacy match source.
+
+
+## Original Perranporth Voting Centre UX restored — 21 September 2026
+
+The redesign introduced in commit 48ff3337 was rejected. Voting Centre now follows the original Perranporth management screen directly:
+
+- Voting match selector at the top
+- Voting OPEN / CLOSED status
+- Open voting and Close voting controls
+- Player voting link + copy button
+- Voting information for the selected match
+- Top 3 with medal/rank, total score and 3× / 2× / 1× breakdown
+- Dick of the Day with vote count and all displayed reasons
+- Who's voted
+- Still to vote
+- private Season Voting Table is an additional small link, not a replacement workflow
+
+The page uses Core/Supabase underneath but deliberately does not mount the shared Core nav or shared Core visual layer so the familiar Perranporth Voting Centre appearance is preserved.
+
+A generic team-player `voting_alias` field now supports legacy voter names such as Gilby/Piran/Badger when resolving Who's voted vs Still to vote.
+
+The copied player voting link now targets Player Portal with `tab=vote`; player-portal.html honours this parameter after login.

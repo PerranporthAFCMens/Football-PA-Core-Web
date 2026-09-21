@@ -68,3 +68,11 @@ if(!votingCentre.includes('Season Voting Table')||!votingCentre.includes('can_vi
 const votingSeason=fs.readFileSync('voting-season.html','utf8');
 if(!votingSeason.includes('get_private_voting_season_report')||!votingSeason.includes('Pts/Game')||!votingSeason.includes('MOTM')||!votingSeason.includes('DOD'))fail('voting-season.html','private season voting table missing');
 if(failed)process.exit(1);
+
+const legacyVoting=fs.readFileSync('voting.html','utf8');
+if(!legacyVoting.includes('Voting match')||!legacyVoting.includes('Open voting')||!legacyVoting.includes('Close voting'))fail('voting.html','legacy Voting Centre controls missing');
+if(!legacyVoting.includes("Who's voted")||!legacyVoting.includes('Still to vote')||!legacyVoting.includes('Dick of the Day'))fail('voting.html','legacy Voting Centre result sections missing');
+if(!legacyVoting.includes('get_voting_match_snapshot')||!legacyVoting.includes('set_voting_open_event'))fail('voting.html','Voting Centre Core RPC wiring missing');
+const portalVote=fs.readFileSync('player-portal.html','utf8');
+if(!portalVote.includes("q.get('tab')==='vote'"))fail('player-portal.html','direct Vote tab link support missing');
+if(failed)process.exit(1);
