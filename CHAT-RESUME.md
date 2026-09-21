@@ -35,7 +35,9 @@ Current QA team:
 - four x 12 minute periods
 
 Current main navigation:
-Home → Fixtures → Match Centre → Live Score → Dashboard → Players & Training → Voting → Subs Admin → Settings.
+Home → Match Centre → Players → Fixtures → Dashboard → Live Score → Settings.
+
+Voting, Subs Admin and Fixture Sync are available from the Home screen More tools card rather than the main navigation.
 
 Recent completed work you need to preserve:
 - Players & Training is admin/tools only, not a player performance dashboard.
@@ -61,3 +63,10 @@ The next known architectural review area is fixture/front-end permission alignme
 Continue from the current `main` branch. Do not infer state from an older Vercel page without checking the current commit/deployment.
 
 ---
+
+Recent fixture-sync behaviour to preserve:
+- past Full-Time fixtures disappearing after their scheduled calendar date do not generate cancellation updates
+- future disappeared fixtures can still be reviewed
+- ignored fixture-sync updates persist in `team_settings.fixture_sync_ignored_updates`
+- ignored updates stay hidden unless the proposed change itself changes
+- the Home fixture-update notice follows the same rules
