@@ -309,3 +309,7 @@ The team header now follows the same spatial direction as the drawer:
 - left-side drawer unchanged
 
 The dev Pages workflow now triggers directly on every push to `dev`, checks out the exact pushed SHA, runs the smoke checker on that exact commit, and only then publishes the preview. This replaces the previous indirect `workflow_run` trigger which could leave the visible preview behind the current dev branch.
+
+
+### Dev Pages deployment note
+GitHub Pages currently restricts the deployment environment to the default branch. The supported preview pattern is therefore: a successful `dev` smoke run triggers the `Dev preview` workflow from `main`, and that workflow explicitly checks out `dev` before publishing. Do not add a direct `push: dev` Pages deployment unless the environment protection rule is changed first.
