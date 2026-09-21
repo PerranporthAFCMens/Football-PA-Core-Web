@@ -37,3 +37,8 @@ node scripts/smoke-check.mjs
 ```
 
 For active project state and deployment caveats, read [HANDOVER.md](HANDOVER.md). For a ready-to-paste prompt for a new ChatGPT conversation, read [CHAT-RESUME.md](CHAT-RESUME.md).
+
+
+## Reference migrations
+
+Perranporth AFC is now provisioned as a real Core team and is used alongside St Agnes for product validation. Perranporth's historic Player Portal URL is a compatibility requirement and must remain usable during and after cut-over.

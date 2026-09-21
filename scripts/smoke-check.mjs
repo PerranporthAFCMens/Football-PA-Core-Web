@@ -13,3 +13,11 @@ if(!playerHtml.includes('Surname A–Z'))fail('players.html','player surname sor
 const sync=fs.readFileSync('fixture-sync.html','utf8');if(!sync.includes('fixtureDateHasPassed'))fail('fixture-sync.html','past missing fixtures are not protected');if(!sync.includes('fixture_sync_ignored_updates')||!sync.includes('ignoreChange'))fail('fixture-sync.html','ignored fixture updates are not persisted');
 const home=fs.readFileSync('index.html','utf8');if(!home.includes('Coming up'))fail('index.html','Coming up Home card missing');if(/More tools|ACTIVE PLAYERS|Voting|Subs Admin/.test(home))fail('index.html','unsupported or old Home card content remains');if(!home.includes('data-upcoming'))fail('index.html','Coming up fixtures are not rendered');if(!home.includes('trainingShortcut')||!home.includes('dashboardShortcut'))fail('index.html','Home training/dashboard shortcuts missing');if(!home.includes('fixture_sync_ignored_updates'))fail('index.html','Home fixture notice does not respect ignored updates');
 if(failed)process.exit(1);console.log('Football PA Core smoke checks passed.');
+const portal=fs.readFileSync('player-portal.html','utf8');
+for(const rpc of ['player_portal_list_players','player_portal_login','player_portal_first_time_setup','player_portal_change_pin','player_portal_data_v2','player_portal_submit_vote'])if(!portal.includes(rpc))fail('player-portal.html','missing PIN portal RPC '+rpc);
+if(!portal.includes("q.get('pin')==='1'"))fail('player-portal.html','legacy-compatible PIN portal mode missing');
+if(!portal.includes('historical_team')||!portal.includes('historical'))fail('player-portal.html','historical player/team comparison missing');
+if(!dash.includes("eq('include_in_stats',true)"))fail('dashboard.html','dashboard does not exclude fixtures disabled from statistics');
+if(!home.includes('include_in_stats!==false'))fail('index.html','Home KPIs do not respect fixture statistics inclusion');
+const devTeam=fs.readFileSync('dev-team.html','utf8');if(!devTeam.includes('viewPlayerPortal')||!devTeam.includes('&pin=1'))fail('dev-team.html','Dev Admin player portal preview missing');
+if(failed)process.exit(1);

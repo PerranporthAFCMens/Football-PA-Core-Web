@@ -196,3 +196,23 @@ Before calling a fix complete:
 `match_events.zone` is an integer column. Match Centre had been sending text such as `"Zone 1"`, which caused save failures. The database function `save_match_centre_state` was updated so it safely extracts and stores the numeric zone.
 
 This database fix was applied directly through a Supabase migration and does not require a front-end deployment.
+
+
+## Perranporth Core migration — 21 September 2026
+
+Perranporth AFC has been provisioned in the shared Core/Supabase platform as a normal configurable club/team rather than a special fork.
+
+Migration scope:
+- Perranporth club + Men's 1st Team, 2026/27
+- current squad, fixtures, match events, substitutions, starter history, voting and subs/payment history
+- 2025/26 historical fixtures/events plus player season snapshots for portal comparison
+- £3 per-game subs configuration and existing Perranporth payment-link template
+- platform/admin access for existing Supabase users; pending team-access claims for legacy managers who have not created a Supabase account yet
+- generic legacy-compatible Player Portal PIN sessions, first-time DOB setup, PIN change and in-portal voting
+
+The existing public Perranporth Player Portal URL must remain stable:
+`https://PerranporthAFCMens.github.io/Perranporth/player.html`
+
+Do not cut that legacy URL over until the Core production Player Portal has been deployed and verified for the Perranporth team. The compatibility page can then host the Core portal while preserving the original URL.
+
+Perranporth remains a UX reference. Core should retain its generic multi-team architecture while adopting stronger Perranporth UX patterns where appropriate.

@@ -158,7 +158,7 @@ function render(){
 async function boot(){try{
  ctx=await FootballPAContext.resolve();FootballPANav.mount({teamId:ctx.team.id});if(ctx.club.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
  $('dashTitle').textContent=ctx.team.name;$('dashSub').textContent=(ctx.season?.label||ctx.team.season_label||'Current season')+' · '+ctx.club.name;
- let fq=sb.from('fixtures').select('id,opponent,venue,competition,kick_off,status,home_score,away_score').eq('team_id',ctx.team.id).order('kick_off');if(ctx.season?.id)fq=fq.eq('season_id',ctx.season.id);
+ let fq=sb.from('fixtures').select('id,opponent,venue,competition,kick_off,status,home_score,away_score,include_in_stats').eq('team_id',ctx.team.id).eq('include_in_stats',true).order('kick_off');if(ctx.season?.id)fq=fq.eq('season_id',ctx.season.id);
  let pq=sb.from('team_players').select('players(id,display_name,first_name,last_name,shirt_number)').eq('team_id',ctx.team.id).eq('active',true);if(ctx.season?.id)pq=pq.eq('season_id',ctx.season.id);
  const [fr,pr,tr]=await Promise.all([fq,pq,sb.from('training_sessions').select('id,session_date').eq('team_id',ctx.team.id)]);if(fr.error)throw fr.error;if(pr.error)throw pr.error;if(tr.error)throw tr.error;fixtures=fr.data||[];players=(pr.data||[]).map(x=>x.players).filter(Boolean);sessions=tr.data||[];
  const ids=fixtures.map(f=>f.id);

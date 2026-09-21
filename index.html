@@ -72,10 +72,10 @@ async function boot(){try{
  $('trainingShortcut').href=ctx.href('/players.html');
  $('dashboardShortcut').href=ctx.href('/dashboard.html');
  if(ctx.preview){$('preview').classList.remove('hidden');$('exitPreview').onclick=()=>location.href='/dev-team.html?id='+encodeURIComponent(team.id)}
- let fixtureQuery=sb.from('fixtures').select('id,opponent,venue,competition,status,home_score,away_score,kick_off').eq('team_id',team.id).order('kick_off');if(ctx.season?.id)fixtureQuery=fixtureQuery.eq('season_id',ctx.season.id);
+ let fixtureQuery=sb.from('fixtures').select('id,opponent,venue,competition,status,home_score,away_score,kick_off,include_in_stats').eq('team_id',team.id).order('kick_off');if(ctx.season?.id)fixtureQuery=fixtureQuery.eq('season_id',ctx.season.id);
  const fr=await fixtureQuery;
  if(fr.error)throw fr.error;
- const fixtures=fr.data||[],done=fixtures.filter(final);
+ const fixtures=fr.data||[],done=fixtures.filter(f=>final(f)&&f.include_in_stats!==false);
  let w=0,d=0,gf=0,ga=0;for(const f of done){const a=ourScore(f),b=theirScore(f);gf+=a;ga+=b;if(a>b)w++;else if(a===b)d++}
  const vals=[[done.length,'P'],[w,'W'],[d,'D'],[gf,'GF'],[ga,'GA'],[(gf-ga>0?'+':'')+(gf-ga),'GD']];
  $('stats').innerHTML=vals.map(v=>'<div class="record-item"><b>'+v[0]+'</b><span>'+v[1]+'</span></div>').join('');
