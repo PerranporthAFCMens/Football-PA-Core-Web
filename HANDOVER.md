@@ -285,3 +285,16 @@ Core now uses a slightly richer shared visual language without changing page arc
 - Training Log and Dashboard are proper shortcut tiles rather than plain text links
 - the shared team header/menu styling is slightly refined while retaining team colours
 - functional layouts such as Match Centre pitch, dashboard tables and settings forms were deliberately not structurally rewritten
+
+
+## Football-focused visual refresh — 21 September 2026
+
+The v5 visual layer deliberately moves away from a clinical SaaS feel.
+
+- stronger club-colour use
+- chunkier shortcut cards and controls
+- matchday/football visual cues
+- asymmetrical decorative shapes and stronger shadows
+- more personality in results, stats and navigation
+- still generic across clubs because all accents derive from each club's configured colours
+- avoids structural changes to functional screens

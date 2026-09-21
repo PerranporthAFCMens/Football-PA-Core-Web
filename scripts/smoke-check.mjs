@@ -49,3 +49,7 @@ if(!homeDesign.includes('Season at a glance')||!homeDesign.includes('home-shortc
 const sharedUi=fs.readFileSync('core-ui.css','utf8');
 if(!sharedUi.includes('Football PA visual refresh v4')||!sharedUi.includes('.home-shortcut')||!sharedUi.includes('--fpa-radius-lg'))fail('core-ui.css','shared visual refresh missing');
 if(failed)process.exit(1);
+
+const playfulUi=fs.readFileSync('core-ui.css','utf8');
+if(!playfulUi.includes('Football PA visual refresh v5')||!playfulUi.includes('MATCHDAY')||!playfulUi.includes('--fpa-fun-shadow'))fail('core-ui.css','football-focused visual refresh missing');
+if(failed)process.exit(1);
