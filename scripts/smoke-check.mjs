@@ -34,3 +34,8 @@ const teamSettingsNavOrder=fs.readFileSync('team-settings.html','utf8');
 if(!teamSettingsNavOrder.includes('Navigation Bar')||!teamSettingsNavOrder.includes('navOrderList')||!teamSettingsNavOrder.includes('normaliseNavOrder'))fail('team-settings.html','Navigation Bar settings missing');
 if(!teamSettingsNavOrder.includes('nav_order:normaliseNavOrder()'))fail('team-settings.html','Navigation order is not persisted');
 if(failed)process.exit(1);
+
+const keeperSettings=fs.readFileSync('team-settings.html','utf8');
+if(!keeperSettings.includes('goalkeeperKitColour')||!keeperSettings.includes('goalkeeper_kit_colour'))fail('team-settings.html','goalkeeper kit colour setting missing');
+if(!match.includes('goalkeeper_kit_colour')||!match.includes("toLowerCase()==='gk'")||!match.includes('shirtStriped=!isKeeper&&striped'))fail('match-centre.html','goalkeeper block-colour rendering missing');
+if(failed)process.exit(1);

@@ -249,3 +249,14 @@ Each team can control the order of its available navigation items from Team Sett
 - Live Score only appears when a scoreboard token is configured.
 - The settings screen only presents the items that can actually appear for that team.
 - Reordering uses mobile-friendly up/down controls.
+
+
+## Goalkeeper kit colour — 21 September 2026
+
+Team Settings → Match Kit includes a separate goalkeeper colour.
+
+- Stored in `team_settings.goalkeeper_kit_colour`.
+- Goalkeeper shirts in Match Centre are always rendered as a solid block colour.
+- Outfield shirt pattern/colours remain unchanged.
+- The goalkeeper is determined by the formation's `gk` slot, so tactical player changes do not change the kit rule.
+- Goalkeeper shirt-number colour is chosen automatically for contrast.
