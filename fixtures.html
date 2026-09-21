@@ -68,7 +68,7 @@ function render(){
  $('fixtureList').innerHTML=rows.length?rows.map(f=>{
   const dt=prettyDate(f.kick_off),score=final(f)&&f.home_score!=null&&f.away_score!=null?f.home_score+'–'+f.away_score:'',venue=String(f.venue||'neutral').toLowerCase();
   const place=[f.ground_name,f.ground_postcode].filter(Boolean).join(' · '),maps=(f.ground_address||f.ground_postcode||f.ground_name)?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent([f.ground_name,f.ground_address,f.ground_postcode].filter(Boolean).join(', ')):'';
-  return '<div class="fixture-item"><div class="fixture-date"><b>'+esc(dt.d)+'</b><span>'+esc(dt.m)+'</span></div><div class="fixture-body"><div class="fixture-top"><div class="fixture-main"><strong>'+esc(f.opponent)+'</strong><div class="fixture-meta"><span>'+esc(dt.full)+'</span>'+(f.competition?'<span>• '+esc(f.competition)+'</span>':'')+'</div></div>'+(score?'<div class="score">'+esc(score)+'</div>':'')+'</div>'+(place?'<div class="fixture-location"><span class="pin">📍</span><span>'+esc(place)+'</span></div>':'')+'<div class="fixture-actions"><span class="pill '+esc(venue)+'">'+esc(venue.toUpperCase())+'</span>'+(maps?'<a class="fixture-action primary" href="'+maps+'" target="_blank" rel="noopener">Directions</a>':'')+(ctx.canManage?'<button class="fixture-action secondary" data-edit="'+f.id+'">Edit</button>':'')+'</div></div></div>';
+  return '<div class="fixture-item"><div class="fixture-date"><b>'+esc(dt.d)+'</b><span>'+esc(dt.m)+'</span></div><div class="fixture-body"><div class="fixture-top"><div class="fixture-main"><strong>'+esc(f.opponent)+'</strong><div class="fixture-meta"><span>'+esc(dt.full)+'</span>'+(f.competition?'<span>• '+esc(f.competition)+'</span>':'')+'</div></div>'+(score?'<div class="score">'+esc(score)+'</div>':'')+'</div>'+(place?'<div class="fixture-location"><span class="pin">📍</span><span>'+esc(place)+'</span></div>':'')+'<div class="fixture-actions"><span class="pill '+esc(venue)+'">'+esc(venue.toUpperCase())+'</span>'+(maps?'<a class="fixture-action primary" href="'+maps+'" target="_blank" rel="noopener">Directions</a>':'')+((ctx.access?.can_manage_fixtures??ctx.canManage)?'<button class="fixture-action secondary" data-edit="'+f.id+'">Edit</button>':'')+'</div></div></div>';
  }).join(''):'<div class="empty">No fixtures match these filters.</div>';
  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));
 }
@@ -81,7 +81,7 @@ function openEditor(id=null){
 function closeEditor(){editingId=null;$('editor').classList.add('hidden')}
 async function enrichMissingGrounds(){
  const missing=fixtures.filter(f=>f.external_source==='fa_full_time'&&f.external_id&&!(f.ground_name||f.ground_address||f.ground_postcode));
- if(!ctx.canManage||!missing.length||!ctx.settings?.fixture_source_url)return false;
+ if(!(ctx.access?.can_manage_fixtures??ctx.canManage)||!missing.length||!ctx.settings?.fixture_source_url)return false;
  try{
   const {data:{session}}=await sb.auth.getSession();if(!session)return false;
   const resp=await fetch('https://hennzggqaquevqgiucqn.supabase.co/functions/v1/fa-fulltime-preview',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':'sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW'},body:JSON.stringify({url:ctx.settings.fixture_source_url,teamId:ctx.team.id})});
@@ -110,7 +110,7 @@ async function loadFixtures(){
  render();
 }
 async function save(){
- if(!ctx.canManage)return;
+ if(!(ctx.access?.can_manage_fixtures??ctx.canManage))return;
  const opponent=$('opponent').value.trim(),kick=$('kickOff').value;
  if(!opponent){$('editStatus').textContent='Opponent is required.';return}
  if(!kick){$('editStatus').textContent='Date and time are required.';return}
@@ -123,7 +123,7 @@ async function save(){
 }
 async function boot(){try{
  ctx=await FootballPAContext.resolve();FootballPANav.mount({teamId:ctx.team.id});if(ctx.club.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
- $('subtitle').textContent=(ctx.season?.label||ctx.team.season_label||'Current season');if(ctx.canManage)$('addFixture').classList.remove('hidden');
+ $('subtitle').textContent=(ctx.season?.label||ctx.team.season_label||'Current season');if((ctx.access?.can_manage_fixtures??ctx.canManage))$('addFixture').classList.remove('hidden');
  const {data:calSettings}=await sb.from('team_settings').select('fixture_calendar_token').eq('team_id',ctx.team.id).maybeSingle();
  if(calSettings?.fixture_calendar_token)calendarUrl='https://hennzggqaquevqgiucqn.supabase.co/functions/v1/team-calendar?token='+encodeURIComponent(calSettings.fixture_calendar_token);
  $('addFixture').onclick=()=>openEditor();$('shareCalendar').onclick=async()=>{if(!calendarUrl){alert('Calendar link is not available yet.');return}const name=(ctx.club?.name?ctx.club.name+' ':'')+(ctx.team?.name||'Football PA')+' fixtures';try{if(navigator.share){await navigator.share({title:name,text:'Subscribe to our Football PA fixtures calendar',url:calendarUrl});return}}catch(e){if(e?.name==='AbortError')return}try{await navigator.clipboard.writeText(calendarUrl);const b=$('shareCalendar'),old=b.textContent;b.textContent='✓ Link copied';setTimeout(()=>b.textContent=old,1800)}catch{prompt('Copy this calendar subscription link:',calendarUrl)}};$('cancelEdit').onclick=closeEditor;$('saveFixture').onclick=save;$('statusFilter').onchange=render;$('venueFilter').onchange=render;
