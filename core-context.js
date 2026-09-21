@@ -21,7 +21,7 @@ async function resolve(opts={}){
   const q=new URLSearchParams(location.search);
   const {data:{session},error:sessionError}=await sb.auth.getSession();
   if(sessionError) throw sessionError;
-  if(!session){ const back=location.pathname+location.search; location.replace('/login.html?return='+encodeURIComponent(back)); throw new Error('Not signed in'); }
+  if(!session){ const back=location.pathname+location.search; location.replace('./login.html?return='+encodeURIComponent(back)); throw new Error('Not signed in'); }
 
   const domain=await domainTeam();
   const queryRequested=opts.teamId||q.get('team')||q.get('id');
