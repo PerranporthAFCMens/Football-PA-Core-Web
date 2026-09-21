@@ -63,7 +63,7 @@ if(!subsFixture.includes('No squad has been saved for this fixture yet'))fail('s
 if(failed)process.exit(1);
 
 const votingCentre=fs.readFileSync('voting.html','utf8');
-if(!votingCentre.includes('Previous matches')||!votingCentre.includes('get_voting_centre')||!votingCentre.includes('View full result'))fail('voting.html','historical Voting Centre results missing');
+if(!votingCentre.includes('Voting match')||!votingCentre.includes('get_voting_centre')||!votingCentre.includes('get_voting_match_snapshot'))fail('voting.html','Voting Centre match-picker history missing');
 if(!votingCentre.includes('Season Voting Table')||!votingCentre.includes('can_view_private_report'))fail('voting.html','private season report link missing');
 const votingSeason=fs.readFileSync('voting-season.html','utf8');
 if(!votingSeason.includes('get_private_voting_season_report')||!votingSeason.includes('Pts/Game')||!votingSeason.includes('MOTM')||!votingSeason.includes('DOD'))fail('voting-season.html','private season voting table missing');
