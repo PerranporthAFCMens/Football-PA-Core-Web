@@ -4,9 +4,9 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eef3f8">
 <title>Team Dashboard · Football PA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/core-context.js"></script>
-<script src="/core-nav.js"></script>
-<link rel="stylesheet" href="/core-ui.css">
+<script src="./core-context.js"></script>
+<script src="./core-nav.js"></script>
+<link rel="stylesheet" href="./core-ui.css">
 <style>
 html,body{width:100%;max-width:100%;overflow-x:hidden}.fpa-page{min-width:0!important;max-width:100%!important}.dashboard{display:grid;gap:12px;min-width:0;width:100%;max-width:100%}.dashboard>*{min-width:0;max-width:100%}.dash-hero{padding:18px;position:relative;overflow:hidden}.dash-hero:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:-85px;top:-85px;background:color-mix(in srgb,var(--blue) 11%,transparent)}.dash-kicker{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.dash-title{margin:4px 0 0;font-size:27px;line-height:1.05}.dash-sub{margin-top:6px;color:var(--muted);font-size:13px}.dash-filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.dash-filters select{min-width:140px;border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fff;font:inherit}
 .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.kpi{padding:13px 8px;text-align:center}.kpi b{display:block;font-size:25px;line-height:1}.kpi span{display:block;font-size:9px;font-weight:900;letter-spacing:.08em;color:var(--muted);margin-top:5px}
@@ -174,6 +174,6 @@ async function boot(){try{
  const comps=[...new Set(fixtures.map(f=>f.competition).filter(Boolean))].sort();$('competitionFilter').innerHTML='<option value="all">All competitions</option>'+comps.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
  $('competitionFilter').onchange=render;$('venueFilter').onchange=render;$('trainingWindow').onchange=()=>{render();if(selectedPlayerId){const fs=activeFixtures(),ids=new Set(fs.map(f=>f.id));renderPlayerDetail(lineups.filter(x=>ids.has(x.fixture_id)),subs.filter(x=>ids.has(x.fixture_id)),events.filter(x=>ids.has(x.fixture_id)))}};$('teamTab').onclick=()=>setView('team');$('playersTab').onclick=()=>setView('players');$('closePlayerModal').onclick=closePlayerModal;$('playerModal').onclick=e=>{if(e.target===$('playerModal'))closePlayerModal()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('playerModal').classList.contains('hidden'))closePlayerModal()});render();$('loading').classList.add('hidden');$('app').classList.remove('hidden');
 }catch(e){$('loading').innerHTML='<b>Could not load dashboard.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}}
-sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});boot();
+sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('./login.html')});boot();
 </script>
 </body></html>
