@@ -15,6 +15,7 @@ Football PA Core is the generic, multi-club web application behind Football PA. 
 - `/` Home
 - `/fixtures.html` Fixtures
 - `/match-centre.html` Match Centre
+- `/live-score.html` Spectator-safe live scoreboard
 - `/dashboard.html` Team and player performance
 - `/players.html` Player management and training log
 - `/voting.html` Voting
