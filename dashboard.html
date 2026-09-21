@@ -16,7 +16,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.fpa-page{min-width:0!impo
 .matchBars{display:flex;align-items:flex-end;gap:7px;height:180px;overflow-x:auto;padding:10px 2px 0}.matchBar{min-width:42px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}.barPair{height:132px;display:flex;align-items:flex-end;gap:3px}.bar{width:13px;border-radius:4px 4px 0 0;min-height:2px}.bar.gf{background:var(--blue)}.bar.ga{background:#d65a5a}.barLabel{font-size:8px;color:var(--muted);max-width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.barScore{font-size:9px;font-weight:900}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:9px}.splitCard{border:1px solid #e5ebf1;border-radius:12px;padding:12px}.splitCard b{font-size:22px}.splitCard small{display:block;color:var(--muted);font-weight:800;margin-top:3px}.miniStats{display:flex;gap:10px;margin-top:9px;font-size:11px;color:var(--muted);font-weight:800;flex-wrap:wrap}
 .contribRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px 0;border-top:1px solid #eef2f5}.contribRow:first-child{border-top:0}.contribRow strong{font-size:13px}.contribRow small{color:var(--muted)}.contribNum{font-size:13px;font-weight:900}
-.legend{display:flex;gap:12px;font-size:10px;color:var(--muted);font-weight:800;margin-top:-5px;margin-bottom:7px}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}.legend .g{background:var(--blue)}.legend .c{background:#d65a5a}
+.legend{display:flex;gap:12px;font-size:10px;color:var(--muted);font-weight:800;margin-top:-5px;margin-bottom:7px}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}.legend .g{background:var(--blue)}.legend .c{background:#d65a5a}.playerTable{width:100%;border-collapse:separate;border-spacing:0;min-width:660px}.playerTable th,.playerTable td{background:#fff}.playerTable thead th{background:#eef0f2}.playerTable .playerCol{position:sticky;left:0;z-index:3;min-width:220px;max-width:220px;text-align:left}.playerTable thead .playerCol{z-index:5;background:#eef0f2}.playerTable tbody .playerCol{background:#fff;box-shadow:8px 0 10px -10px #10203388}.playerTable tbody tr:nth-child(even) .playerCol{background:#fff}
 @media(max-width:760px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid2{grid-template-columns:minmax(0,1fr)}.dash-title{font-size:24px}.panel{padding:14px}.kpi b{font-size:22px}.dash-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.dash-filters select{width:100%;min-width:0}.playerTableWrap{max-width:calc(100vw - 46px)}}
 </style>
 </head>
@@ -57,8 +57,8 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.fpa-page{min-width:0!impo
   <section class="fpa-card panel">
     <h2>Player data</h2>
     <div class="playerTableWrap" style="width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch">
-      <table style="width:100%;border-collapse:collapse;min-width:660px">
-        <thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid #e8eef4">Player</th><th>Apps</th><th>Starts</th><th>Minutes</th><th>Goals</th><th>Assists</th><th>Training</th></tr></thead>
+      <table class="playerTable">
+        <thead><tr><th class="playerCol" style="padding:8px;border-bottom:1px solid #e8eef4">Player</th><th>Apps</th><th>Starts</th><th>Minutes</th><th>Goals</th><th>Assists</th><th>Training</th></tr></thead>
         <tbody id="playerDataRows"></tbody>
       </table>
     </div>
@@ -124,7 +124,7 @@ function render(){
    const assists=ev.filter(e=>e.event_type==='goal'&&e.team_side==='us'&&e.related_player_id===p.id).length;
    const trained=attendance.filter(a=>a.player_id===p.id&&a.status==='present').length;
    const training=sessions.length?trained+'/'+sessions.length:'0/0';
-   return '<tr><td style="padding:9px 8px;border-bottom:1px solid #eef2f5;font-weight:800">#'+esc(p.shirt_number??'–')+' '+esc(p.display_name)+'</td><td style="text-align:center">'+appsCount+'</td><td style="text-align:center">'+startsCount+'</td><td style="text-align:center">'+mins+'</td><td style="text-align:center">'+goals+'</td><td style="text-align:center">'+assists+'</td><td style="text-align:center">'+training+'</td></tr>';
+   return '<tr><td class="playerCol" style="padding:9px 8px;border-bottom:1px solid #eef2f5;font-weight:800">#'+esc(p.shirt_number??'–')+' '+esc(p.display_name)+'</td><td style="text-align:center">'+appsCount+'</td><td style="text-align:center">'+startsCount+'</td><td style="text-align:center">'+mins+'</td><td style="text-align:center">'+goals+'</td><td style="text-align:center">'+assists+'</td><td style="text-align:center">'+training+'</td></tr>';
  });
  $('playerDataRows').innerHTML=playerRows.join('')||'<tr><td colspan="7" class="empty">No player data yet.</td></tr>';
 }
