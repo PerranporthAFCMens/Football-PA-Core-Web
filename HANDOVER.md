@@ -1,6 +1,6 @@
 # Football PA Core Handover
 
-Updated: 20 September 2026
+Updated: 21 September 2026
 
 ## Project
 
@@ -17,17 +17,25 @@ Do not modify the separate live Perranporth app unless explicitly asked.
 1. Home
 2. Fixtures
 3. Match Centre
-4. Dashboard
-5. Players & Training
-6. Voting
-7. Subs Admin
-8. Settings
+4. Live Score
+5. Dashboard
+6. Players & Training
+7. Voting
+8. Subs Admin
+9. Settings
 
 Dashboard sits directly below Match Centre with no special Dashboard heading.
 
 ## Dashboard
 
 `dashboard.html` owns statistical/performance views: team KPIs, form, home/away split, goals for/against, scorers, assists, appearances, goal timing and player data including training attendance.
+
+Current mobile behaviour:
+- page-level horizontal overflow has been removed
+- only the Player data table scrolls horizontally
+- the Player column is sticky
+- sticky player names use first name + surname initial, for example `Olivia T.`
+- the sticky Player column is deliberately narrow so more statistics remain visible
 
 ## Players & Training
 
@@ -55,7 +63,9 @@ There are five completed fixtures marked `Demo / Test` to populate dashboards.
 Current intended behaviour:
 - match-format-specific formations
 - configurable kit and shirt-number colour
-- explicit Set starting lineup control
+- starting lineup can be saved, then explicitly unlocked with **Edit starting lineup** if a correction is needed
+- one period control button changes state: **Start Period 1 → End Period 1 → Start Period 2 → End Period 2**, continuing for all configured periods
+- Pause remains a separate control
 - single and bulk substitutions
 - bulk incoming-player duplicate prevention
 - goal logging with scorer, assist, goal type and spatial zones
@@ -108,6 +118,7 @@ Calendar subscriptions use Edge Function `team-calendar` and a per-team UUID tok
 - `perranporth-matchday` v18
 - `fa-fulltime-preview` v13
 - `team-calendar` v1
+- `team-scoreboard` public read-only scoreboard endpoint
 
 ## Feature flags
 
@@ -115,9 +126,9 @@ Features controls were removed from Team Settings. The underlying `team_features
 
 ## Deployment warning
 
-Vercel has repeatedly rejected builds with `build-rate-limit`. GitHub `main` can be ahead of the visible deployment. Check commit deployment status before assuming code is missing.
+Vercel previously hit `build-rate-limit` repeatedly. Recent deployments have been succeeding again, but GitHub `main` can still be ahead of the visible deployment if a build fails. Always check commit deployment status before assuming code is missing.
 
-Do not create dummy deployment commits. Batch genuine changes.
+Do not create dummy deployment commits. Batch genuine changes when sensible.
 
 ## Critical technical risk found in the sweep
 
@@ -146,11 +157,19 @@ Front-end `canManage` can include club owner/admin, while some fixture RLS histo
 Completed on main:
 - durable README, handover, resume and audit docs added
 - Players & Training rewritten as one focused management/attendance surface
+- player names restored to stronger sizing after over-cleaning
+- Players defaults to surname A–Z with surname, shirt-number and first-name sorting
+- training sessions support persistent Save & lock / Unlock
 - legacy Training route reduced to a redirect
 - duplicate shared-navigation mounts removed from Subs, Voting and Fixture Sync
 - dead Features loading removed from Team Settings
 - temporary deploy marker removed from shared navigation
 - approved half-pitch goal-zone map implemented
+- Live Score page, nav entry and sharing added
+- Match Centre period controls consolidated into one Start/End button
+- saved starting lineup can be unlocked and corrected
+- Dashboard mobile overflow fixed
+- Dashboard Player data uses a narrow sticky first-name + surname-initial column
 - smoke checks expanded around regressions already seen in testing
 
 The remaining high-priority work is architectural rather than cosmetic: starting-lineup history/current-XI persistence and substitution-feed reconstruction.
@@ -165,3 +184,10 @@ Before calling a fix complete:
 5. run/update smoke checks
 6. verify Supabase persistence where relevant
 7. verify Vercel deployment separately
+
+
+## Important Supabase fix applied on 21 September
+
+`match_events.zone` is an integer column. Match Centre had been sending text such as `"Zone 1"`, which caused save failures. The database function `save_match_centre_state` was updated so it safely extracts and stores the numeric zone.
+
+This database fix was applied directly through a Supabase migration and does not require a front-end deployment.
