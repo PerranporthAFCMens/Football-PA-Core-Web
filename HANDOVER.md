@@ -216,3 +216,16 @@ The existing public Perranporth Player Portal URL must remain stable:
 Do not cut that legacy URL over until the Core production Player Portal has been deployed and verified for the Perranporth team. The compatibility page can then host the Core portal while preserving the original URL.
 
 Perranporth remains a UX reference. Core should retain its generic multi-team architecture while adopting stronger Perranporth UX patterns where appropriate.
+
+
+## Team subdomains — 21 September 2026
+
+Football PA supports team-scoped hostnames through `public.team_domains`.
+
+- `perranporth.footballpa.com` maps directly to Perranporth 1st Team.
+- A mapped hostname takes precedence over query-string and local-storage team selection.
+- Navigation on a team hostname stays on that hostname without `?team=...`.
+- The login page reads only the public routing/branding directory and brands itself before authentication.
+- Dev Admin Create/Manage Team includes a Football PA subdomain field.
+- `core.footballpa.com` remains the generic Core entry point.
+- DNS/Vercel domain assignment is infrastructure configuration and must be completed before a new hostname resolves publicly.

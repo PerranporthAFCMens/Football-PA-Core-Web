@@ -10,14 +10,23 @@ function applyTheme(club){
   root.style.setProperty('--fpa-accent',primary);
   root.style.setProperty('--fpa-header-text',contrast(primary));
 }
+async function domainTeam(){
+  const host=String(location.hostname||'').toLowerCase();
+  if(!host||host==='localhost'||host.endsWith('.vercel.app')||host==='core.footballpa.com'||host==='dev.footballpa.com')return null;
+  const {data,error}=await sb.from('team_domains').select('team_id,hostname,team_name,club_name,badge_url,primary_colour,secondary_colour').eq('hostname',host).eq('active',true).maybeSingle();
+  if(error)throw error;
+  return data||null;
+}
 async function resolve(opts={}){
   const q=new URLSearchParams(location.search);
   const {data:{session},error:sessionError}=await sb.auth.getSession();
   if(sessionError) throw sessionError;
   if(!session){ const back=location.pathname+location.search; location.replace('/login.html?return='+encodeURIComponent(back)); throw new Error('Not signed in'); }
 
-  const requested=opts.teamId||q.get('team')||q.get('id')||localStorage.getItem('fpa_active_team_id');
-  const preview=q.get('dev_preview')==='1';
+  const domain=await domainTeam();
+  const queryRequested=opts.teamId||q.get('team')||q.get('id');
+  const requested=domain?.team_id||queryRequested||localStorage.getItem('fpa_active_team_id');
+  const preview=q.get('dev_preview')==='1'&&!domain;
   let team=null;
 
   if(requested){
@@ -29,6 +38,8 @@ async function resolve(opts={}){
     if(error) throw error;
     team=data;
   }
+
+  if(domain&&!team) throw new Error('Your account does not have access to this Football PA team.');
 
   if(!team){
     const {data:memberships,error}=await sb.from('team_memberships')
@@ -50,7 +61,7 @@ async function resolve(opts={}){
   if(!team) throw new Error('No Football PA team is available for this account.');
   localStorage.setItem('fpa_active_team_id',team.id);
 
-  const {data:club,error:clubError}=await sb.from('clubs').select('id,name,short_name,primary_colour,secondary_colour').eq('id',team.club_id).single();
+  const {data:club,error:clubError}=await sb.from('clubs').select('id,name,short_name,primary_colour,secondary_colour,badge_url').eq('id',team.club_id).single();
   if(clubError) throw clubError;
   applyTheme(club);
 
@@ -76,14 +87,19 @@ async function resolve(opts={}){
 
   const previewSuffix=preview?'&dev_preview=1':'';
   return {
-    session,team,club,season,preview,canManage,teamRole,clubRole,
+    session,team,club,season,preview,canManage,teamRole,clubRole,domain,
     features:featureRes.data||{},
     settings:settingsRes.data||{},
     href(path,extra=''){
+      const cleanExtra=extra?extra.replace(/^&/,''):'';
+      if(domain){
+        if(!cleanExtra)return path;
+        return path+(path.includes('?')?'&':'?')+cleanExtra;
+      }
       const glue=path.includes('?')?'&':'?';
-      return path+glue+'team='+encodeURIComponent(team.id)+previewSuffix+(extra?('&'+extra.replace(/^&/,'')):'');
+      return path+glue+'team='+encodeURIComponent(team.id)+previewSuffix+(cleanExtra?('&'+cleanExtra):'');
     }
   };
 }
-window.FootballPAContext={resolve,applyTheme};
+window.FootballPAContext={resolve,applyTheme,domainTeam};
 })();

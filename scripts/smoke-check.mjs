@@ -21,3 +21,11 @@ if(!dash.includes("eq('include_in_stats',true)"))fail('dashboard.html','dashboar
 if(!home.includes('include_in_stats!==false'))fail('index.html','Home KPIs do not respect fixture statistics inclusion');
 const devTeam=fs.readFileSync('dev-team.html','utf8');if(!devTeam.includes('viewPlayerPortal')||!devTeam.includes('&pin=1'))fail('dev-team.html','Dev Admin player portal preview missing');
 if(failed)process.exit(1);
+
+const contextDomain=fs.readFileSync('core-context.js','utf8');
+if(!contextDomain.includes("from('team_domains')")||!contextDomain.includes('domain?.team_id'))fail('core-context.js','hostname-aware team routing is missing');
+const loginDomain=fs.readFileSync('login.html','utf8');
+if(!loginDomain.includes("from('team_domains')")||!loginDomain.includes('location.hostname'))fail('login.html','team-domain branded login is missing');
+const devCreateDomain=fs.readFileSync('dev-create-team.html','utf8');
+if(!devCreateDomain.includes('.footballpa.com')||!devCreateDomain.includes("from('team_domains')"))fail('dev-create-team.html','subdomain provisioning is missing');
+if(failed)process.exit(1);
