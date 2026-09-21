@@ -19,7 +19,7 @@
 <div id="app" class="hidden"><div id="fixtureNotice" class="fpa-preview hidden" style="background:#eef4fb;border-color:#bfd4ea;color:#102033"></div>
 <div class="home-shell">
   <section id="nextMatch" class="fpa-card hero-match"></section>
-  <section class="fpa-card record-card"><div id="stats" class="record-strip"></div></section>
+  <section class="fpa-card record-card"><div id="stats" class="record-strip"></div><div class="team-actions" style="margin-top:10px"><a id="trainingShortcut" class="btn" href="#">Training Log</a><a id="dashboardShortcut" class="btn" href="#">Dashboard</a></div></section>
   <section class="home-lower">
     <article class="fpa-card home-panel"><div class="panel-head"><h2>Recent results</h2></div><div id="recent"></div></article>
     <article class="fpa-card home-panel"><div class="panel-head"><h2>Coming up</h2></div><div id="teamSummary"></div></article>
@@ -69,6 +69,8 @@ async function boot(){try{
  const ctx=await FootballPAContext.resolve();const {team,club}=ctx;
  FootballPANav.mount({teamId:team.id});
  if(club.primary_colour)document.documentElement.style.setProperty('--blue',club.primary_colour);
+ $('trainingShortcut').href=ctx.href('/players.html');
+ $('dashboardShortcut').href=ctx.href('/dashboard.html');
  if(ctx.preview){$('preview').classList.remove('hidden');$('exitPreview').onclick=()=>location.href='/dev-team.html?id='+encodeURIComponent(team.id)}
  let fixtureQuery=sb.from('fixtures').select('id,opponent,venue,competition,status,home_score,away_score,kick_off').eq('team_id',team.id).order('kick_off');if(ctx.season?.id)fixtureQuery=fixtureQuery.eq('season_id',ctx.season.id);
  const fr=await fixtureQuery;
