@@ -430,3 +430,15 @@ Core customer/admin pages no longer rely on root-relative /core-context.js, /cor
 - On `*.github.io/Football-PA-Core-Web/`, nav routes keep the `/Football-PA-Core-Web` prefix instead of incorrectly linking to the domain root.
 - This applies to Match Centre, Players, Fixtures, Dashboard, Voting, Subs, Live Score and Settings.
 - Custom/root domains continue using root-relative routes as before.
+
+
+## GitHub Pages route corruption fix — 21 September 2026
+
+Root cause of URLs such as `subs.html/Football-PA-Core-Web/match-centre.html` was the preview builder rewriting every slash-prefixed JavaScript string. That corrupted the shared routing logic during GitHub Pages builds.
+
+Fix:
+- preview builder now rewrites only actual HTML href/src/action attributes and CSS url(...) references
+- arbitrary JavaScript strings are never rewritten
+- core-nav and core-context both explicitly add the GitHub Pages project prefix when hosted on *.github.io
+- custom/root domains are unchanged
+- nav and context-generated URLs on the dev preview now resolve to `/Football-PA-Core-Web/<page>.html`

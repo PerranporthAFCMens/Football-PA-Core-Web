@@ -111,3 +111,12 @@ const navPathSafe=fs.readFileSync('core-nav.js','utf8');
 if(!navPathSafe.includes("location.hostname.endsWith('.github.io')")||!navPathSafe.includes("const routedPath=path=>pagesBase"))fail('core-nav.js','GitHub Pages project-path routing missing');
 if(!navPathSafe.includes("const route=routedPath(path)"))fail('core-nav.js','teamHref does not use project-path routing');
 if(failed)process.exit(1);
+
+const pagesBuilder=fs.readFileSync('scripts/build-pages-preview.mjs','utf8');
+if(pagesBuilder.includes("replace(/([\"'\`])\\/(?!\\/)/g"))fail('build-pages-preview.mjs','preview builder must not rewrite arbitrary JavaScript strings');
+if(!pagesBuilder.includes('(?:href|src|action)'))fail('build-pages-preview.mjs','preview builder markup-only rewrite missing');
+const contextRouting=fs.readFileSync('core-context.js','utf8');
+if(!contextRouting.includes("location.hostname.endsWith('.github.io')")||!contextRouting.includes('const route=routedPath(path)'))fail('core-context.js','GitHub Pages project-path routing missing');
+const navRouting=fs.readFileSync('core-nav.js','utf8');
+if(!navRouting.includes("location.hostname.endsWith('.github.io')")||!navRouting.includes('const route=routedPath(path)'))fail('core-nav.js','GitHub Pages project-path routing missing');
+if(failed)process.exit(1);

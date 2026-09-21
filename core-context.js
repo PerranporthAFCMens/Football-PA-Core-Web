@@ -86,18 +86,21 @@ async function resolve(opts={}){
   const canManage=!!platformAdminRes.data||['team_admin','manager','coach'].includes(teamRole)||['owner','club_admin'].includes(clubRole);
 
   const previewSuffix=preview?'&dev_preview=1':'';
+  const pagesBase=location.hostname.endsWith('.github.io')?('/'+location.pathname.split('/').filter(Boolean)[0]):'';
+  const routedPath=path=>pagesBase&&String(path).startsWith('/')?pagesBase+path:path;
   return {
     session,team,club,season,preview,canManage,teamRole,clubRole,domain,
     features:featureRes.data||{},
     settings:settingsRes.data||{},
     href(path,extra=''){
       const cleanExtra=extra?extra.replace(/^&/,''):'';
+      const route=routedPath(path);
       if(domain){
-        if(!cleanExtra)return path;
-        return path+(path.includes('?')?'&':'?')+cleanExtra;
+        if(!cleanExtra)return route;
+        return route+(route.includes('?')?'&':'?')+cleanExtra;
       }
-      const glue=path.includes('?')?'&':'?';
-      return path+glue+'team='+encodeURIComponent(team.id)+previewSuffix+(cleanExtra?('&'+cleanExtra):'');
+      const glue=route.includes('?')?'&':'?';
+      return route+glue+'team='+encodeURIComponent(team.id)+previewSuffix+(cleanExtra?('&'+cleanExtra):'');
     }
   };
 }
