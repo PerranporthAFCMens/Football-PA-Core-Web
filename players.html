@@ -21,7 +21,7 @@
 .hidden{display:none!important}.status{min-height:0;font-size:12px}.status.ok{color:#187747}.status.bad{color:#b42318}
 .formGrid{display:grid;grid-template-columns:1fr 1fr 1fr 90px auto;gap:8px;margin-top:12px}.formGrid input,.sessionGrid input,.sessionSelect{min-width:0;border:1px solid var(--line);border-radius:11px;padding:11px;background:#fff;font:inherit}
 .roster{margin-top:12px;border-top:1px solid #edf1f5}.playerRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #edf1f5}
-.playerName{font-weight:900}.playerMeta{margin-top:2px;color:var(--muted);font-size:11px}.rowActions{display:flex;gap:6px}
+.playerName{font-size:19px;line-height:1.18;font-weight:900}.playerMeta{margin-top:4px;color:var(--muted);font-size:13px}.rowActions{display:flex;gap:6px}.manageActions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.sortSelect{min-width:150px}
 .sessionGrid{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:12px}.review{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-top:14px}
 .review label{display:grid;gap:6px;min-width:0;flex:1;color:var(--muted);font-size:11px;font-weight:900}.reviewActions{display:flex;gap:7px}
 .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px -15px 0;padding:12px 15px;background:#f8fafc;border-top:1px solid #edf1f5;border-bottom:1px solid #edf1f5}
@@ -31,7 +31,7 @@
 .att{display:inline-flex;position:relative;width:40px;height:40px;align-items:center;justify-content:center}.att input{position:absolute;inset:0;width:40px;height:40px;opacity:0;z-index:2;cursor:pointer}
 .att span{display:flex;width:34px;height:34px;align-items:center;justify-content:center;border:2px solid #9aabba;border-radius:9px;background:#fff;color:transparent;font-size:20px;font-weight:900}
 .att input:checked+span{background:var(--blue);border-color:var(--blue);color:#fff}.att input:disabled+span{opacity:.55}.empty{padding:22px 0;text-align:center;color:var(--muted)}
-@media(max-width:680px){.formGrid{grid-template-columns:1fr 1fr}.formGrid button{grid-column:1/-1}.sessionGrid{grid-template-columns:1fr 1fr}.sessionGrid button{grid-column:1/-1}.review{align-items:stretch;flex-direction:column}.reviewActions{width:100%}.reviewActions .btn{flex:1}.playerRow{grid-template-columns:1fr}.rowActions .btn{flex:1}.hero h1{font-size:23px}}
+@media(max-width:680px){.manageActions{width:100%;justify-content:space-between}.sectionHead{align-items:flex-start;flex-wrap:wrap}.sortSelect{min-width:0;flex:1}.formGrid{grid-template-columns:1fr 1fr}.formGrid button{grid-column:1/-1}.sessionGrid{grid-template-columns:1fr 1fr}.sessionGrid button{grid-column:1/-1}.review{align-items:stretch;flex-direction:column}.reviewActions{width:100%}.reviewActions .btn{flex:1}.playerRow{grid-template-columns:1fr}.rowActions .btn{flex:1}.hero h1{font-size:23px}}
 </style>
 </head>
 <body>
@@ -52,7 +52,7 @@
   <section id="playersPanel" class="fpa-card card">
     <div class="sectionHead">
       <div><h2>Manage squad</h2><div class="muted">Add, edit or remove players from this team.</div></div>
-      <button id="toggleAdd" class="btn primary">+ Add player</button>
+      <div class="manageActions"><select id="playerSort" class="btn sortSelect" aria-label="Sort players"><option value="surname">Surname A–Z</option><option value="shirt">Shirt number</option><option value="first">First name A–Z</option></select><button id="toggleAdd" class="btn primary">+ Add player</button></div>
     </div>
     <div id="playerForm" class="formGrid hidden">
       <input id="firstName" placeholder="First name" autocomplete="off">
@@ -76,11 +76,12 @@
       <div class="review">
         <label>SESSION<select id="reviewSession" class="sessionSelect"></select></label>
         <div id="reviewActions" class="reviewActions">
-          <button id="selectAll" class="btn primary">Select all</button>
+          <button id="lockSession" class="btn primary">Save & lock session</button>
+          <button id="selectAll" class="btn">Select all</button>
           <button id="deleteSession" class="btn danger">Delete session</button>
         </div>
       </div>
-      <div id="summary" class="summary"></div>
+      <div id="sessionLockNote" class="muted" style="margin-top:10px"></div><div id="summary" class="summary"></div>
       <table class="register"><thead><tr><th>Player</th><th>Attended</th></tr></thead><tbody id="regBody"></tbody></table>
     </div>
   </section>
@@ -93,8 +94,10 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
 const byShirt=(a,b)=>a.shirt_number==null?(b.shirt_number==null?a.display_name.localeCompare(b.display_name):1):b.shirt_number==null?-1:(a.shirt_number-b.shirt_number)||a.display_name.localeCompare(b.display_name);
+const surnameKey=p=>String(p.last_name||p.display_name||'').trim().toLocaleLowerCase('en-GB');
+const firstKey=p=>String(p.first_name||p.display_name||'').trim().toLocaleLowerCase('en-GB');
 
-let ctx=null,players=[],sessions=[],attendance=[],editingPlayerId=null;
+let ctx=null,players=[],sessions=[],attendance=[],editingPlayerId=null,playerSort='surname';
 
 function showStatus(message,type=''){const el=$('status');el.textContent=message;el.className='status '+type}
 function activeSession(){return sessions.find(s=>s.id===$('reviewSession').value)||sessions[0]||null}
@@ -113,7 +116,8 @@ function resetPlayerForm(){
   $('savePlayer').textContent='Add to squad';$('playerForm').classList.add('hidden');
 }
 function renderRoster(){
-  const rows=[...players].sort(byShirt);
+  const comparator=playerSort==='shirt'?byShirt:playerSort==='first'?(a,b)=>firstKey(a).localeCompare(firstKey(b),'en-GB',{sensitivity:'base'})||surnameKey(a).localeCompare(surnameKey(b),'en-GB',{sensitivity:'base'}):(a,b)=>surnameKey(a).localeCompare(surnameKey(b),'en-GB',{sensitivity:'base'})||firstKey(a).localeCompare(firstKey(b),'en-GB',{sensitivity:'base'});
+  const rows=[...players].sort(comparator);
   $('roster').innerHTML=rows.length?rows.map(p=>'<div class="playerRow"><div><div class="playerName">'+esc(p.display_name)+'</div><div class="playerMeta">#'+esc(p.shirt_number??'–')+(p.preferred_position?' · '+esc(p.preferred_position):'')+'</div></div><div class="rowActions">'+(ctx.canManage?'<button class="btn" data-edit="'+p.id+'">Edit</button><button class="btn danger" data-remove="'+p.id+'">Remove</button>':'')+'</div></div>').join(''):'<div class="empty">No players in this squad yet.</div>';
 }
 function renderTraining(){
@@ -126,12 +130,16 @@ function renderTraining(){
   $('reviewSession').innerHTML=sessions.map(s=>'<option value="'+s.id+'">'+fmt(s.session_date)+' · '+esc(s.title||'Training')+'</option>').join('');
   if(previous&&sessions.some(s=>s.id===previous))$('reviewSession').value=previous;
   const session=activeSession();$('reviewSession').value=session.id;
+  const locked=!!session.locked_at;
   const rows=[...players].sort(byShirt);
   const present=new Set(attendance.filter(a=>a.session_id===session.id&&a.status==='present').map(a=>a.player_id));
   $('summary').innerHTML='<div><b>'+rows.length+'</b><span>SQUAD</span></div><div><b>'+present.size+'</b><span>PRESENT</span></div><div><b>'+Math.max(0,rows.length-present.size)+'</b><span>NOT MARKED</span></div>';
-  $('regBody').innerHTML=rows.map(p=>'<tr><td><span class="shirt">#'+esc(p.shirt_number??'–')+'</span><b>'+esc(p.display_name)+'</b></td><td><label class="att"><input type="checkbox" data-session="'+session.id+'" data-player="'+p.id+'" '+(present.has(p.id)?'checked':'')+' '+(!ctx.canManage?'disabled':'')+'><span>✓</span></label></td></tr>').join('');
+  $('regBody').innerHTML=rows.map(p=>'<tr><td><span class="shirt">#'+esc(p.shirt_number??'–')+'</span><b>'+esc(p.display_name)+'</b></td><td><label class="att"><input type="checkbox" data-session="'+session.id+'" data-player="'+p.id+'" '+(present.has(p.id)?'checked':'')+' '+((!ctx.canManage||locked)?'disabled':'')+'><span>✓</span></label></td></tr>').join('');
   $('reviewActions').classList.toggle('hidden',!ctx.canManage);
-  const all=rows.length>0&&present.size===rows.length;$('selectAll').disabled=all;$('selectAll').textContent=all?'All selected ✓':'Select all';
+  $('sessionLockNote').textContent=locked?'Session locked. Attendance is protected from accidental changes.':'Session open. Save & lock it when attendance is complete.';
+  $('lockSession').textContent=locked?'Unlock session':'Save & lock session';
+  $('lockSession').classList.toggle('primary',!locked);
+  const all=rows.length>0&&present.size===rows.length;$('selectAll').disabled=locked||all;$('selectAll').textContent=all?'All selected ✓':'Select all';$('deleteSession').disabled=locked;
 }
 async function load(){
   ctx=await FootballPAContext.resolve();
@@ -153,7 +161,7 @@ async function load(){
   setTab(new URLSearchParams(location.search).get('view')==='training'?'training':'players',{replaceUrl:false});
 }
 
-$('playersTab').onclick=()=>setTab('players');
+$('playersTab').onclick=()=>setTab('players');$('playerSort').onchange=e=>{playerSort=e.target.value;renderRoster()};
 $('trainingTab').onclick=()=>setTab('training');
 $('toggleAdd').onclick=()=>{$('playerForm').classList.toggle('hidden');if(!$('playerForm').classList.contains('hidden'))$('firstName').focus()};
 $('savePlayer').onclick=async()=>{
@@ -193,6 +201,7 @@ $('addSession').onclick=async()=>{
   b.disabled=false;b.textContent='+ Add session';if(error){showStatus(error.message,'bad');return}sessions.unshift(data);showStatus('Training session added.','ok');renderTraining();
 };
 $('reviewSession').onchange=renderTraining;
+$('lockSession').onclick=async()=>{if(!ctx.canManage)return;const s=activeSession();if(!s)return;const locked=!!s.locked_at,b=$('lockSession');b.disabled=true;b.textContent=locked?'Unlocking…':'Locking…';const {data:{user}}=await sb.auth.getUser();const patch=locked?{locked_at:null,locked_by:null,updated_at:new Date().toISOString()}:{locked_at:new Date().toISOString(),locked_by:user.id,updated_at:new Date().toISOString()};const {data,error}=await sb.from('training_sessions').update(patch).eq('id',s.id).eq('team_id',ctx.team.id).select().single();b.disabled=false;if(error){showStatus(error.message,'bad');renderTraining();return}sessions=sessions.map(x=>x.id===data.id?data:x);showStatus(locked?'Training session unlocked.':'Training session saved and locked.','ok');renderTraining()};
 $('selectAll').onclick=async()=>{
   if(!ctx.canManage)return;const s=activeSession();if(!s||!players.length)return;
   const b=$('selectAll');b.disabled=true;b.textContent='Saving…';const {data:{user}}=await sb.auth.getUser();

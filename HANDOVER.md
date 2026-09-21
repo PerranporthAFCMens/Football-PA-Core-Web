@@ -79,6 +79,22 @@ Use a half pitch. The approved map is the old Perranporth idea with old zones 2 
 
 Do not revert to the earlier eight-zone full-pitch mock-up.
 
+## Live Score
+
+`live-score.html` is a spectator-safe scoreboard inspired by the Perranporth live page. It is linked from the authenticated nav but the shared URL is token-based and can be opened without signing in.
+
+- public read-only Edge Function: `team-scoreboard`
+- token: `team_settings.scoreboard_token`
+- refreshes from Match Centre state every 5 seconds
+- follows configured club branding
+- shows team names, score, phase/time and our recorded scorers
+- after full time, the completed fixture remains the selected scoreboard match for the rest of that UK calendar day
+- Share uses native Web Share where available, with copy-link fallback
+
+## Training session locking
+
+Training attendance is still saved as it is changed, but a manager can now use **Save & lock session** as the final confirmation. Locked sessions disable attendance editing, Select all and deletion. Unlocking is explicit. The lock is persisted in `training_sessions.locked_at/locked_by`, and a database trigger rejects attendance writes to locked sessions.
+
 ## Fixtures
 
 `fixtures.html` supports active-season fixtures, filters, manager add/edit, completed scores, ground details, directions and calendar subscription.

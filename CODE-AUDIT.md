@@ -46,3 +46,12 @@ Vercel build-rate limiting is the main reason the visible site can lag behind `m
 - old static logo asset until usage is conclusively checked
 
 Avoid broad rewrites solely for aesthetics. Clean around proven product boundaries and preserve working persistence paths.
+
+
+## 21 September batch
+
+- restored strong player-name sizing after the Players & Training cleanup
+- Players defaults to surname A–Z and offers surname, shirt-number and first-name sorting
+- added persistent Save & lock / Unlock workflow to training attendance, backed by a database write guard
+- added tokenised public Live Score page and `team-scoreboard` Edge Function
+- added Live Score to the authenticated navigation and spectator sharing
