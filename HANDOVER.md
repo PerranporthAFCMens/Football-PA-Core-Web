@@ -236,3 +236,16 @@ Football PA supports team-scoped hostnames through `public.team_domains`.
 - Dev Admin Create/Manage Team includes a Football PA subdomain field.
 - `core.footballpa.com` remains the generic Core entry point.
 - DNS/Vercel domain assignment is infrastructure configuration and must be completed before a new hostname resolves publicly.
+
+
+## Per-team navigation ordering — 21 September 2026
+
+Each team can control the order of its available navigation items from Team Settings → Navigation Bar.
+
+- Order is stored in `team_settings.nav_order`.
+- Feature flags still control whether an item is available at all.
+- Voting only appears when `team_features.voting=true`.
+- Subs Tracker only appears when `team_features.subs_finance=true`.
+- Live Score only appears when a scoreboard token is configured.
+- The settings screen only presents the items that can actually appear for that team.
+- Reordering uses mobile-friendly up/down controls.
