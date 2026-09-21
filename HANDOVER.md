@@ -14,15 +14,22 @@ Do not modify the separate live Perranporth app unless explicitly asked.
 
 ## Intended navigation
 
+The shared navigation is team-aware and feature-aware.
+
+Always/common:
 1. Home
-2. Match Centre
-3. Players
+2. Match Centre, when enabled
+3. Players, when enabled
 4. Fixtures
 5. Dashboard
-6. Live Score
-7. Settings
+6. Live Score, when configured
+7. Settings, for managers/admins
 
-Voting, Subs Admin and Fixture Sync remain available from the Home screen **More tools** card rather than the main navigation.
+Conditional manager/admin tools:
+- Voting appears when `team_features.voting=true`
+- Subs Tracker appears when `team_features.subs_finance=true`
+
+For example, Perranporth has both Voting and Subs Tracker enabled, while St Agnes has both disabled, so their menus are intentionally different.
 
 ## Dashboard
 

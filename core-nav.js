@@ -24,6 +24,8 @@ async function mount(opts={}){
   ['players','Players','/players.html?team='+tid+preview,'players',true],
   ['fixtures','Fixtures','/fixtures.html?team='+tid+preview,null,true],
   ['dashboard','Dashboard','/dashboard.html?team='+tid+preview,null,true],
+  ['voting','Voting','/voting.html?team='+tid+preview,'voting',canManage],
+  ['subs','Subs Tracker','/subs.html?team='+tid+preview,'subs_finance',canManage],
   ['live','Live Score','/live-score.html?team='+tid+'&token='+encodeURIComponent(scoreboardToken)+preview,null,!!scoreboardToken],
   ['settings','Settings','/team-settings.html?team='+tid+preview,null,canManage]
  ].filter(x=>(!x[3]||features[x[3]]!==false)&&x[4]);
