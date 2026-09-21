@@ -141,3 +141,29 @@ Validation:
 - Supabase Security Advisor now reports anonymous SECURITY DEFINER warnings only for the nine deliberately public Player Portal RPCs
 
 The remaining authenticated SECURITY DEFINER warnings are the intentional signed-in Core RPC surface plus self-scoped authorisation helpers. They remain guarded inside the function bodies and will be revisited only if the API is later moved behind a dedicated exposed schema.
+
+
+## Recommendation 3/5 — Eliminate GitHub Pages route escapes
+
+Completed on 21 September 2026.
+
+Changes:
+
+- converted the Home dev-preview exit to a project-relative route
+- converted Fixture Sync's Settings back-link to a project-relative route
+- converted Player Portal auth/login and fallback navigation to project-relative routes
+- converted the legacy Training redirect to a project-relative route
+- fixed the default Login destination and email-confirmation callback so GitHub Pages retains the `/Football-PA-Core-Web/` project path
+- converted all Dev Admin navigation and auth redirects across `dev.html`, `dev-login.html`, `dev-teams.html`, `dev-team.html` and `dev-create-team.html` to project-relative routes
+- corrected stale smoke assertions that still expected the pre-Recommendation-1 `canManage` navigation model
+- added an app-wide smoke rule that scans every root HTML file for unsafe root-relative HTML navigation, direct JavaScript root navigation and root-built callback URLs
+
+Validation:
+
+- 19 root HTML pages were scanned after the changes
+- zero unsafe first-party root navigation matches remain
+- all inline scripts across those pages parse successfully
+- the smoke-check module parses successfully
+- shared `ctx.href()` / `teamHref()` routes remain unchanged and continue to handle team domains plus GitHub Pages project hosting
+
+The regression check now protects future pages too because it enumerates every root `.html` file at smoke-test time.
