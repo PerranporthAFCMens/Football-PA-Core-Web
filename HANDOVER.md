@@ -415,3 +415,10 @@ Restores matchday functionality that existed in the original Perranporth Match C
 - Match Centre now loads core-context.js/core-nav.js/core-ui.css with relative paths so the same HTML works on GitHub Pages project URLs and root/custom domains.
 - Startup explicitly verifies FootballPAContext and FootballPANav and retries loading the local dependency before booting.
 - This prevents the page from failing with "FootballPAContext is not defined" if a root-relative dependency path is missed/cached incorrectly.
+
+
+## App-wide relative Core dependency paths — 21 September 2026
+
+Core customer/admin pages no longer rely on root-relative /core-context.js, /core-nav.js or /core-ui.css references. Relevant pages now use relative paths so they work consistently on both custom domains and GitHub Pages project-path previews. Shared login redirects are also relative-path safe.
+
+11-a-side shirt numbers are now forced inline on the SVG text element at 24 units, while 7-a-side keeps the 34-unit baseline. Inline SVG styling is authoritative, so stylesheet specificity can no longer mask the 11-a-side number-size change.
