@@ -1,6 +1,6 @@
 # Code Audit and Deep-Clean Notes
 
-Audit date: 20 September 2026
+Audit date: 21 September 2026
 
 ## Scope
 
@@ -55,3 +55,20 @@ Avoid broad rewrites solely for aesthetics. Clean around proven product boundari
 - added persistent Save & lock / Unlock workflow to training attendance, backed by a database write guard
 - added tokenised public Live Score page and `team-scoreboard` Edge Function
 - added Live Score to the authenticated navigation and spectator sharing
+
+
+## 21 September follow-up
+
+Additional completed cleanup and UX fixes:
+- Match Centre period controls consolidated to one reversible Start/End period button
+- saved starting lineup can be unlocked for corrections
+- match-event zone save error fixed at the Supabase RPC layer because the database zone column is integer
+- Dashboard mobile page overflow fixed
+- Dashboard Player data table now scrolls internally with a sticky player-name column
+- sticky Dashboard player names shortened to first name + surname initial
+- Live Score and training-session locking are now part of the documented core product state
+
+Still unresolved:
+- historical starting lineup vs current tactical XI persistence
+- substitution feed reconstruction after reload
+- broader fixture/front-end permission alignment review
