@@ -22,7 +22,7 @@
   <section class="fpa-card record-card"><div id="stats" class="record-strip"></div></section>
   <section class="home-lower">
     <article class="fpa-card home-panel"><div class="panel-head"><h2>Recent results</h2></div><div id="recent"></div></article>
-    <article class="fpa-card home-panel"><div class="panel-head"><h2>More tools</h2></div><div id="teamSummary" class="team-card"></div></article>
+    <article class="fpa-card home-panel"><div class="panel-head"><h2>Coming up</h2></div><div id="teamSummary"></div></article>
   </section>
 </div>
 </div>
@@ -89,7 +89,7 @@ async function boot(){try{
  const recent=[...done].sort((a,b)=>new Date(b.kick_off)-new Date(a.kick_off)).slice(0,3);
  $('recent').innerHTML=recent.length?recent.map(f=>'<div class="match-row" data-fixture="'+f.id+'"><div class="match-result">'+ourScore(f)+'–'+theirScore(f)+'<small>FT</small></div><div><strong>'+esc(f.opponent)+'</strong><small>'+esc(f.competition||'Fixture')+' · '+venueLabel(f.venue)+'</small></div><div class="mini-date">'+fmtDate(f.kick_off)+'</div></div>').join(''):'<div class="empty">No completed matches yet.</div>';
  document.querySelectorAll('[data-fixture]').forEach(r=>r.onclick=()=>location.href=ctx.href('/match-centre.html','fixture='+encodeURIComponent(r.dataset.fixture)));
- const tools=[['Voting',ctx.href('/voting.html')]];if(ctx.canManage){tools.push(['Subs Admin',ctx.href('/subs.html')],['Fixture Sync',ctx.href('/fixture-sync.html')])}$('teamSummary').innerHTML='<div class="team-label">QUICK ACCESS</div><div class="team-actions">'+tools.map(t=>'<a class="btn" href="'+t[1]+'">'+t[0]+'</a>').join('')+'</div>';
+ const comingUp=upcoming.slice(next?1:0,4);$('teamSummary').innerHTML=comingUp.length?comingUp.map(f=>'<div class="match-row" data-upcoming="'+f.id+'"><div class="match-result"><small>'+venueLabel(f.venue)+'</small></div><div><strong>'+esc(f.opponent)+'</strong><small>'+esc(f.competition||'Fixture')+'</small></div><div class="mini-date">'+fmtDate(f.kick_off)+'</div></div>').join(''):'<div class="empty">No further fixtures scheduled.</div>';document.querySelectorAll('[data-upcoming]').forEach(r=>r.onclick=()=>location.href=ctx.href('/match-centre.html','fixture='+encodeURIComponent(r.dataset.upcoming)));
  $('loading').classList.add('hidden');$('app').classList.remove('hidden');checkFixtureUpdates(ctx);
 }catch(e){$('loading').innerHTML='<b>Could not load Football PA.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}}
 sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('/login.html')});boot();
