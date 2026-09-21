@@ -1,6 +1,12 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": false,
   "trailingSlash": false,
+  "git": {
+    "deploymentEnabled": {
+      "dev": false
+    }
+  },
   "headers": [
     {
       "source": "/players.html",
