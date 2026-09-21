@@ -20,13 +20,11 @@ async function mount(opts={}){
  const icon=k=>({home:'<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10.5V20h13v-9.5"></path><path d="M9.5 20v-6h5v6"></path></svg>',dashboard:'<svg viewBox="0 0 24 24"><path d="M4 19V9"></path><path d="M10 19V5"></path><path d="M16 19v-7"></path><path d="M22 19H2"></path></svg>',fixtures:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18"></path></svg>',match:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m12 8 3 2-1 4h-4l-1-4 3-2Z"></path><path d="m9 10-4-1M15 10l4-1M10 14l-2 4M14 14l2 4"></path></svg>',live:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3"></rect><path d="M8 12h2M14 12h2"></path><path d="M12 9v6"></path></svg>',players:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19c.5-4 2.5-6 5.5-6s5 2 5.5 6"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M15 14c3.5-.3 5.2 1.4 5.5 5"></path></svg>',training:'<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"></rect><path d="M9 4.5V3h6v1.5"></path><path d="m8.5 12 2 2 4.5-5"></path></svg>',voting:'<svg viewBox="0 0 24 24"><path d="M7 4h10l2 5H5l2-5Z"></path><rect x="4" y="9" width="16" height="11" rx="2"></rect><path d="m9 14 2 2 4-4"></path></svg>',subs:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M15 8.5c-.7-.7-1.5-1-2.7-1-1.7 0-2.8.8-2.8 2 0 3 6 1.5 6 4.5 0 1.3-1.2 2.2-3 2.2-1.3 0-2.4-.4-3.2-1.2M12 5.5v13"></path></svg>',settings:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19 13.5v-3l-2-.7-.7-1.7.9-1.9-2.1-2.1-1.9.9-1.7-.7L10.5 2h-3l-.7 2-1.7.7-1.9-.9L1.1 6l.9 1.9-.7 1.7-2 .7v3l2 .7.7 1.7-.9 1.9 2.1 2.1 1.9-.9 1.7.7.7 2h3l.7-2 1.7-.7 1.9.9 2.1-2.1-.9-1.9.7-1.7 2-.7Z" transform="translate(2 0) scale(.83)"></path></svg>'}[k]||'');
  const teamItems=[
   ['home','Home','/index.html?team='+tid+preview,null,true],
-  ['fixtures','Fixtures','/fixtures.html?team='+tid+preview,null,true],
   ['match','Match Centre','/match-centre.html?team='+tid+preview,'match_centre',true],
-  ['live','Live Score','/live-score.html?team='+tid+'&token='+encodeURIComponent(scoreboardToken)+preview,null,!!scoreboardToken],
+  ['players','Players','/players.html?team='+tid+preview,'players',true],
+  ['fixtures','Fixtures','/fixtures.html?team='+tid+preview,null,true],
   ['dashboard','Dashboard','/dashboard.html?team='+tid+preview,null,true],
-  ['players','Players & Training','/players.html?team='+tid+preview,'players',true],
-  ['voting','Voting','/voting.html?team='+tid+preview,'voting',true],
-  ['subs','Subs Admin','/subs.html?team='+tid+preview,'subs_finance',canManage],
+  ['live','Live Score','/live-score.html?team='+tid+'&token='+encodeURIComponent(scoreboardToken)+preview,null,!!scoreboardToken],
   ['settings','Settings','/team-settings.html?team='+tid+preview,null,canManage]
  ].filter(x=>(!x[3]||features[x[3]]!==false)&&x[4]);
  const shade=document.createElement('div');shade.className='fpa-nav-shade';shade.id='fpaSharedNavShade';
