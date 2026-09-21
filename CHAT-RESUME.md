@@ -49,17 +49,14 @@ Recent completed work you need to preserve:
 - Dashboard mobile overflow has been fixed.
 - Dashboard Player data scrolls horizontally inside its card. The Player column stays sticky and displays first name + surname initial, for example `Olivia T.`.
 
-The highest-priority known architectural issue is still match-lineup history:
-`save_match_centre_state` currently deletes/recreates `match_lineups` from the current XI on routine saves, so after substitutions it can overwrite the real starting XI and distort starts/minutes analytics.
+The Match Centre persistence architecture was fixed on 21 September 2026:
+- `match_states.current_xi` stores the current tactical XI
+- routine `save_match_centre_state` no longer rewrites `match_lineups`
+- explicit starting-lineup confirmation/correction uses `set_match_starting_lineup`
+- `load_match_centre_state` returns current `xi` separately from `starting_xi`
+- substitution rows are rebuilt into the visible event feed after reload
 
-Recommended direction:
-- persist current tactical XI separately, ideally on `match_states.current_xi`
-- write historical starter rows only when starting lineup is confirmed
-- never overwrite starter history during routine autosaves
-- load current tactical XI from the dedicated current-XI state
-
-Second known issue:
-substitution records survive reload, but substitution feed entries are not reconstructed into the visible event feed after reload.
+The next known architectural review area is fixture/front-end permission alignment where UI `canManage` and database RLS may not always describe the same manager/admin roles.
 
 Continue from the current `main` branch. Do not infer state from an older Vercel page without checking the current commit/deployment.
 
