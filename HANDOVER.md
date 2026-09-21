@@ -393,3 +393,18 @@ The copied player voting link now targets Player Portal with `tab=vote`; player-
 ## Voting match picker order — 21 September 2026
 - Voting match selector is chronological, earliest to latest.
 - Default selection remains the most recent completed match unless voting is currently open for another fixture.
+
+
+## Match Centre event editing + sharing restored — 21 September 2026
+
+Restores matchday functionality that existed in the original Perranporth Match Centre.
+
+- Event feed has Edit and Delete controls on every event.
+- Edit supports goal details, cards, opposition goals and substitutions, including match minute/stoppage time.
+- Editing a substitution updates the substitution record without creating a duplicate event.
+- Deleting a goal now adjusts the correct side of the score, including opposition goals.
+- Completed matches show Share result and FA Full-Time events buttons.
+- Share result recreates the original WhatsApp-friendly output: competition, opponent, score/result, starting lineup, used subs, unused subs and goal/card icons.
+- Native Web Share is used when available, with clipboard fallback.
+- FA Full-Time Events produces a chronological event list and appends the MOTM winner from Voting Centre when available.
+- Share buttons remain hidden until the match is completed.
