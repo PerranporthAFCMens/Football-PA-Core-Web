@@ -134,7 +134,7 @@ async function boot(){
     ctx=await FootballPAContext.resolve();
     FootballPANav.mount({teamId:ctx.team.id});
     $('teamLabel').textContent=(ctx.club.name||'Football PA')+' · '+(ctx.team.name||'')+' · '+(ctx.season?.label||ctx.team.season_label||'');
-    $('link').value=location.origin+ctx.href('/player-portal.html','pin=1&tab=vote');
+    const votePortalParams='pin=1&tab=vote'+(ctx.settings?.player_portal_token?'&portal='+encodeURIComponent(ctx.settings.player_portal_token):'');$('link').value=location.origin+ctx.href('/player-portal.html',votePortalParams);
     await loadCentre();await results();
     $('loading').classList.add('hidden');$('app').classList.remove('hidden');
   }catch(e){$('loading').textContent=e.message;$('loading').classList.add('bad')}
