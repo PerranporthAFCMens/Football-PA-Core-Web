@@ -20,12 +20,12 @@ const sync=fs.readFileSync('fixture-sync.html','utf8');if(!sync.includes('fixtur
 const home=fs.readFileSync('index.html','utf8');const homeVisible=home.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');if(!home.includes('Coming up'))fail('index.html','Coming up Home card missing');if(/More tools|ACTIVE PLAYERS|Subs Admin/.test(homeVisible))fail('index.html','unsupported or old Home card content remains');if(!home.includes('data-upcoming'))fail('index.html','Coming up fixtures are not rendered');if(!home.includes('homeShortcut1')||!home.includes('homeShortcut2')||!home.includes('renderHomeShortcut'))fail('index.html','configurable Home shortcuts missing');if(!home.includes('fixture_sync_ignored_updates'))fail('index.html','Home fixture notice does not respect ignored updates');
 if(failed)process.exit(1);console.log('Football PA Core smoke checks passed.');
 const portal=fs.readFileSync('player-portal.html','utf8');
-for(const rpc of ['player_portal_list_players','player_portal_login','player_portal_first_time_setup','player_portal_change_pin','player_portal_data_v2','player_portal_submit_vote'])if(!portal.includes(rpc))fail('player-portal.html','missing PIN portal RPC '+rpc);
-if(!portal.includes("q.get('pin')==='1'"))fail('player-portal.html','legacy-compatible PIN portal mode missing');
+for(const rpc of ['player_portal_list_players','player_portal_list_players_v2','player_portal_login','player_portal_login_v2','player_portal_first_time_setup','player_portal_first_time_setup_v2','player_portal_change_pin','player_portal_data_v2','player_portal_submit_vote'])if(!portal.includes(rpc))fail('player-portal.html','missing PIN portal RPC '+rpc);
+if(!portal.includes("q.get('pin')==='1'"))fail('player-portal.html','legacy-compatible PIN portal mode missing');if(!portal.includes("q.get('portal')")||!portal.includes('p_portal_token:PORTAL_TOKEN'))fail('player-portal.html','protected Player Portal token support missing');
 if(!portal.includes('historical_team')||!portal.includes('historical'))fail('player-portal.html','historical player/team comparison missing');
 if(!dash.includes("eq('include_in_stats',true)"))fail('dashboard.html','dashboard does not exclude fixtures disabled from statistics');
 if(!home.includes('include_in_stats!==false'))fail('index.html','Home KPIs do not respect fixture statistics inclusion');
-const devTeam=fs.readFileSync('dev-team.html','utf8');if(!devTeam.includes('viewPlayerPortal')||!devTeam.includes('&pin=1'))fail('dev-team.html','Dev Admin player portal preview missing');
+const devTeam=fs.readFileSync('dev-team.html','utf8');if(!devTeam.includes('viewPlayerPortal')||!devTeam.includes('&pin=1'))fail('dev-team.html','Dev Admin player portal preview missing');if(!devTeam.includes('player_portal_token')||!devTeam.includes('&portal='))fail('dev-team.html','Dev Admin Player Portal preview is missing the protected token');
 if(failed)process.exit(1);
 
 const contextDomain=fs.readFileSync('core-context.js','utf8');
@@ -68,7 +68,7 @@ if(!subsFixture.includes('Copy matches + payment link')||!subsFixture.includes('
 if(!subsFixture.includes('No squad has been saved for this fixture yet'))fail('subs.html','pre-match fixture fallback missing');
 if(failed)process.exit(1);
 
-const votingCentre=fs.readFileSync('voting.html','utf8');
+const votingCentre=fs.readFileSync('voting.html','utf8');if(!votingCentre.includes('player_portal_token')||!votingCentre.includes('&portal='))fail('voting.html','Voting share link is missing the protected Player Portal token');
 if(!votingCentre.includes('Voting match')||!votingCentre.includes('get_voting_centre')||!votingCentre.includes('get_voting_match_snapshot'))fail('voting.html','Voting Centre match-picker history missing');
 if(!votingCentre.includes('Season Voting Table')||!votingCentre.includes('can_view_private_report'))fail('voting.html','private season report link missing');
 const votingSeason=fs.readFileSync('voting-season.html','utf8');
@@ -137,7 +137,7 @@ const navRouting=fs.readFileSync('core-nav.js','utf8');
 if(!navRouting.includes("location.hostname.endsWith('.github.io')")||!navRouting.includes('const route=routedPath(path)'))fail('core-nav.js','GitHub Pages project-path routing missing');
 if(failed)process.exit(1);
 
-const homeSettings=fs.readFileSync('team-settings.html','utf8');
+const homeSettings=fs.readFileSync('team-settings.html','utf8');if(!homeSettings.includes('Public Links')||!homeSettings.includes('rotate_team_public_token')||!homeSettings.includes('playerPortalLink')||!homeSettings.includes('scoreboardLink')||!homeSettings.includes('calendarLink'))fail('team-settings.html','public link management is missing');if(homeSettings.includes('const settingsPatch={...settings'))fail('team-settings.html','stale settings spread can overwrite rotated public tokens');
 if(!homeSettings.includes('id="homeShortcut1"')||!homeSettings.includes('id="homeShortcut2"')||!homeSettings.includes('home_shortcut_1')||!homeSettings.includes('home_shortcut_2'))fail('team-settings.html','Home shortcut settings missing');
 if(!home.includes('result-score')||!home.includes('venue-result'))fail('index.html','Home score/venue layout classes missing');
 if(!sharedUi.includes('Home polish v6')||!sharedUi.includes('.result-score')||!sharedUi.includes('.hero-match:before'))fail('core-ui.css','Home visual polish missing');
