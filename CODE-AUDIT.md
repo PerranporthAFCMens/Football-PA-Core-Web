@@ -167,3 +167,21 @@ Validation:
 - shared `ctx.href()` / `teamHref()` routes remain unchanged and continue to handle team domains plus GitHub Pages project hosting
 
 The regression check now protects future pages too because it enumerates every root `.html` file at smoke-test time.
+
+
+## Recommendation 4/5 — Extract shared frontend plumbing
+
+Completed on 22 September 2026.
+
+Scope was deliberately kept narrow to avoid redesigning or destabilising working football features.
+
+Changes:
+
+- added `core-client.js` as the single shared Supabase client bootstrap
+- moved the Supabase project URL and publishable client creation out of 18 individual HTML pages
+- wired all Core, Player Portal, Live Score and Dev Admin pages that use Supabase through `FootballPAClient`
+- preserved all page-specific match, voting, subs, dashboard and admin logic in place
+- added smoke checks that require Supabase-enabled pages to load `core-client.js`, reject page-local `supabase.createClient(...)` calls, and verify load order
+- confirmed all affected inline scripts still parse successfully
+
+This recommendation intentionally stops here. Further extraction of small helpers such as local escaping functions would add churn without meaningful structural benefit at this stage.
