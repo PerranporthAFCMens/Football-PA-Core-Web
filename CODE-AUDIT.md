@@ -185,3 +185,51 @@ Changes:
 - confirmed all affected inline scripts still parse successfully
 
 This recommendation intentionally stops here. Further extraction of small helpers such as local escaping functions would add churn without meaningful structural benefit at this stage.
+
+
+## Recommendation 5/5 — Harden public Player Portal and public team services
+
+Completed on 22 September 2026.
+
+Supabase migrations:
+
+- `20260922110146_harden_player_portal_public_access`
+- `20260922110427_fix_public_token_rotation`
+- `20260922110635_lock_legacy_player_portal_mode`
+
+Edge Function:
+
+- `team-calendar` v2
+
+Changes:
+
+- added per-team `player_portal_token` capability links, defaulting to protected mode for new teams
+- added token-protected Player Portal directory, login and first-time setup RPCs
+- kept the original Perranporth PIN/DOB RPC signatures working behind an explicit Perranporth-only legacy compatibility flag
+- locked `player_portal_legacy_open` so only a platform admin can change the exception
+- added manager-controlled token rotation for Player Portal, Live Score and fixture calendar public links
+- Player Portal token rotation also invalidates active portal sessions for that team
+- added a Team Settings Public Links panel with copy/regenerate actions for all three public services
+- updated Voting Centre and Dev Admin Player Portal links to include the protected portal token
+- prevented ordinary Team Settings saves from spreading stale settings data back over newly rotated tokens
+- confirmed Live Score remains exact-token-only and spectator-safe
+- changed the public fixture calendar from a fixed 90-minute event duration to `period_count × period_minutes`
+- added `PUBLIC-SURFACES.md` describing the permanent public-service security boundary
+- expanded smoke checks for tokenised Player Portal entry, secure generated links and public-link management
+
+Validation:
+
+- Perranporth legacy Player Portal still returns its expected 19-player directory
+- the protected Perranporth Player Portal link returns the same 19-player directory
+- generic teams reject bare-team-ID legacy Player Portal discovery
+- incorrect Player Portal tokens are rejected
+- anonymous users see zero `team_settings` rows and cannot retrieve public capability tokens directly
+- anonymous users cannot execute the public-token rotation RPC
+- authenticated managers can rotate portal, scoreboard and calendar tokens
+- non-platform managers cannot enable or disable legacy Player Portal compatibility
+- the active `team-calendar` v2 source uses team-configured period count and period minutes
+- Dynamos Girls U10 calendar duration now resolves to 48 minutes; adult 2 × 45 teams remain 90 minutes
+- Player Portal, Team Settings, Voting Centre and Dev Admin changed pages all pass JavaScript syntax checks
+- the public-service regression checks are present in `scripts/smoke-check.mjs`
+
+This completes the five-recommendation Football PA Core technical audit and stabilisation pass.
