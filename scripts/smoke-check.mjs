@@ -1,10 +1,10 @@
 import fs from 'node:fs';
-const pages=['index.html','dashboard.html','players.html','match-centre.html','team-settings.html','fixture-sync.html','fixtures.html','voting.html','subs.html','player-portal.html'];
+const pages=['index.html','dashboard.html','players.html','match-centre.html','team-settings.html','fixture-sync.html','fixtures.html','availability.html','voting.html','subs.html','player-portal.html'];
 let failed=false;const fail=(file,msg)=>{failed=true;console.error(`FAIL ${file}: ${msg}`)};
 for(const file of pages){const html=fs.readFileSync(file,'utf8');const ids=[...html.matchAll(/\bid=["']([^"']+)["']/g)].map(m=>m[1]);const seen=new Set();for(const id of ids){if(seen.has(id))fail(file,`duplicate id "${id}"`);seen.add(id)}const refs=[...html.matchAll(/\$\('([^']+)'\)/g)].map(m=>m[1]);for(const id of new Set(refs)){if(!seen.has(id))fail(file,`JavaScript references missing element #${id}`)}for(const m of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)){try{new Function(m[1])}catch(e){fail(file,`inline JavaScript syntax error: ${e.message}`)}}if(!html.includes('/core-ui.css'))fail(file,'missing shared /core-ui.css');if(!html.includes('/core-nav.js'))fail(file,'missing shared /core-nav.js');const visible=html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');for(const phrase of ['Saved to Supabase','Synced from Supabase','Core test','browser-only','secure Dev access'])if(visible.toLowerCase().includes(phrase.toLowerCase()))fail(file,`customer-facing debug wording: "${phrase}"`);if(/Club_Logo\.png/i.test(html))fail(file,'hardcoded club logo found');if((html.match(/FootballPANav\.mount/g)||[]).length>1)fail(file,'shared navigation mounted more than once')}
 const coreClient=fs.readFileSync('core-client.js','utf8');try{new Function(coreClient)}catch(e){fail('core-client.js',`syntax error: ${e.message}`)}if((coreClient.match(/supabase\.createClient\(/g)||[]).length!==1)fail('core-client.js','shared Supabase client should be created exactly once');if(!coreClient.includes('FootballPAClient'))fail('core-client.js','shared FootballPAClient global missing');
 const context=fs.readFileSync('core-context.js','utf8');try{new Function(context)}catch(e){fail('core-context.js',`syntax error: ${e.message}`)}if(!context.includes("get_team_access_context")||!context.includes("capabilities:access"))fail('core-context.js','authoritative team access context is not wired in');
-const nav=fs.readFileSync('core-nav.js','utf8');try{new Function(nav)}catch(e){fail('core-nav.js',`syntax error: ${e.message}`)}if(/deploy refresh/i.test(nav))fail('core-nav.js','temporary deployment marker still present');if(!nav.includes("get_team_access_context")||!nav.includes('access.can_manage_match')||!nav.includes('access.can_manage_voting')||!nav.includes('access.can_manage_subs')||!nav.includes('access.can_manage_team'))fail('core-nav.js','capability-based navigation access is missing');if(!nav.includes("select('scoreboard_token,nav_order')")||!nav.includes('teamItems.sort'))fail('core-nav.js','saved team navigation order is not applied');if(!nav.includes("['voting','Voting'")||!nav.includes('access.can_manage_voting'))fail('core-nav.js','feature-gated Voting navigation missing');if(!nav.includes("['subs','Subs Tracker'")||!nav.includes('access.can_manage_subs'))fail('core-nav.js','feature-gated Subs Tracker navigation missing');
+const nav=fs.readFileSync('core-nav.js','utf8');try{new Function(nav)}catch(e){fail('core-nav.js',`syntax error: ${e.message}`)}if(/deploy refresh/i.test(nav))fail('core-nav.js','temporary deployment marker still present');if(!nav.includes("get_team_access_context")||!nav.includes('access.can_manage_match')||!nav.includes('access.can_manage_voting')||!nav.includes('access.can_manage_subs')||!nav.includes('access.can_manage_team'))fail('core-nav.js','capability-based navigation access is missing');if(!nav.includes("select('scoreboard_token,nav_order')")||!nav.includes('teamItems.sort'))fail('core-nav.js','saved team navigation order is not applied');if(!nav.includes("['voting','Voting'")||!nav.includes('access.can_manage_voting'))fail('core-nav.js','feature-gated Voting navigation missing');if(!nav.includes("['subs','Subs Tracker'")||!nav.includes('access.can_manage_subs'))fail('core-nav.js','feature-gated Subs Tracker navigation missing');if(!nav.includes("['availability','Availability'")||!nav.includes("'availability',true"))fail('core-nav.js','feature-gated Availability navigation missing');
 const playersAccess=fs.readFileSync('players.html','utf8');if(!playersAccess.includes('can_manage_players'))fail('players.html','Players does not use the shared players capability');
 const fixturesAccess=fs.readFileSync('fixtures.html','utf8');if(!fixturesAccess.includes('can_manage_fixtures'))fail('fixtures.html','Fixtures does not use the shared fixtures capability');
 const syncAccess=fs.readFileSync('fixture-sync.html','utf8');if(!syncAccess.includes('can_manage_fixtures'))fail('fixture-sync.html','Fixture Sync does not use the shared fixtures capability');
@@ -20,7 +20,7 @@ const sync=fs.readFileSync('fixture-sync.html','utf8');if(!sync.includes('fixtur
 const home=fs.readFileSync('index.html','utf8');const homeVisible=home.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');if(!home.includes('Coming up'))fail('index.html','Coming up Home card missing');if(/More tools|ACTIVE PLAYERS|Subs Admin/.test(homeVisible))fail('index.html','unsupported or old Home card content remains');if(!home.includes('data-upcoming'))fail('index.html','Coming up fixtures are not rendered');if(!home.includes('homeShortcut1')||!home.includes('homeShortcut2')||!home.includes('renderHomeShortcut'))fail('index.html','configurable Home shortcuts missing');if(!home.includes('fixture_sync_ignored_updates'))fail('index.html','Home fixture notice does not respect ignored updates');
 if(failed)process.exit(1);console.log('Football PA Core smoke checks passed.');
 const portal=fs.readFileSync('player-portal.html','utf8');
-for(const rpc of ['player_portal_list_players','player_portal_list_players_v2','player_portal_login','player_portal_login_v2','player_portal_first_time_setup','player_portal_first_time_setup_v2','player_portal_change_pin','player_portal_data_v2','player_portal_submit_vote'])if(!portal.includes(rpc))fail('player-portal.html','missing PIN portal RPC '+rpc);
+for(const rpc of ['player_portal_list_players','player_portal_list_players_v2','player_portal_login','player_portal_login_v2','player_portal_first_time_setup','player_portal_first_time_setup_v2','player_portal_change_pin','player_portal_data_v2','player_portal_submit_vote','player_portal_availability','player_portal_set_availability'])if(!portal.includes(rpc))fail('player-portal.html','missing PIN portal RPC '+rpc);
 if(!portal.includes("q.get('pin')==='1'"))fail('player-portal.html','legacy-compatible PIN portal mode missing');if(!portal.includes("q.get('portal')")||!portal.includes('p_portal_token:PORTAL_TOKEN'))fail('player-portal.html','protected Player Portal token support missing');
 if(!portal.includes('historical_team')||!portal.includes('historical'))fail('player-portal.html','historical player/team comparison missing');
 if(!dash.includes("eq('include_in_stats',true)"))fail('dashboard.html','dashboard does not exclude fixtures disabled from statistics');
@@ -38,7 +38,7 @@ if(failed)process.exit(1);
 
 const teamSettingsNavOrder=fs.readFileSync('team-settings.html','utf8');
 if(!teamSettingsNavOrder.includes('Navigation Bar')||!teamSettingsNavOrder.includes('navOrderList')||!teamSettingsNavOrder.includes('normaliseNavOrder'))fail('team-settings.html','Navigation Bar settings missing');
-if(!teamSettingsNavOrder.includes('nav_order:normaliseNavOrder()'))fail('team-settings.html','Navigation order is not persisted');
+if(!teamSettingsNavOrder.includes('nav_order:normaliseNavOrder()'))fail('team-settings.html','Navigation order is not persisted');if(!teamSettingsNavOrder.includes("'availability'")||!teamSettingsNavOrder.includes("availability:'Availability'"))fail('team-settings.html','Availability is missing from configurable navigation');
 if(failed)process.exit(1);
 
 const keeperSettings=fs.readFileSync('team-settings.html','utf8');
@@ -68,6 +68,13 @@ if(!subsFixture.includes('Copy matches + payment link')||!subsFixture.includes('
 if(!subsFixture.includes('No squad has been saved for this fixture yet'))fail('subs.html','pre-match fixture fallback missing');
 if(failed)process.exit(1);
 
+const availability=fs.readFileSync('availability.html','utf8');
+if(!availability.includes('get_team_availability')||!availability.includes('save_fixture_squad'))fail('availability.html','availability data/squad RPC wiring missing');
+if(!availability.includes('Share to WhatsApp')||!availability.includes('tab=availability&fixture='))fail('availability.html','weekly WhatsApp availability share flow missing');
+if(!availability.includes('Season availability')||!availability.includes('response_rate_pct'))fail('availability.html','season availability reporting missing');
+if(!portal.includes('data-tab="availability"')||!portal.includes('data-avail-answer="true"')||!portal.includes('data-avail-answer="false"'))fail('player-portal.html','Yes/No Availability poll UI missing');
+if(failed)process.exit(1);
+
 const votingCentre=fs.readFileSync('voting.html','utf8');if(!votingCentre.includes('player_portal_token')||!votingCentre.includes('&portal='))fail('voting.html','Voting share link is missing the protected Player Portal token');
 if(!votingCentre.includes('Voting match')||!votingCentre.includes('get_voting_centre')||!votingCentre.includes('get_voting_match_snapshot'))fail('voting.html','Voting Centre match-picker history missing');
 if(!votingCentre.includes('Season Voting Table')||!votingCentre.includes('can_view_private_report'))fail('voting.html','private season report link missing');
@@ -80,7 +87,7 @@ if(!legacyVoting.includes('Voting match')||!legacyVoting.includes('Open voting')
 if(!legacyVoting.includes("Who\\'s voted")||!legacyVoting.includes('Still to vote')||!legacyVoting.includes('Dick of the Day'))fail('voting.html','legacy Voting Centre result sections missing');
 if(!legacyVoting.includes('get_voting_match_snapshot')||!legacyVoting.includes('set_voting_open_event'))fail('voting.html','Voting Centre Core RPC wiring missing');
 const portalVote=fs.readFileSync('player-portal.html','utf8');
-if(!portalVote.includes("q.get('tab')==='vote'"))fail('player-portal.html','direct Vote tab link support missing');
+if(!portalVote.includes("const wanted=q.get('tab')")||!portalVote.includes("['availability','vote'].includes(wanted)"))fail('player-portal.html','direct Availability/Vote tab link support missing');
 if(failed)process.exit(1);
 
 const votingShared=fs.readFileSync('voting.html','utf8');if(!votingShared.includes('./core-ui.css')||!votingShared.includes('./core-nav.js')||!votingShared.includes('FootballPANav.mount'))fail('voting.html','Voting Centre must use shared Football PA shell');
@@ -88,7 +95,7 @@ if(failed)process.exit(1);
 
 const matchTactical=fs.readFileSync('match-centre.html','utf8');
 if(matchTactical.includes('function openPicker(slot){if(lineupSaved)return;'))fail('match-centre.html','saved lineup still blocks tactical player picker');
-if(!matchTactical.includes('.pitch.format-11 .slot-shirt .shirt-number{font-size:25px}')||!matchTactical.includes('.pitch.format-11 .slot-shirt .shirt-number{font-size:16px}'))fail('match-centre.html','reduced 11-a-side shirt numbers missing');
+if(!matchTactical.includes('.pitch.format-11 .slot-shirt .shirt-number{font-size:25px}')||!matchTactical.includes('.pitch.format-11 .slot-shirt .shirt-number{font-size:16px}'))fail('match-centre.html','reduced 11-a-side shirt numbers missing');if(!matchTactical.includes('function eligiblePlayers()')||!matchTactical.includes('matchSquadIds.length'))fail('match-centre.html','saved match squad is not used as the Match Centre player pool');
 if(failed)process.exit(1);
 
 const votingOrder=fs.readFileSync('voting.html','utf8');if(!votingOrder.includes(".order('kick_off',{ascending:true})"))fail('voting.html','Voting match picker must be chronological');if(failed)process.exit(1);
