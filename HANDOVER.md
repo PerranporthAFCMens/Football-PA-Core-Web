@@ -488,3 +488,132 @@ The two large Home shortcut cards are now team-configurable in Team Settings →
 ### Next-chat discipline
 
 Before changing anything, fetch the current `dev` branch and this handover. Do not recreate old fixes from memory. Verify whether a reported issue is on GitHub Pages dev preview or Vercel production, because the user actively tests both. Preserve the existing Perranporth workflows when moving them into the generic Core product rather than redesigning them without a request.
+
+
+## Fixture Availability — 23 September 2026
+
+Football PA now has a fixture-based Availability workflow.
+
+### Player response model
+
+Player choices are deliberately binary:
+
+- **Available**
+- **Unavailable**
+
+There is no Unsure option.
+
+Until a player answers, they are shown as **No response**.
+
+Responses are visible to the team. The Availability Centre and Player Portal show the names in all three groups, so availability is not private between players.
+
+### Poll lifecycle
+
+- table: `fixture_availability_polls`
+- table: `fixture_availability_responses`
+- future non-cancelled/non-postponed fixtures automatically receive a poll when Availability is enabled for the team
+- existing future fixtures were backfilled
+- integrity triggers enforce fixture/team/season/player relationships
+- players can change their Yes/No response until kickoff
+- after kickoff, responses are closed for that fixture
+
+Migration:
+- `add_fixture_availability`
+- follow-up stats migration: `fix_availability_future_stats`
+
+### Availability Centre
+
+Page: `availability.html`
+
+The shared team navigation contains **Availability** when `team_features.availability != false`.
+
+The page provides:
+
+- fixture selector
+- Available / Unavailable / No response counts
+- public team name lists for each response state
+- generated weekly WhatsApp message
+- native mobile share / copy fallback
+- manager squad selection from Available players
+- season availability statistics
+
+Availability is also an optional Home shortcut and participates in per-team configurable nav ordering.
+
+### WhatsApp sharing
+
+Football PA remains the source of truth. It does not create a native WhatsApp group poll.
+
+The generated weekly message includes:
+
+- Gameweek / competition
+- opponent and Home/Away
+- venue
+- match date
+- kickoff
+- arrival time
+- protected Player Portal availability link
+
+Arrival currently defaults to **60 minutes before kickoff**.
+
+The protected link opens Player Portal directly on the fixture availability poll using:
+
+`tab=availability&fixture=<fixture_id>`
+
+### Player Portal
+
+Player Portal now has a fifth tab: **Availability**.
+
+The player sees:
+
+- upcoming fixture picker
+- two large buttons: Available / Unavailable
+- their current response
+- live Available / Unavailable / No response counts
+- the player names in each group
+
+PIN sessions use:
+
+- `player_portal_availability`
+- `player_portal_set_availability`
+
+Authenticated linked-player sessions use:
+
+- `get_team_availability`
+- `set_my_fixture_availability`
+
+### Squad selection / Match Centre
+
+Managers save the selected match squad through `save_fixture_squad`.
+
+The Availability Centre only offers players who answered **Available** when building the squad.
+
+Match Centre now treats a saved `match_squads` selection as its player pool for:
+
+- initial formation
+- tactical player picker
+- bench
+- single substitutions
+- multiple substitutions
+
+If no squad has been saved, Match Centre retains the previous fallback and offers the full active team roster.
+
+### Availability statistics
+
+Season player statistics include:
+
+- Games asked
+- Available
+- Unavailable
+- No response
+- Availability %
+- Response rate %
+
+**Availability %** = Available / answered polls.
+
+Future unanswered fixtures do not reduce response rate months in advance. A fixture enters a player's stats once the player answers it, or once the kickoff has passed. The live poll still shows No response immediately.
+
+### Current Perranporth state
+
+The Culdrose away fixture on 26 September 2026 has an Availability poll and is correctly identified as **League GW2**.
+
+No real availability responses were inserted during development tests. Temporary response/squad tests were executed inside rolled-back database transactions.
