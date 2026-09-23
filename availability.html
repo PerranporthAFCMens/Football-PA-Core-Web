@@ -97,7 +97,7 @@ function competitionLabel(f){return String(f?.competition||'').toLowerCase()==='
 function groundLine(f){const vals=[f?.ground_name,f?.ground_address,f?.ground_postcode].filter(Boolean),unique=[...new Set(vals.map(String))];return unique.join(' · ')||'Venue TBC'}
 function playerLine(p){return '<div class="person"><span class="shirt">'+esc(p.shirt_number??'–')+'</span><span>'+esc(p.name)+'</span></div>'}
 function renderList(id,arr){$(id).innerHTML=(arr||[]).map(playerLine).join('')||'<div class="empty">Nobody</div>'}
-function portalLink(f){const token=ctx?.settings?.player_portal_token;if(!token||!f)return'';return 'https://core.footballpa.com/player-portal.html?team='+encodeURIComponent(ctx.team.id)+'&pin=1&portal='+encodeURIComponent(token)+'&tab=availability&fixture='+encodeURIComponent(f.fixture_id)}
+function portalLink(f){const token=ctx?.settings?.player_portal_token;if(!token||!f)return'';const github=location.hostname.endsWith('.github.io'),parts=location.pathname.split('/').filter(Boolean),base=github?location.origin+(parts[0]?'/'+parts[0]:''):'https://core.footballpa.com';return base+'/player-portal.html?team='+encodeURIComponent(ctx.team.id)+'&pin=1&portal='+encodeURIComponent(token)+'&tab=availability&fixture='+encodeURIComponent(f.fixture_id)+(github?'&dev_preview=1':'')}
 function shareText(f){if(!f)return'';return [
   '*'+gameLabel(f)+' - '+shortOpponent(f.opponent)+' ('+venueCode(f)+')*',
   '',
