@@ -70,6 +70,7 @@ if(failed)process.exit(1);
 
 const availability=fs.readFileSync('availability.html','utf8');
 if(!availability.includes('get_team_availability')||!availability.includes('save_fixture_squad'))fail('availability.html','availability data/squad RPC wiring missing');
+if(!availability.includes('set_player_fixture_availability')||!availability.includes('data-set-player-avail'))fail('availability.html','manager availability override controls missing');
 if(!availability.includes('Share to WhatsApp')||!availability.includes('tab=availability&fixture='))fail('availability.html','weekly WhatsApp availability share flow missing');
 if(!availability.includes('Season availability')||!availability.includes('response_rate_pct'))fail('availability.html','season availability reporting missing');
 if(!portal.includes('data-tab="availability"')||!portal.includes('data-avail-answer="true"')||!portal.includes('data-avail-answer="false"'))fail('player-portal.html','Yes/No Availability poll UI missing');
