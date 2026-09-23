@@ -515,11 +515,14 @@ Responses are visible to the team. The Availability Centre and Player Portal sho
 - existing future fixtures were backfilled
 - integrity triggers enforce fixture/team/season/player relationships
 - players can change their Yes/No response until kickoff
+- managers/coaches/owners with match-management capability can set or change a player's availability from Availability Centre with one-tap ✓ / ✕ controls
+- manager-entered responses remain editable by the player afterwards; there is no manager-lock state
 - after kickoff, responses are closed for that fixture
 
 Migration:
 - `add_fixture_availability`
 - follow-up stats migration: `fix_availability_future_stats`
+- manager override migration: `add_manager_availability_override`
 
 ### Availability Centre
 
@@ -532,6 +535,7 @@ The page provides:
 - fixture selector
 - Available / Unavailable / No response counts
 - public team name lists for each response state
+- manager/coach/owner one-tap controls to mark players Available or Unavailable
 - generated weekly WhatsApp message
 - native mobile share / copy fallback
 - manager squad selection from Available players
