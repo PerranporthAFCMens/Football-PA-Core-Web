@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Availability · Football PA</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./core-client.js"></script>
+<script src="./core-context.js"></script>
+<script src="./core-nav.js"></script>
+<link rel="stylesheet" href="./core-ui.css">
+<style>
+.av-wrap{width:min(100% - 24px,980px);margin:18px auto 60px}.hidden{display:none!important}.status{padding:14px;border-radius:14px;background:#fff;border:1px solid #d9e3ec;margin-bottom:12px}.status.bad{color:#a31912;border-color:#efc2bd;background:#fff7f6}.toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}.toolbar select{width:100%;min-height:46px;border:1px solid #cad6e1;border-radius:12px;background:#fff;padding:10px;font:inherit}.fixture-card{margin-top:12px;padding:16px;border:1px solid #dce6ef;border-radius:18px;background:linear-gradient(135deg,#fff,#f5f9fc)}.fixture-title{font-size:21px;font-weight:900}.fixture-meta{margin-top:5px;color:#67798b;font-size:13px;line-height:1.55}.counts{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}.count{border-radius:15px;padding:13px;text-align:center;border:1px solid #dce6ef;background:#fff}.count b{display:block;font-size:27px}.count span{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.count.yes{background:#edf9f1;border-color:#bde2c9;color:#176338}.count.no{background:#fff2f0;border-color:#efc6c0;color:#9b2c23}.count.wait{background:#f3f5f7;color:#667789}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:12px;min-height:44px;padding:10px 14px;font-weight:900;cursor:pointer;background:#e6edf3;color:#102033}.btn.primary{background:var(--fpa-primary,#1357A6);color:#fff}.btn.whatsapp{background:#1f9d55;color:#fff}.btn:disabled{opacity:.5;cursor:default}.share-preview{width:100%;min-height:230px;margin-top:10px;border:1px solid #d4dfe8;border-radius:13px;padding:12px;background:#fbfcfd;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical}.response-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.response-card{background:#fff;border:1px solid #dce6ef;border-radius:16px;padding:14px;min-width:0}.response-card h3{margin:0 0 10px;font-size:15px}.person{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #edf1f4}.person:last-child{border-bottom:0}.shirt{width:29px;height:29px;border-radius:9px;background:#eef3f7;display:grid;place-items:center;font-size:11px;font-weight:900;flex:0 0 29px}.empty{padding:10px;border-radius:10px;background:#f5f7f8;color:#768697;font-size:12px}.squad-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:10px}.squad-player{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid #dce6ef;border-radius:12px;background:#fff;font-weight:800}.squad-player input{width:20px;height:20px}.section{background:#fff;border:1px solid #d9e3ec;border-radius:18px;padding:16px;margin-top:12px}.section h2{margin:0 0 5px;font-size:18px}.muted{color:#718192;font-size:12px}.table-wrap{overflow:auto;margin-top:12px}.stats-table{width:100%;border-collapse:collapse;min-width:690px}.stats-table th,.stats-table td{text-align:left;padding:10px 8px;border-bottom:1px solid #e7edf2;font-size:12px}.stats-table th{font-size:10px;text-transform:uppercase;color:#738294;letter-spacing:.04em}.stats-table td.num{text-align:center}.pill{display:inline-flex;align-items:center;justify-content:center;min-width:42px;border-radius:999px;padding:5px 8px;background:#eef3f7;font-weight:900}.squad-status{font-size:12px;color:#647587;margin-left:auto;align-self:center}
+@media(max-width:720px){.response-grid{grid-template-columns:1fr}.squad-list{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr}.counts{gap:6px}.count{padding:10px 5px}.count b{font-size:23px}.av-wrap{width:100%;padding:0 10px}.share-preview{min-height:250px}}
+</style>
+</head>
+<body>
+<main class="av-wrap fpa-page">
+  <div id="status" class="status">Loading availability…</div>
+  <div id="app" class="hidden">
+    <section class="section">
+      <div class="toolbar">
+        <div>
+          <div class="muted" style="font-weight:900;text-transform:uppercase;letter-spacing:.06em">Availability Centre</div>
+          <h1 style="margin:4px 0 10px">Match availability</h1>
+          <select id="fixtureSelect"></select>
+        </div>
+        <button id="refreshBtn" class="btn">Refresh</button>
+      </div>
+      <div id="fixtureCard" class="fixture-card"></div>
+      <div class="counts">
+        <div class="count yes"><b id="yesCount">0</b><span>Available</span></div>
+        <div class="count no"><b id="noCount">0</b><span>Unavailable</span></div>
+        <div class="count wait"><b id="waitCount">0</b><span>No response</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Weekly WhatsApp message</h2>
+      <div class="muted">Generated from the selected fixture. The link opens the Player Portal directly on this availability poll.</div>
+      <textarea id="sharePreview" class="share-preview" readonly></textarea>
+      <div class="actions" style="margin-top:10px">
+        <button id="shareBtn" class="btn whatsapp">Share to WhatsApp</button>
+        <button id="copyBtn" class="btn">Copy message</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Responses</h2>
+      <div class="muted">Everyone in the team can see these lists.</div>
+      <div class="response-grid" style="margin-top:12px">
+        <div class="response-card"><h3>✅ Available</h3><div id="yesList"></div></div>
+        <div class="response-card"><h3>❌ Unavailable</h3><div id="noList"></div></div>
+        <div class="response-card"><h3>⏳ No response</h3><div id="waitList"></div></div>
+      </div>
+    </section>
+
+    <section id="squadSection" class="section hidden">
+      <h2>Pick squad</h2>
+      <div class="muted">Only players who have said they are available are offered here. Saved squad selections feed into Match Centre.</div>
+      <div class="actions" style="margin-top:10px">
+        <button id="selectAllBtn" class="btn">Select all available</button>
+        <button id="clearBtn" class="btn">Clear</button>
+        <span id="squadStatus" class="squad-status"></span>
+      </div>
+      <div id="squadList" class="squad-list"></div>
+      <div class="actions" style="margin-top:12px">
+        <button id="saveSquadBtn" class="btn primary">Save squad</button>
+        <button id="openMatchBtn" class="btn">Open Match Centre</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Season availability</h2>
+      <div class="muted">Availability % is Yes responses divided by Yes + No responses. Response rate shows how often the player has answered.</div>
+      <div class="table-wrap">
+        <table class="stats-table">
+          <thead><tr><th>Player</th><th>Asked</th><th>Available</th><th>Unavailable</th><th>No response</th><th>Availability</th><th>Response rate</th></tr></thead>
+          <tbody id="statsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+<script>
+const sb=FootballPAClient,$=id=>document.getElementById(id);
+let ctx=null,data=null,selected=null,selectedSquad=new Set();
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const finalStatus=s=>['completed','ft','full_time','complete','finished'].includes(String(s||'').toLowerCase());
+function londonDate(v){return v?new Date(v).toLocaleDateString('en-GB',{timeZone:'Europe/London',weekday:'long',day:'numeric',month:'short'}):'Date TBC'}
+function londonTime(v){return v?new Date(v).toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit',hour12:false}):'TBC'}
+function arrivalTime(v){if(!v)return'TBC';return londonTime(new Date(new Date(v).getTime()-60*60000))}
+function venueCode(f){const v=String(f?.venue||'').toLowerCase();return v==='home'||v==='h'?'H':v==='away'||v==='a'?'A':'N'}
+function shortOpponent(v){return String(v||'Opponent').replace(/\s+(1st|2nd|2nds|3rd|3rds)$/i,'').trim()}
+function gameLabel(f){return String(f?.competition||'').toLowerCase()==='league'&&f?.gameweek_number?'GW'+f.gameweek_number:(f?.competition||'Match')}
+function competitionLabel(f){return String(f?.competition||'').toLowerCase()==='league'&&f?.gameweek_number?'League GW'+f.gameweek_number:(f?.competition||'Fixture')}
+function groundLine(f){const vals=[f?.ground_name,f?.ground_address,f?.ground_postcode].filter(Boolean),unique=[...new Set(vals.map(String))];return unique.join(' · ')||'Venue TBC'}
+function playerLine(p){return '<div class="person"><span class="shirt">'+esc(p.shirt_number??'–')+'</span><span>'+esc(p.name)+'</span></div>'}
+function renderList(id,arr){$(id).innerHTML=(arr||[]).map(playerLine).join('')||'<div class="empty">Nobody</div>'}
+function portalLink(f){const token=ctx?.settings?.player_portal_token;if(!token||!f)return'';return 'https://core.footballpa.com/player-portal.html?team='+encodeURIComponent(ctx.team.id)+'&pin=1&portal='+encodeURIComponent(token)+'&tab=availability&fixture='+encodeURIComponent(f.fixture_id)}
+function shareText(f){if(!f)return'';return [
+  '*'+gameLabel(f)+' - '+shortOpponent(f.opponent)+' ('+venueCode(f)+')*',
+  '',
+  'ℹ️ *MATCH INFO*',
+  '🏆 '+competitionLabel(f),
+  '🆚 '+String(f.opponent||'Opponent'),
+  '🏟️ '+groundLine(f),
+  '📅 '+londonDate(f.kick_off),
+  '⚽️KO '+londonTime(f.kick_off),
+  '🛬 Arrival '+arrivalTime(f.kick_off),
+  '',
+  'Poll below 👇',
+  '',
+  portalLink(f)
+].join('\n')}
+function futureFixture(f){return f?.kick_off&&new Date(f.kick_off).getTime()>Date.now()&&!finalStatus(f.status)}
+function chooseDefault(){const q=new URLSearchParams(location.search),requested=q.get('fixture'),fixtures=data?.fixtures||[];return fixtures.find(f=>f.fixture_id===requested)||fixtures.find(f=>futureFixture(f))||fixtures[fixtures.length-1]||null}
+function renderFixture(){
+  if(!selected)return;
+  $('fixtureCard').innerHTML='<div class="fixture-title">'+esc(gameLabel(selected)+' · '+selected.opponent+' ('+venueCode(selected)+')')+'</div><div class="fixture-meta">'+esc(competitionLabel(selected))+'<br>'+esc(londonDate(selected.kick_off)+' · '+londonTime(selected.kick_off))+'<br>'+esc(groundLine(selected))+'</div>';
+  $('yesCount').textContent=selected.available_count||0;$('noCount').textContent=selected.unavailable_count||0;$('waitCount').textContent=selected.no_response_count||0;
+  renderList('yesList',selected.available);renderList('noList',selected.unavailable);renderList('waitList',selected.no_response);
+  $('sharePreview').value=shareText(selected);
+  renderSquad();
+}
+function renderSquad(){
+  if(!data?.can_manage){$('squadSection').classList.add('hidden');return}
+  $('squadSection').classList.remove('hidden');
+  const available=selected?.available||[],saved=new Set(selected?.saved_squad||[]);
+  if(!selectedSquad.size){selectedSquad=new Set(saved.size?[...saved]:available.map(p=>p.player_id))}
+  $('squadList').innerHTML=available.map(p=>'<label class="squad-player"><input type="checkbox" data-squad-player="'+p.player_id+'" '+(selectedSquad.has(p.player_id)?'checked':'')+'><span>'+esc(p.name)+'</span></label>').join('')||'<div class="empty">No available players yet.</div>';
+  updateSquadStatus();
+}
+function updateSquadStatus(){$('squadStatus').textContent=selectedSquad.size+' selected'}
+function renderStats(){
+  $('statsBody').innerHTML=(data?.player_stats||[]).map(p=>'<tr><td><b>'+esc(p.name)+'</b></td><td class="num">'+p.games_asked+'</td><td class="num">'+p.available+'</td><td class="num">'+p.unavailable+'</td><td class="num">'+p.no_response+'</td><td class="num"><span class="pill">'+(p.availability_pct==null?'–':p.availability_pct+'%')+'</span></td><td class="num"><span class="pill">'+(p.response_rate_pct==null?'–':p.response_rate_pct+'%')+'</span></td></tr>').join('')||'<tr><td colspan="7">No availability data yet.</td></tr>'
+}
+function render(){
+  const fixtures=data?.fixtures||[];
+  $('fixtureSelect').innerHTML=fixtures.map(f=>'<option value="'+f.fixture_id+'">'+esc(londonDate(f.kick_off)+' · '+gameLabel(f)+' · '+f.opponent+' ('+venueCode(f)+')')+'</option>').join('');
+  selected=selected||chooseDefault();if(selected)$('fixtureSelect').value=selected.fixture_id;
+  renderFixture();renderStats();
+  $('status').classList.add('hidden');$('app').classList.remove('hidden');
+}
+async function load(){
+  ctx=await FootballPAContext.resolve();
+  if(ctx.features?.availability===false)throw new Error('Availability is not enabled for this team.');
+  FootballPANav.mount({teamId:ctx.team.id});
+  const {data:payload,error}=await sb.rpc('get_team_availability',{p_team_id:ctx.team.id,p_season_id:ctx.season?.id||null});
+  if(error)throw error;data=payload||{fixtures:[],player_stats:[]};selected=null;selectedSquad=new Set();render()
+}
+async function shareMessage(){const text=shareText(selected);if(!text)return;if(navigator.share){try{await navigator.share({text});return}catch(e){if(e?.name==='AbortError')return}}await copyMessage();alert('Message copied. Paste it into your WhatsApp group.')}
+async function copyMessage(){const text=shareText(selected);if(!text)return;try{await navigator.clipboard.writeText(text);const b=$('copyBtn'),old=b.textContent;b.textContent='Copied';setTimeout(()=>b.textContent=old,1500)}catch{prompt('Copy this message:',text)}}
+async function saveSquad(){if(!selected)return;const b=$('saveSquadBtn'),old=b.textContent;b.disabled=true;b.textContent='Saving…';const {data:count,error}=await sb.rpc('save_fixture_squad',{p_fixture_id:selected.fixture_id,p_player_ids:[...selectedSquad]});b.disabled=false;b.textContent=old;if(error){alert(error.message);return}selected.saved_squad=[...selectedSquad];$('squadStatus').textContent=(count||0)+' players saved';}
+$('fixtureSelect').onchange=()=>{selected=(data.fixtures||[]).find(f=>f.fixture_id===$('fixtureSelect').value)||null;selectedSquad=new Set();renderFixture()};
+$('refreshBtn').onclick=()=>load().catch(e=>{alert(e.message)});
+$('shareBtn').onclick=shareMessage;$('copyBtn').onclick=copyMessage;
+$('squadList').onchange=e=>{const c=e.target.closest('[data-squad-player]');if(!c)return;c.checked?selectedSquad.add(c.dataset.squadPlayer):selectedSquad.delete(c.dataset.squadPlayer);updateSquadStatus()};
+$('selectAllBtn').onclick=()=>{selectedSquad=new Set((selected?.available||[]).map(p=>p.player_id));renderSquad()};
+$('clearBtn').onclick=()=>{selectedSquad=new Set();$('squadList').querySelectorAll('input').forEach(x=>x.checked=false);updateSquadStatus()};
+$('saveSquadBtn').onclick=saveSquad;
+$('openMatchBtn').onclick=()=>{if(selected)location.href=ctx.href('/match-centre.html','fixture='+encodeURIComponent(selected.fixture_id))};
+load().catch(e=>{$('status').textContent='Could not load Availability: '+e.message;$('status').classList.add('bad')});
+</script>
+</body>
+</html>
