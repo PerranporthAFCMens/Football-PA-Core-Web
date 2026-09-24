@@ -33,7 +33,34 @@ const target=q.get('return')||'./index.html';
 function msg(t,bad=false){$('status').textContent=t;$('status').className='status'+(bad?' bad':'')}
 async function loadBrand(){
   const host=String(location.hostname||'').toLowerCase();
-  const {data}=await sb.from('team_domains').select('team_name,club_name,badge_url,primary_colour').eq('hostname',host).eq('active',true).maybeSingle();
+  let data=null;
+
+  const directTeam=q.get('team')||q.get('id')||'';
+  let returnTeam='';
+  try{
+    const returnUrl=new URL(target,location.origin);
+    returnTeam=returnUrl.searchParams.get('team')||returnUrl.searchParams.get('id')||'';
+  }catch(e){}
+  const teamId=directTeam||returnTeam;
+
+  if(teamId){
+    const {data:team}=await sb.from('teams').select('id,name,club_id,badge_url').eq('id',teamId).maybeSingle();
+    if(team){
+      const {data:club}=await sb.from('clubs').select('name,primary_colour,badge_url').eq('id',team.club_id).maybeSingle();
+      data={
+        team_name:team.name,
+        club_name:club?.name||team.name,
+        badge_url:team.badge_url||club?.badge_url||'',
+        primary_colour:club?.primary_colour||''
+      };
+    }
+  }
+
+  if(!data){
+    const res=await sb.from('team_domains').select('team_name,club_name,badge_url,primary_colour').eq('hostname',host).eq('active',true).maybeSingle();
+    data=res.data||null;
+  }
+
   if(!data){$('clubBadge').style.display='none';return}
   if(data.primary_colour)document.documentElement.style.setProperty('--blue',data.primary_colour);
   $('clubName').textContent=data.club_name||data.team_name||'Football PA';
