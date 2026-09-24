@@ -10,7 +10,17 @@ function applyTheme(club){
   root.style.setProperty('--fpa-accent',primary);
   root.style.setProperty('--fpa-header-text',contrast(primary));
 }
+function pathTenant(){
+  const host=String(location.hostname||'').toLowerCase();
+  const path=String(location.pathname||'');
+  if((host==='footballpa.com'||host==='www.footballpa.com')&&/^\/Perranporth(?:\/|$)/i.test(path)){
+    return {team_id:'d5bcdf95-40a2-4596-b044-e9c8bcabecbc',hostname:host,team_name:'Perranporth 1st Team',club_name:'Perranporth AFC',path_base:'/Perranporth'};
+  }
+  return null;
+}
 async function domainTeam(){
+  const tenant=pathTenant();
+  if(tenant)return tenant;
   const host=String(location.hostname||'').toLowerCase();
   if(!host||host==='localhost'||host.endsWith('.vercel.app')||host==='core.footballpa.com'||host==='dev.footballpa.com')return null;
   const {data,error}=await sb.from('team_domains').select('team_id,hostname,team_name,club_name,badge_url,primary_colour,secondary_colour').eq('hostname',host).eq('active',true).maybeSingle();
@@ -88,7 +98,8 @@ async function resolve(opts={}){
   const canManage=!!access.can_manage_team;
 
   const previewSuffix=preview?'&dev_preview=1':'';
-  const pagesBase=location.hostname.endsWith('.github.io')?('/'+location.pathname.split('/').filter(Boolean)[0]):'';
+  const tenant=pathTenant();
+  const pagesBase=tenant?.path_base||(location.hostname.endsWith('.github.io')?('/'+location.pathname.split('/').filter(Boolean)[0]):'');
   const routedPath=path=>pagesBase&&String(path).startsWith('/')?pagesBase+path:path;
   return {
     session,team,club,season,preview,canManage,teamRole,clubRole,domain,access,capabilities:access,
@@ -106,5 +117,5 @@ async function resolve(opts={}){
     }
   };
 }
-window.FootballPAContext={resolve,applyTheme,domainTeam};
+window.FootballPAContext={resolve,applyTheme,domainTeam,pathTenant};
 })();
