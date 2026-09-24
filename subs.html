@@ -104,9 +104,23 @@ function renderSummary(){
   const claims=(D.players||[]).filter(p=>Number(p.claims_paid)>0);
   $('claimBlock').innerHTML=claims.length?'<div class="sectionTitle"><h3>Awaiting confirmation</h3><span>'+claims.reduce((n,p)=>n+Number(p.claims_paid||0),0)+' claim(s)</span></div>'+claims.map(p=>'<div class="debtor" data-open-player="'+esc(p.player_id)+'"><div><b>'+esc(p.name)+'</b><div class="mini">'+p.claims_paid+' payment claim'+(p.claims_paid===1?'':'s')+' to check</div></div><span class="pill claim">Check</span></div>').join(''):'';
 }
+function orderedMatches(){
+  const now=Date.now(),all=(D.matches||[]).slice();
+  const future=all.filter(m=>new Date(m.kick_off).getTime()>=now).sort((a,b)=>new Date(a.kick_off)-new Date(b.kick_off));
+  const past=all.filter(m=>new Date(m.kick_off).getTime()<now).sort((a,b)=>new Date(b.kick_off)-new Date(a.kick_off));
+  return [...future,...past];
+}
+function chooseDefaultMatch(){
+  const all=orderedMatches();
+  if(selectedMatch&&all.some(m=>m.fixture_id===selectedMatch))return selectedMatch;
+  const nextSaved=all.find(m=>new Date(m.kick_off).getTime()>=Date.now()&&m.has_saved_squad);
+  const next=all.find(m=>new Date(m.kick_off).getTime()>=Date.now());
+  return (nextSaved||next||all[0]||{}).fixture_id||'';
+}
 function renderPickers(){
+  selectedMatch=chooseDefaultMatch();
   $('playerPicker').innerHTML='<option value="">Select player…</option>'+(D.players||[]).slice().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>'<option value="'+esc(p.player_id)+'" '+(p.player_id===selectedPlayer?'selected':'')+'>'+esc(p.name)+'</option>').join('');
-  $('matchPicker').innerHTML='<option value="">Select match…</option>'+(D.matches||[]).slice().sort((a,b)=>new Date(b.kick_off)-new Date(a.kick_off)).map(m=>'<option value="'+esc(m.fixture_id)+'" '+(m.fixture_id===selectedMatch?'selected':'')+'>'+esc(fixtureLabel(m))+'</option>').join('');
+  $('matchPicker').innerHTML='<option value="">Select match…</option>'+orderedMatches().map(m=>'<option value="'+esc(m.fixture_id)+'" '+(m.fixture_id===selectedMatch?'selected':'')+'>'+esc(fixtureLabel(m))+'</option>').join('');
 }
 function playerMessage(p){
   const unpaid=(p.matches||[]).filter(m=>m.status==='Not Paid'||m.status==='Unconfirmed');
@@ -133,10 +147,11 @@ function renderMatch(){
   const host=$('matchFile');if(!selectedMatch){host.innerHTML='';return}
   const m=(D.matches||[]).find(x=>x.fixture_id===selectedMatch);if(!m){host.innerHTML='';return}
   const players=matchPlayers(m),due=players.filter(p=>p.status==='Not Paid'||p.status==='Unconfirmed'),paid=players.filter(p=>p.status==='Confirmed Paid');
+  const pay=m.payment_link?'<div class="payBox" style="margin:10px 0"><div class="payBoxTop"><div><b>Collect match subs</b><div class="mini">'+money(D.charge_amount_pence)+' each · '+esc(m.opponent)+'</div></div><div class="bigMoney">'+money(D.charge_amount_pence)+'</div></div><a class="btn purple full" style="display:block;text-align:center;text-decoration:none;margin-top:10px" target="_blank" rel="noopener" href="'+esc(m.payment_link)+'">Open payment link</a><div class="actions" style="margin-top:7px"><button class="btn secondary" data-copy-link="'+esc(m.fixture_id)+'">Copy payment link</button><button class="btn green" data-share-link="'+esc(m.fixture_id)+'">Share payment link</button></div></div>':'<div class="empty" style="margin:10px 0">No payment link is configured for this match.</div>';
   const copy=due.length?'<button class="btn secondary full" style="margin:10px 0 2px" data-copy-match="'+esc(m.fixture_id)+'">Copy outstanding list + payment link</button>':'';
   const note=!m.is_final&&!m.has_saved_squad?'<div class="empty" style="margin:10px 0">No squad has been saved for this fixture yet, so all active players are shown. You can still mark payments received before matchday.</div>':'';
   const rows=players.length?players.map(p=>'<div class="row"><div class="rowTop"><div><div class="matchName">'+esc(p.name)+'</div><div class="mini">'+(p.fallback?'Not yet in saved squad':(p.played?'Played':'Match squad'))+'</div></div><span class="pill '+pillClass(p.status)+'">'+esc(p.status)+'</span></div><div class="actions">'+statusButtons(m.fixture_id,p.player_id,p.status)+'</div></div>').join(''):'<div class="empty">No players are attached to this match yet.</div>';
-  host.innerHTML='<div class="file"><div class="fileHead"><div class="fileHeadTop"><div><h3>'+esc(m.opponent)+'</h3><div class="mini">'+esc(fixtureLabel(m))+' · '+esc(m.competition||'Fixture')+'</div></div><span class="pill paid">'+paid.length+' paid</span></div></div><div class="fileBody">'+note+'<div class="summaryGrid" style="grid-template-columns:1fr 1fr;margin:12px 0"><div class="summaryBox"><b>'+paid.length+'</b><span>Paid</span></div><div class="summaryBox"><b>'+due.length+'</b><span>Outstanding</span></div></div>'+copy+rows+'</div></div>';
+  host.innerHTML='<div class="file"><div class="fileHead"><div class="fileHeadTop"><div><h3>'+esc(m.opponent)+'</h3><div class="mini">'+esc(fixtureLabel(m))+' · '+esc(m.competition||'Fixture')+'</div></div><span class="pill paid">'+paid.length+' paid</span></div></div><div class="fileBody">'+pay+note+'<div class="summaryGrid" style="grid-template-columns:1fr 1fr;margin:12px 0"><div class="summaryBox"><b>'+paid.length+'</b><span>Paid</span></div><div class="summaryBox"><b>'+due.length+'</b><span>Outstanding</span></div></div>'+copy+rows+'</div></div>';
 }
 function setTab(name){tab=name;['summary','player','match'].forEach(v=>{$(v+'View').classList.toggle('hidden',v!==name);document.querySelectorAll('[data-tab="'+v+'"]').forEach(b=>b.classList.toggle('active',v===name))})}
 async function setStatus(btn){
@@ -153,12 +168,27 @@ function copyMatch(id){
   const text=m.opponent+' – subs outstanding\n\n'+due.map(p=>p.name).join('\n')+'\n\n'+money(D.charge_amount_pence)+' each'+(m.payment_link?'\n'+m.payment_link:'');
   copyText(text,'Match payment list copied');
 }
+function paymentShareText(m){
+  return '*💷 Match Subs - '+m.opponent+'*\n\n'+money(D.charge_amount_pence)+' each\n\n'+(m.payment_link||'');
+}
+function copyPaymentLink(id){
+  const m=(D.matches||[]).find(x=>x.fixture_id===id);if(!m?.payment_link)return toast('No payment link available');
+  copyText(m.payment_link,'Payment link copied');
+}
+async function sharePaymentLink(id){
+  const m=(D.matches||[]).find(x=>x.fixture_id===id);if(!m?.payment_link)return toast('No payment link available');
+  const text=paymentShareText(m);
+  if(navigator.share){try{await navigator.share({text});return}catch(e){if(e?.name==='AbortError')return}}
+  await copyText(text,'Payment message copied');
+}
 document.addEventListener('click',e=>{
   const t=e.target.closest('[data-tab]');if(t){setTab(t.dataset.tab);return}
   const op=e.target.closest('[data-open-player]');if(op){selectedPlayer=op.dataset.openPlayer;setTab('player');renderPickers();renderPlayer();return}
   const st=e.target.closest('[data-status]');if(st){setStatus(st);return}
   const cp=e.target.closest('[data-copy-player]');if(cp){const p=(D.players||[]).find(x=>x.player_id===cp.dataset.copyPlayer);if(p)copyText(playerMessage(p),'Player payment details copied');return}
   const cm=e.target.closest('[data-copy-match]');if(cm){copyMatch(cm.dataset.copyMatch);return}
+  const cl=e.target.closest('[data-copy-link]');if(cl){copyPaymentLink(cl.dataset.copyLink);return}
+  const sl=e.target.closest('[data-share-link]');if(sl){sharePaymentLink(sl.dataset.shareLink);return}
 });
 $('playerPicker').onchange=()=>{selectedPlayer=$('playerPicker').value;renderPlayer()};
 $('matchPicker').onchange=()=>{selectedMatch=$('matchPicker').value;renderMatch()};
