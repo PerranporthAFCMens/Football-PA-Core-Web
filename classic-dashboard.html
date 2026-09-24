@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <style>
+    :root{
+      --bg:#0f1115;--panel:#171a21;--panel2:#1d222b;--text:#f4f7fb;--muted:#9aa4b2;
+      --blue:#1684ff;--blue2:#65b3ff;--red:#ff4d4f;--green:#26c281;--line:#2a303b;--gold:#f4c95d;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+    .wrap{max-width:1500px;margin:0 auto;padding:18px}
+    .hero{background:linear-gradient(135deg,#11151c,#172b46);border:1px solid #23324a;border-radius:20px;padding:18px 20px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden}
+    .hero:after{content:"";position:absolute;inset:auto -100px -160px auto;width:380px;height:380px;border-radius:50%;background:rgba(22,132,255,.14)}
+    .badge{width:84px;height:84px;object-fit:contain;background:white;border-radius:50%;padding:5px;z-index:1}
+    .hero h1{margin:0 0 4px;font-size:30px}.hero .sub{color:var(--muted);font-size:15px}.heroActions{margin-left:auto;display:flex;gap:10px;z-index:2}.refreshBtn,.backBtn{text-decoration:none;width:44px;height:44px;border:1px solid #ffffff33;border-radius:50%;background:#ffffff12;color:#fff;font-size:25px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}.backBtn{font-size:22px;font-weight:700}.refreshBtn:active,.backBtn:active{transform:scale(.96);background:#ffffff20}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+    select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:180px}
+    .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+    .kpi{background:linear-gradient(180deg,#122743,#0f1e31);border:1px solid #20446e;border-radius:14px;padding:14px;text-align:center}
+    .kpi .v{font-size:28px;font-weight:800}.kpi .l{font-size:12px;color:#a9c9ec;margin-top:4px;text-transform:uppercase;letter-spacing:.6px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;overflow:hidden}
+    .panel h2{font-size:17px;margin:0 0 12px}.panel .hint{font-size:12px;color:var(--muted);margin-top:-7px;margin-bottom:10px}
+    .barrow{display:grid;grid-template-columns:minmax(110px,190px) 1fr 46px;align-items:center;gap:8px;margin:8px 0;font-size:13px}
+    .track{height:22px;background:#0d1015;border-radius:7px;overflow:hidden;border:1px solid #232a35;display:flex}
+    .seg{height:100%;min-width:0}.seg.league{background:var(--blue)}.seg.cup{background:#6f8cff}.seg.friendly{background:#61c0bf}.seg.other{background:#9a72df}.seg.goalContrib{background:var(--blue)}.seg.assistContrib{background:var(--gold)}
+    .value{text-align:right;font-weight:700}
+    .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:4px 0 10px}.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+    .timeline{display:flex;align-items:flex-end;gap:5px;height:200px;padding-top:10px;overflow-x:auto}
+    .gamecol{min-width:34px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px}
+    .cols{height:155px;display:flex;align-items:flex-end;gap:3px}.gbar,.cbar{width:12px;border-radius:3px 3px 0 0}.gbar{background:var(--blue)}.cbar{background:var(--red)}
+    .xlabel{font-size:9px;color:var(--muted);writing-mode:vertical-rl;transform:rotate(180deg);height:38px;overflow:hidden}
+    .simplebars{display:flex;align-items:flex-end;gap:18px;height:185px;padding:15px 6px 0}.simplecat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}.simplecat .barwrap{height:140px;width:100%;display:flex;gap:5px;align-items:flex-end;justify-content:center}.b{width:36%;min-width:18px;border-radius:4px 4px 0 0}.b.goal{background:var(--blue)}.b.conc{background:var(--red)}.catlab{font-size:11px;color:var(--muted);margin-top:6px}.barnum{font-size:11px;margin-bottom:3px}
+    .donutwrap{display:flex;align-items:center;gap:18px}.donut{width:150px;height:150px;border-radius:50%;position:relative;flex:0 0 150px}.donut:after{content:"";position:absolute;inset:34px;background:var(--panel);border-radius:50%}.donutlegend{font-size:12px;line-height:1.9}.donutlegend b{float:right;margin-left:20px}
+    .pitch{position:relative;background:#528844;border:3px solid #d9e8d2;border-radius:5px;aspect-ratio:1.30/1;overflow:hidden}
+    .pitchSvg{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none}
+    .zone{position:absolute;border:1px solid rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;text-shadow:0 1px 2px #000;transition:.2s;background:rgba(22,132,255,.08);z-index:2}
+    .zone small{font-size:10px;font-weight:400;display:block}.zone .znum{text-align:center}
+    .z1{left:37%;top:0;width:26%;height:12%}.z2{left:37%;top:12%;width:26%;height:11%}.z3{left:37%;top:23%;width:26%;height:13%}.z4{left:20%;top:0;width:17%;height:36%}.z5{left:63%;top:0;width:17%;height:36%}.z6{left:0;top:0;width:20%;height:36%}.z7{left:80%;top:0;width:20%;height:36%}.z8{left:20%;top:36%;width:60%;height:26%}.z9{left:0;top:36%;width:20%;height:64%}.z10{left:20%;top:62%;width:60%;height:38%}.z11{left:80%;top:36%;width:20%;height:64%}
+    .empty{color:var(--muted);font-size:13px;padding:18px 0;text-align:center}.footer{color:var(--muted);font-size:11px;text-align:center;padding:8px 0 20px}.loading{padding:60px;text-align:center;color:var(--muted)}
+    @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.kpis .kpi:last-child{grid-column:span 2}.grid2,.grid3{grid-template-columns:1fr}.hero h1{font-size:24px}.badge{width:66px;height:66px}.wrap{padding:10px}.barrow{grid-template-columns:110px 1fr 38px}}
+    @media(max-width:700px){.controls{grid-template-columns:1fr!important}}
+    .compareToolbar{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin:0 0 14px;flex-wrap:wrap}.compareToolbar label{font-size:13px;color:var(--muted);font-weight:700}.compareToolbar select{min-width:220px}.compareNote{font-size:13px;color:var(--muted);margin:-4px 0 14px}
+    @media(max-width:700px){.compareToolbar{display:grid;grid-template-columns:1fr;justify-content:stretch}.compareToolbar select{width:100%;min-width:0}}
+  </style>
+  <link rel="apple-touch-icon" sizes="180x180" href="./Club_Logo.png">
+  <link rel="icon" type="image/png" href="./Club_Logo.png">
+  
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./core-client.js"></script>
+  <script src="./core-context.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div id="loading" class="loading">Loading season dashboard…</div>
+  <div id="app" style="display:none">
+    <div class="hero"><img id="badge" class="badge" alt="Perranporth AFC"><div><h1 id="title">Perranporth AFC</h1><div class="sub" id="subtitle"></div></div><div class="heroActions"><a id="classicBack" class="backBtn" href="./" aria-label="Back to home" title="Back to home">←</a><a id="classicRefresh" class="refreshBtn" href="./classic-dashboard.html" aria-label="Refresh dashboard" title="Refresh">↻</a></div></div>
+    <div class="controls"><select id="seasonMode"></select><select id="competition"></select><select id="venue"><option value="All">All venues</option><option>Home</option><option>Away</option><option>Neutral</option></select></div>
+    <div id="comparisonPanel" style="display:none"></div>
+    <div id="detailView">
+      <div class="kpis"><div class="kpi"><div class="v" id="games">0</div><div class="l">Games</div></div><div class="kpi"><div class="v" id="goals">0</div><div class="l">Goals</div></div><div class="kpi"><div class="v" id="gpg">0.00</div><div class="l">Goals / Game</div></div><div class="kpi"><div class="v" id="cpg">0.00</div><div class="l">Conceded / Game</div></div><div class="kpi"><div class="v" id="touchAvg">—</div><div class="l">Touches to Finish</div></div></div>
+      <div class="grid2"><div class="panel"><h2>Top Goalscorers</h2><div id="scorers"></div></div><div class="panel"><h2>Top Assists</h2><div id="assists"></div></div></div>
+      <div class="panel"><h2>Goals vs Conceded by Match</h2><div class="legend"><span><i class="dot" style="background:var(--blue)"></i>Goals</span><span><i class="dot" style="background:var(--red)"></i>Conceded</span></div><div id="matchTimeline" class="timeline"></div></div>
+      <div class="grid2"><div class="panel"><h2>Player Contributions</h2><div class="legend"><span><i class="dot" style="background:var(--blue)"></i>Goals</span><span><i class="dot" style="background:var(--gold)"></i>Assists</span></div><div id="contrib"></div></div><div class="panel"><h2>Time Impact</h2><div class="legend"><span><i class="dot" style="background:var(--blue)"></i>Goals</span><span><i class="dot" style="background:var(--red)"></i>Conceded</span></div><div id="timeImpact" class="simplebars"></div></div></div>
+      <div class="grid3"><div class="panel"><h2>Minutes of Goals</h2><div id="goalMinutes" class="simplebars"></div></div><div class="panel"><h2>Touches by Scorer</h2><div id="touches" class="simplebars"></div></div><div class="panel"><h2>Goal Type</h2><div id="goalType"></div></div></div>
+      <div class="grid2"><div class="panel"><h2>Goal Locations</h2><div id="goalPitch" class="pitch"></div></div><div class="panel"><h2>Assist Locations</h2><div id="assistPitch" class="pitch"></div></div></div>
+      <div class="grid2"><div class="panel"><h2>Goals Conceded</h2><div id="concededBands" class="simplebars"></div></div><div class="panel"><h2>Conceded Locations</h2><div id="concededPitch" class="pitch"></div><div id="concededPitchEmpty" class="empty" style="display:none">No conceded-location data recorded yet.</div></div></div>
+    </div>
+    <div class="footer" id="updated"></div>
+  </div>
+</div>
+<script>
+let BUNDLE=null,DATA=null,HISTORIC_LOADING=false;
+const DASH_URL='https://hennzggqaquevqgiucqn.supabase.co/functions/v1/perranporth-classic-dashboard';
+const DASH_KEY='sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW';
+const LOCAL_CACHE='pmd_dashboard_current_v1';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function isOppEvent(e){return e.type==='Conceded Goal'||(e.type==='Goal'&&e.team==='Opposition')}
+function isOurGoal(e){return e.type==='Goal'&&e.team!=='Opposition'}
+function band(min){const m=Number(min||0);if(m<=22)return'0–22';if(m<=45)return'23–45';if(m<=67)return'46–67';return'68–90+'}
+function compClass(c){c=String(c||'').toLowerCase();if(c.includes('league'))return'league';if(c.includes('cup'))return'cup';if(c.includes('friendly'))return'friendly';return'other'}
+function filteredMatches(){const c=$('competition').value,v=$('venue').value;return DATA.matches.filter(m=>(c==='All'||m.competition===c)&&(v==='All'||m.venue===v))}
+function allEvents(ms){return ms.flatMap(m=>m.events.map(e=>({...e,competition:m.competition,matchId:m.matchId}))) }
+function sum(a){return a.reduce((x,y)=>x+y,0)}
+function fmt(n,d=2){return Number(n||0).toFixed(d)}
+function breakdown(events,field){const out={};events.forEach(e=>{const n=e[field];if(!n)return;if(!out[n])out[n]={total:0,comps:{}};out[n].total++;out[n].comps[e.competition]=(out[n].comps[e.competition]||0)+1});return out}
+function renderRank(id,obj,limit=8){const rows=Object.entries(obj).sort((a,b)=>b[1].total-a[1].total||a[0].localeCompare(b[0])).slice(0,limit);const max=rows.length?rows[0][1].total:1;$(id).innerHTML=rows.length?rows.map(([name,x])=>{const segs=Object.entries(x.comps).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<span class="seg ${compClass(c)}" style="width:${(n/max)*100}%" title="${esc(c)}: ${n}"></span>`).join('');return`<div class="barrow"><div>${esc(name)}</div><div class="track">${segs}</div><div class="value">${x.total}</div></div>`}).join(''):'<div class="empty">No data yet</div>'}
+function renderContrib(id,obj,limit=10){const rows=Object.entries(obj).sort((a,b)=>b[1].total-a[1].total||b[1].goals-a[1].goals||a[0].localeCompare(b[0])).slice(0,limit);const max=rows.length?rows[0][1].total:1;$(id).innerHTML=rows.length?rows.map(([name,x])=>{const goalW=(x.goals/max)*100,assistW=(x.assists/max)*100;return`<div class="barrow"><div>${esc(name)}</div><div class="track"><span class="seg goalContrib" style="width:${goalW}%" title="Goals: ${x.goals}"></span><span class="seg assistContrib" style="width:${assistW}%" title="Assists: ${x.assists}"></span></div><div class="value">${x.total}</div></div>`}).join(''):'<div class="empty">No data yet</div>'}
+function renderTimeline(ms){const mx=Math.max(1,...ms.map(m=>Math.max(m.ourScore,m.oppScore)));$('matchTimeline').innerHTML=ms.length?ms.map(m=>`<div class="gamecol" title="${esc(m.date)} · ${esc(m.opponent)} · ${m.ourScore}-${m.oppScore}"><div class="cols"><div class="gbar" style="height:${(m.ourScore/mx)*145}px"></div><div class="cbar" style="height:${(m.oppScore/mx)*145}px"></div></div><div class="xlabel">${esc(m.opponent)}</div></div>`).join(''):'<div class="empty">No matches yet</div>'}
+function countsByBand(events,pred){const cats=['0–22','23–45','46–67','68–90+'],o={};cats.forEach(c=>o[c]=0);events.filter(pred).forEach(e=>o[band(e.displayMinute)]++);return o}
+function renderDualBands(id,a,b){const cats=Object.keys(a),mx=Math.max(1,...cats.map(c=>Math.max(a[c]||0,b[c]||0)));$(id).innerHTML=cats.map(c=>`<div class="simplecat"><div class="barwrap"><div><div class="barnum">${a[c]||0}</div><div class="b goal" style="height:${((a[c]||0)/mx)*120}px"></div></div><div><div class="barnum">${b[c]||0}</div><div class="b conc" style="height:${((b[c]||0)/mx)*120}px"></div></div></div><div class="catlab">${c}</div></div>`).join('')}
+function renderSingleBars(id,obj){const cats=Object.keys(obj),mx=Math.max(1,...cats.map(c=>obj[c]||0));$(id).innerHTML=cats.map(c=>`<div class="simplecat"><div class="barwrap"><div><div class="barnum">${obj[c]||0}</div><div class="b goal" style="height:${((obj[c]||0)/mx)*120}px;width:28px"></div></div></div><div class="catlab">${esc(c)}</div></div>`).join('')}
+function renderDonut(id,obj){const entries=Object.entries(obj).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);if(!entries.length){$(id).innerHTML='<div class="empty">No data yet</div>';return}const total=sum(entries.map(x=>x[1]));const colors=['#1684ff','#6f8cff','#61c0bf','#f4c95d','#9a72df','#ff7b7d'];let acc=0,parts=[];entries.forEach(([k,v],i)=>{const s=acc/total*360;acc+=v;const e=acc/total*360;parts.push(`${colors[i%colors.length]} ${s}deg ${e}deg`)});$(id).innerHTML=`<div class="donutwrap"><div class="donut" style="background:conic-gradient(${parts.join(',')})"></div><div class="donutlegend">${entries.map(([k,v],i)=>`<div><i class="dot" style="background:${colors[i%colors.length]}"></i>${esc(k||'Other')} <b>${v}</b></div>`).join('')}</div></div>`}
+function zoneKey(z){const m=String(z||'').match(/(\d+)/);return m?Number(m[1]):0}
+function renderPitch(id,events,field,emptyId){const counts={};events.forEach(e=>{const z=zoneKey(e[field]);if(z)counts[z]=(counts[z]||0)+1});const mx=Math.max(1,...Object.values(counts));const pitchSvg=`<svg class="pitchSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="100" x2="100" y2="100" stroke="rgba(255,255,255,.72)" stroke-width="0.45"/><rect x="20" y="0" width="60" height="36" fill="none" stroke="rgba(255,255,255,.72)" stroke-width="0.45"/><rect x="36.5" y="0" width="27" height="12" fill="none" stroke="rgba(255,255,255,.72)" stroke-width="0.45"/><rect x="44" y="0" width="12" height="2.2" fill="none" stroke="rgba(255,255,255,.82)" stroke-width="0.45"/><circle cx="50" cy="24" r="0.55" fill="rgba(255,255,255,.9)"/><path d="M 35.2 36 A 18.5 18.5 0 0 0 64.8 36" fill="none" stroke="rgba(255,255,255,.72)" stroke-width="0.45" stroke-linecap="round"/></svg>`;$(id).innerHTML=pitchSvg+Array.from({length:11},(_,i)=>{const z=i+1,n=counts[z]||0,alpha=n?0.18+0.62*(n/mx):0.06;return`<div class="zone z${z}" style="background:rgba(22,132,255,${alpha})" title="Zone ${z}: ${n}"><div class="znum">${n}<small>Z${z}</small></div></div>`}).join('');if(emptyId)$(emptyId).style.display=Object.keys(counts).length?'none':'block'}
+function seasonDataWithMatches_(data,matches){return Object.assign({},data,{matches:[...(matches||[])]})}
+function seasonSummary(data){const ms=data&&data.matches?data.matches:[];const ev=ms.flatMap(m=>(m.events||[]).map(e=>({...e,competition:m.competition})));const goals=ev.filter(isOurGoal),conc=ev.filter(isOppEvent);const scorers={},assists={};goals.forEach(e=>{if(e.player)scorers[e.player]=(scorers[e.player]||0)+1;if(e.secondaryPlayer)assists[e.secondaryPlayer]=(assists[e.secondaryPlayer]||0)+1});const top=obj=>Object.entries(obj).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,5);return{games:ms.length,goals:goals.length,conceded:conc.length,gpg:ms.length?goals.length/ms.length:0,cpg:ms.length?conc.length/ms.length:0,scorers:top(scorers),assists:top(assists)}}
+function compareSeasonCard(data){const s=seasonSummary(data);const leaderRows=rows=>rows.length?rows.map(([n,v],i)=>`<div class="barrow"><div>${i+1}. ${esc(n)}</div><div></div><div class="value">${v}</div></div>`).join(''):'<div class="empty">No data yet</div>';return`<div class="panel"><h2>${esc(data.season)}</h2><div class="kpis" style="margin-bottom:16px"><div class="kpi"><div class="v">${s.games}</div><div class="l">Games</div></div><div class="kpi"><div class="v">${s.goals}</div><div class="l">Goals</div></div><div class="kpi"><div class="v">${s.gpg.toFixed(2)}</div><div class="l">Goals / Game</div></div><div class="kpi"><div class="v">${s.cpg.toFixed(2)}</div><div class="l">Conceded / Game</div></div></div><h3>Top Goalscorers</h3>${leaderRows(s.scorers)}<h3 style="margin-top:16px">Top Assists</h3>${leaderRows(s.assists)}</div>`}
+function comparisonSets_(){const currentMatches=(BUNDLE.current&&BUNDLE.current.matches)||[],historicMatches=(BUNDLE.historic&&BUNDLE.historic.matches)||[],basis=$('compareBasis')?$('compareBasis').value:'same';if(basis==='full')return{current:seasonDataWithMatches_(BUNDLE.current,currentMatches),historic:seasonDataWithMatches_(BUNDLE.historic,historicMatches),note:`All available matches: ${currentMatches.length} in ${BUNDLE.current.season} vs ${historicMatches.length} in ${BUNDLE.historic.season}.`};const n=Math.min(currentMatches.length,historicMatches.length);return{current:seasonDataWithMatches_(BUNDLE.current,currentMatches.slice(0,n)),historic:seasonDataWithMatches_(BUNDLE.historic,historicMatches.slice(0,n)),note:`Same stage comparison: first ${n} game${n===1?'':'s'} of each season.`}}
+function renderComparison(){const panel=$('comparisonPanel'),currentGames=(BUNDLE.current&&BUNDLE.current.matches?BUNDLE.current.matches.length:0),historicGames=(BUNDLE.historic&&BUNDLE.historic.matches?BUNDLE.historic.matches.length:0),existingBasis=$('compareBasis')?$('compareBasis').value:'same',sets=comparisonSets_();panel.innerHTML=`<div class="compareToolbar"><label for="compareBasis">Compare using</label><select id="compareBasis" onchange="renderComparison()"><option value="same" ${existingBasis==='same'?'selected':''}>Same stage (${Math.min(currentGames,historicGames)} games each)</option><option value="full" ${existingBasis==='full'?'selected':''}>All available games</option></select></div><div class="compareNote">${esc(sets.note)}</div><div class="grid2">${compareSeasonCard(sets.current)}${compareSeasonCard(sets.historic)}</div>`}
+function populateFilters(){const cval=$('competition').value||'All',vval=$('venue').value||'All';const comps=[...new Set(DATA.matches.map(m=>m.competition))].filter(Boolean).sort();$('competition').innerHTML='<option value="All">All competitions</option>'+comps.map(c=>`<option>${esc(c)}</option>`).join('');$('competition').value=comps.includes(cval)?cval:'All';$('venue').value=['All','Home','Away','Neutral'].includes(vval)?vval:'All'}
+function ensureSeasonOptions(){if(!$('seasonMode').options.length){$('seasonMode').innerHTML=`<option value="current">${esc(BUNDLE.current.season)}</option><option value="historic">2025/26</option><option value="compare">Compare seasons</option>`;$('seasonMode').onchange=changeSeasonMode;$('competition').onchange=render;$('venue').onchange=render}}
+function loadHistoric(targetMode){if(HISTORIC_LOADING)return;HISTORIC_LOADING=true;$('subtitle').textContent='Loading historic season…';loadEdge('getHistoricalDashboardData',historic=>{HISTORIC_LOADING=false;if(!historic){$('seasonMode').value='current';changeSeasonMode();return}BUNDLE.historic=historic;$('seasonMode').value=targetMode;changeSeasonMode()},()=>{HISTORIC_LOADING=false;$('seasonMode').value='current';changeSeasonMode()})}
+function changeSeasonMode(){const mode=$('seasonMode').value;if((mode==='historic'||mode==='compare')&&!BUNDLE.historic){loadHistoric(mode);return}if(mode==='compare'){$('comparisonPanel').style.display='block';$('detailView').style.display='none';$('competition').disabled=true;$('venue').disabled=true;$('subtitle').textContent=`${BUNDLE.current.season} vs ${BUNDLE.historic.season} Season Comparison`;renderComparison();return}DATA=(mode==='historic'&&BUNDLE.historic)?BUNDLE.historic:BUNDLE.current;$('comparisonPanel').style.display='none';$('detailView').style.display='block';$('competition').disabled=false;$('venue').disabled=false;$('subtitle').textContent=`Season ${DATA.season} Data Breakdown`;populateFilters();render()}
+function render(){const ms=filteredMatches(),ev=allEvents(ms),goals=ev.filter(isOurGoal),conc=ev.filter(isOppEvent);$('games').textContent=ms.length;$('goals').textContent=goals.length;$('gpg').textContent=ms.length?fmt(goals.length/ms.length):'0.00';$('cpg').textContent=ms.length?fmt(conc.length/ms.length):'0.00';const touches=goals.map(e=>e.touches).filter(n=>Number.isFinite(n)&&n>0);$('touchAvg').textContent=touches.length?fmt(sum(touches)/touches.length):'—';renderRank('scorers',breakdown(goals,'player'));renderRank('assists',breakdown(goals,'secondaryPlayer'));renderTimeline(ms);const contrib={};goals.forEach(e=>{if(e.player){if(!contrib[e.player])contrib[e.player]={total:0,goals:0,assists:0};contrib[e.player].goals++;contrib[e.player].total++}if(e.secondaryPlayer){if(!contrib[e.secondaryPlayer])contrib[e.secondaryPlayer]={total:0,goals:0,assists:0};contrib[e.secondaryPlayer].assists++;contrib[e.secondaryPlayer].total++}});renderContrib('contrib',contrib,10);const gb=countsByBand(ev,isOurGoal),cb=countsByBand(ev,isOppEvent);renderDualBands('timeImpact',gb,cb);renderSingleBars('goalMinutes',gb);const touchCounts={'1':0,'2':0,'3':0,'4+':0};touches.forEach(n=>{if(n===1)touchCounts['1']++;else if(n===2)touchCounts['2']++;else if(n===3)touchCounts['3']++;else touchCounts['4+']++});renderSingleBars('touches',touchCounts);const types={};goals.forEach(e=>{const k=e.goalType||'Other';types[k]=(types[k]||0)+1});renderDonut('goalType',types);renderPitch('goalPitch',goals,'goalZone');renderPitch('assistPitch',goals.filter(e=>e.secondaryPlayer),'assistZone');renderSingleBars('concededBands',cb);renderPitch('concededPitch',conc,'goalZone','concededPitchEmpty')}
+function applyCurrent(data,quick){if(!data)return;try{localStorage.setItem(LOCAL_CACHE,JSON.stringify(data))}catch(e){}const first=!BUNDLE;if(!BUNDLE)BUNDLE={current:data,historic:null};else BUNDLE.current=data;ensureSeasonOptions();$('title').textContent=data.teamName||'Perranporth AFC';$('badge').src=data.badgeUrl||'';$('loading').style.display='none';$('app').style.display='block';const mode=$('seasonMode').value||'current';if(first||mode==='current'){DATA=data;$('seasonMode').value='current';$('subtitle').textContent=`Season ${data.season} Data Breakdown`;populateFilters();render()}$('updated').textContent=quick?`Quick view · Updated ${data.generatedAt} · Refreshing live…`:`Live from match data · Updated ${data.generatedAt}`}
+async function loadEdge(action,onSuccess,onFailure){
+  try{
+    const res=await fetch(DASH_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':DASH_KEY},body:JSON.stringify({action,args:[]}),cache:'no-store'});
+    const body=await res.json();
+    if(!res.ok||body.ok!==true)throw new Error(body.error||'Could not load data');
+    onSuccess(body.result);
+  }catch(err){if(onFailure)onFailure(err)}
+}
+function loadFresh(){loadEdge('getPublicDashboardData',data=>applyCurrent(data,false),err=>{if(!BUNDLE)$('loading').textContent='Could not load dashboard: '+(err&&err.message?err.message:err);else $('updated').textContent='Showing saved view · live refresh failed'})}
+function startDashboard(){let local=null;try{local=JSON.parse(localStorage.getItem(LOCAL_CACHE)||'null')}catch(e){}if(local){applyCurrent(local,true);loadFresh()}else{loadFresh()}}
+async function bootClassicDashboard(){
+  try{
+    const ctx=await FootballPAContext.resolve({teamId:'d5bcdf95-40a2-4596-b044-e9c8bcabecbc'});
+    document.getElementById('classicBack').href=ctx.href('/index.html');
+    document.getElementById('classicRefresh').href=ctx.href('/classic-dashboard.html');
+    startDashboard();
+  }catch(e){
+    document.getElementById('loading').textContent='Could not open Classic Dashboard: '+(e&&e.message?e.message:e);
+  }
+}
+bootClassicDashboard();
+</script>
+</body>
+</html>
