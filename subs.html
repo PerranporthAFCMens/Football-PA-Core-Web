@@ -47,6 +47,7 @@ h2,h3{margin:0}h2{font-size:20px}.muted{color:var(--muted);font-size:12px;line-h
       </div>
       <section id="summaryView">
         <div class="sectionTitle"><h3>Outstanding</h3><span>Tap a player to open their file</span></div>
+        <div id="nextSubsMatch" style="margin-bottom:14px"></div>
         <div id="outstandingList"></div>
         <div id="claimBlock" style="margin-top:12px"></div>
       </section>
@@ -68,7 +69,8 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=p=>'£'+((Number(p)||0)/100).toFixed(2);
 const fmt=v=>v?new Date(v).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):'Date TBC';
-let club,team,season,D={players:[],matches:[],roster:[],summary:{}},tab='summary',selectedPlayer='',selectedMatch='',busy=false;
+const pageQuery=new URLSearchParams(location.search),requestedFixture=pageQuery.get('fixture')||'';
+let club,team,season,D={players:[],matches:[],roster:[],summary:{}},tab=requestedFixture?'match':'summary',selectedPlayer='',selectedMatch=requestedFixture,busy=false;
 
 function toast(msg){const t=$('toast');t.textContent=msg;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>t.style.display='none',2200)}
 function pillClass(s){if(s==='Confirmed Paid')return'paid';if(s==='Claims Paid')return'claim';if(s==='Not Paid'||s==='Unconfirmed')return'owed';if(s==='N/A')return'na';return'unknown'}
@@ -103,6 +105,8 @@ function renderSummary(){
   $('outstandingList').innerHTML=due.length?due.map(p=>'<div class="debtor" data-open-player="'+esc(p.player_id)+'"><div><b>'+esc(p.name)+'</b><div class="mini">'+p.payment_due_games+' game'+(p.payment_due_games===1?'':'s')+' to pay</div></div><div class="debtorAmount">'+money(p.amount_due_pence)+' ›</div></div>').join(''):'<div class="success">Nobody currently owes subs.</div>';
   const claims=(D.players||[]).filter(p=>Number(p.claims_paid)>0);
   $('claimBlock').innerHTML=claims.length?'<div class="sectionTitle"><h3>Awaiting confirmation</h3><span>'+claims.reduce((n,p)=>n+Number(p.claims_paid||0),0)+' claim(s)</span></div>'+claims.map(p=>'<div class="debtor" data-open-player="'+esc(p.player_id)+'"><div><b>'+esc(p.name)+'</b><div class="mini">'+p.claims_paid+' payment claim'+(p.claims_paid===1?'':'s')+' to check</div></div><span class="pill claim">Check</span></div>').join(''):'';
+  const next=orderedMatches().find(m=>new Date(m.kick_off).getTime()>=Date.now());
+  $('nextSubsMatch').innerHTML=next?'<div class="sectionTitle"><h3>Next match</h3><span>Subs collection</span></div><div class="file"><div class="fileHead"><div class="fileHeadTop"><div><h3>'+esc(next.opponent)+'</h3><div class="mini">'+esc(fixtureLabel(next))+' · '+esc(next.competition||'Fixture')+'</div></div><span class="pill '+(next.has_saved_squad?'paid':'claim')+'">'+(next.has_saved_squad?'Squad saved':'No squad yet')+'</span></div></div><div class="fileBody"><button class="btn primary full" data-open-match="'+esc(next.fixture_id)+'">Open this match</button>'+(next.payment_link?'<button class="btn green full" style="margin-top:7px" data-share-link="'+esc(next.fixture_id)+'">Share £'+(Number(D.charge_amount_pence||0)/100).toFixed(2)+' payment link</button>':'')+'</div></div>':'';
 }
 function orderedMatches(){
   const now=Date.now(),all=(D.matches||[]).slice();
@@ -112,6 +116,7 @@ function orderedMatches(){
 }
 function chooseDefaultMatch(){
   const all=orderedMatches();
+  if(requestedFixture&&all.some(m=>m.fixture_id===requestedFixture))return requestedFixture;
   if(selectedMatch&&all.some(m=>m.fixture_id===selectedMatch))return selectedMatch;
   const nextSaved=all.find(m=>new Date(m.kick_off).getTime()>=Date.now()&&m.has_saved_squad);
   const next=all.find(m=>new Date(m.kick_off).getTime()>=Date.now());
@@ -184,6 +189,7 @@ async function sharePaymentLink(id){
 document.addEventListener('click',e=>{
   const t=e.target.closest('[data-tab]');if(t){setTab(t.dataset.tab);return}
   const op=e.target.closest('[data-open-player]');if(op){selectedPlayer=op.dataset.openPlayer;setTab('player');renderPickers();renderPlayer();return}
+  const om=e.target.closest('[data-open-match]');if(om){selectedMatch=om.dataset.openMatch;setTab('match');renderPickers();renderMatch();return}
   const st=e.target.closest('[data-status]');if(st){setStatus(st);return}
   const cp=e.target.closest('[data-copy-player]');if(cp){const p=(D.players||[]).find(x=>x.player_id===cp.dataset.copyPlayer);if(p)copyText(playerMessage(p),'Player payment details copied');return}
   const cm=e.target.closest('[data-copy-match]');if(cm){copyMatch(cm.dataset.copyMatch);return}
