@@ -41,7 +41,9 @@ async function loadBrand(){
     const returnUrl=new URL(target,location.origin);
     returnTeam=returnUrl.searchParams.get('team')||returnUrl.searchParams.get('id')||'';
   }catch(e){}
-  const teamId=directTeam||returnTeam;
+  let teamId=directTeam||returnTeam;
+  const pathLooksPerranporth=/^\/Perranporth(?:\/|$)/i.test(location.pathname)||/^\/Perranporth(?:\/|$)/i.test((()=>{try{return new URL(target,location.origin).pathname}catch(e){return''}})());
+  if(!teamId&&pathLooksPerranporth)teamId='d5bcdf95-40a2-4596-b044-e9c8bcabecbc';
 
   if(teamId){
     const {data:team}=await sb.from('teams').select('id,name,club_id,badge_url').eq('id',teamId).maybeSingle();
