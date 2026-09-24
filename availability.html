@@ -67,6 +67,7 @@
       <div class="actions" style="margin-top:12px">
         <button id="saveSquadBtn" class="btn primary">Save squad</button>
         <button id="shareSquadBtn" class="btn whatsapp">Share squad</button>
+        <button id="openSubsBtn" class="btn">Subs Tracker</button>
         <button id="openMatchBtn" class="btn">Open Match Centre</button>
       </div>
     </section>
@@ -233,6 +234,7 @@ $('selectAllBtn').onclick=()=>{selectedSquad=new Set((selected?.available||[]).m
 $('clearBtn').onclick=()=>{selectedSquad=new Set();$('squadList').querySelectorAll('input').forEach(x=>x.checked=false);updateSquadStatus()};
 $('saveSquadBtn').onclick=()=>saveSquad(false);
 $('shareSquadBtn').onclick=shareSquad;
+$('openSubsBtn').onclick=()=>{location.href=ctx.href('/subs.html',selected?'fixture='+encodeURIComponent(selected.fixture_id):'')};
 $('openMatchBtn').onclick=()=>{if(selected)location.href=ctx.href('/match-centre.html','fixture='+encodeURIComponent(selected.fixture_id))};
 load().catch(e=>{$('status').textContent='Could not load Availability: '+e.message;$('status').classList.add('bad')});
 </script>
