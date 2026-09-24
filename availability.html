@@ -106,8 +106,10 @@ function squadCompetitionLabel(f){
 function squadOpponent(v){return String(v||'Opponent').replace(/\s+FC\b/i,'').replace(/\s+/g,' ').trim()}
 function squadShareText(f){
   if(!f)return'';
-  const available=new Map((f.available||[]).map(p=>[String(p.player_id),String(p.name||'').trim()]));
-  const names=[...selectedSquad].map(id=>available.get(String(id))).filter(Boolean);
+  const names=(f.available||[])
+    .filter(p=>selectedSquad.has(String(p.player_id)))
+    .map(p=>String(p.name||'').trim())
+    .filter(Boolean);
   return [
     '*🏆'+squadCompetitionLabel(f)+' - '+squadOpponent(f.opponent)+' ('+venueCode(f)+')*',
     '',
