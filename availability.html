@@ -66,6 +66,7 @@
       <div id="squadList" class="squad-list"></div>
       <div class="actions" style="margin-top:12px">
         <button id="saveSquadBtn" class="btn primary">Save squad</button>
+        <button id="shareSquadBtn" class="btn whatsapp">Share squad</button>
         <button id="openMatchBtn" class="btn">Open Match Centre</button>
       </div>
     </section>
@@ -94,6 +95,26 @@ function venueCode(f){const v=String(f?.venue||'').toLowerCase();return v==='hom
 function shortOpponent(v){return String(v||'Opponent').replace(/\s+(1st|2nd|2nds|3rd|3rds)$/i,'').trim()}
 function gameLabel(f){return String(f?.competition||'').toLowerCase()==='league'&&f?.gameweek_number?'GW'+f.gameweek_number:(f?.competition||'Match')}
 function competitionLabel(f){return String(f?.competition||'').toLowerCase()==='league'&&f?.gameweek_number?'League GW'+f.gameweek_number:(f?.competition||'Fixture')}
+function squadCompetitionLabel(f){
+  const c=String(f?.competition||'Fixture').trim(),low=c.toLowerCase();
+  if(low==='intermediate cup'||low==='intermediate')return'Int Cup';
+  if(low==='junior cup'||low==='jnr cup')return'Jnr Cup';
+  if(low==='ge cup'||low==='george evely cup')return'GE Cup';
+  if(low==='league'&&f?.gameweek_number)return'GW '+f.gameweek_number;
+  return c;
+}
+function squadOpponent(v){return String(v||'Opponent').replace(/\s+FC\b/i,'').replace(/\s+/g,' ').trim()}
+function squadShareText(f){
+  if(!f)return'';
+  const available=new Map((f.available||[]).map(p=>[String(p.player_id),String(p.name||'').trim()]));
+  const names=[...selectedSquad].map(id=>available.get(String(id))).filter(Boolean);
+  return [
+    '*🏆'+squadCompetitionLabel(f)+' - '+squadOpponent(f.opponent)+' ('+venueCode(f)+')*',
+    '',
+    '👥 *SQUAD*',
+    ...names
+  ].join('\n');
+}
 function groundLine(f){const vals=[f?.ground_name,f?.ground_address,f?.ground_postcode].filter(Boolean),unique=[...new Set(vals.map(String))];return unique.join(' · ')||'Venue TBC'}
 function playerLine(p,state){const controls=data?.can_manage?'<span class="manager-avail-actions"><button class="avail-mini yes '+(state==='yes'?'current':'')+'" data-set-player-avail="true" data-player-id="'+p.player_id+'" aria-label="Mark '+esc(p.name)+' available" title="Mark available">✓</button><button class="avail-mini no '+(state==='no'?'current':'')+'" data-set-player-avail="false" data-player-id="'+p.player_id+'" aria-label="Mark '+esc(p.name)+' unavailable" title="Mark unavailable">✕</button></span>':'';return '<div class="person"><span class="shirt">'+esc(p.shirt_number??'–')+'</span><span class="person-name">'+esc(p.name)+'</span>'+controls+'</div>'}
 function renderList(id,arr,state){$(id).innerHTML=(arr||[]).map(p=>playerLine(p,state)).join('')||'<div class="empty">Nobody</div>'}
@@ -159,7 +180,39 @@ async function load(){
 }
 async function shareMessage(){const text=shareText(selected);if(!text)return;if(navigator.share){try{await navigator.share({text});return}catch(e){if(e?.name==='AbortError')return}}await copyMessage();alert('Message copied. Paste it into your WhatsApp group.')}
 async function copyMessage(){const text=shareText(selected);if(!text)return;try{await navigator.clipboard.writeText(text);const b=$('copyBtn'),old=b.textContent;b.textContent='Copied';setTimeout(()=>b.textContent=old,1500)}catch{prompt('Copy this message:',text)}}
-async function saveSquad(){if(!selected)return;const b=$('saveSquadBtn'),old=b.textContent;b.disabled=true;b.textContent='Saving…';const {data:count,error}=await sb.rpc('save_fixture_squad',{p_fixture_id:selected.fixture_id,p_player_ids:[...selectedSquad]});b.disabled=false;b.textContent=old;if(error){alert(error.message);return}selected.saved_squad=[...selectedSquad];$('squadStatus').textContent=(count||0)+' players saved';}
+async function saveSquad(silent=false){
+  if(!selected)return false;
+  const b=$('saveSquadBtn'),old=b.textContent;
+  b.disabled=true;b.textContent='Saving…';
+  const {data:count,error}=await sb.rpc('save_fixture_squad',{p_fixture_id:selected.fixture_id,p_player_ids:[...selectedSquad]});
+  b.disabled=false;b.textContent=old;
+  if(error){alert(error.message);return false}
+  selected.saved_squad=[...selectedSquad];
+  $('squadStatus').textContent=(count||0)+' players saved';
+  if(!silent){b.textContent='Saved ✓';setTimeout(()=>b.textContent=old,1300)}
+  return true;
+}
+async function shareSquad(){
+  if(!selected||!selectedSquad.size){alert('Select at least one player for the squad first.');return}
+  const b=$('shareSquadBtn'),old=b.textContent;
+  b.disabled=true;b.textContent='Saving…';
+  const saved=await saveSquad(true);
+  if(!saved){b.disabled=false;b.textContent=old;return}
+  const text=squadShareText(selected);
+  b.textContent='Sharing…';
+  if(navigator.share){
+    try{await navigator.share({text});b.disabled=false;b.textContent=old;return}
+    catch(e){if(e?.name==='AbortError'){b.disabled=false;b.textContent=old;return}}
+  }
+  try{
+    await navigator.clipboard.writeText(text);
+    b.textContent='Copied ✓';
+    setTimeout(()=>{b.disabled=false;b.textContent=old},1500);
+  }catch(e){
+    b.disabled=false;b.textContent=old;
+    prompt('Copy this squad list:',text);
+  }
+}
 async function setPlayerAvailability(playerId,value,button){
   if(!selected||!data?.can_manage||!playerId)return;
   const fixtureId=selected.fixture_id,old=button.textContent;
@@ -176,7 +229,8 @@ document.querySelector('.response-grid').addEventListener('click',e=>{const b=e.
 $('squadList').onchange=e=>{const c=e.target.closest('[data-squad-player]');if(!c)return;c.checked?selectedSquad.add(c.dataset.squadPlayer):selectedSquad.delete(c.dataset.squadPlayer);updateSquadStatus()};
 $('selectAllBtn').onclick=()=>{selectedSquad=new Set((selected?.available||[]).map(p=>p.player_id));renderSquad()};
 $('clearBtn').onclick=()=>{selectedSquad=new Set();$('squadList').querySelectorAll('input').forEach(x=>x.checked=false);updateSquadStatus()};
-$('saveSquadBtn').onclick=saveSquad;
+$('saveSquadBtn').onclick=()=>saveSquad(false);
+$('shareSquadBtn').onclick=shareSquad;
 $('openMatchBtn').onclick=()=>{if(selected)location.href=ctx.href('/match-centre.html','fixture='+encodeURIComponent(selected.fixture_id))};
 load().catch(e=>{$('status').textContent='Could not load Availability: '+e.message;$('status').classList.add('bad')});
 </script>
