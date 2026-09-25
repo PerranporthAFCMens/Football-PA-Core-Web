@@ -146,7 +146,29 @@ function substitutionFromDb(x){const on=playerById(x.player_on_id),off=playerByI
 function compareLoadedEvents(a,b){const minute=Number(a.minute||0)-Number(b.minute||0);if(minute)return minute;const stoppage=Number(a.stoppage_minute||0)-Number(b.stoppage_minute||0);if(stoppage)return stoppage;return String(a.created_at||'').localeCompare(String(b.created_at||''))}
 function formatMinute(m,s=0){return s>0?`${m}+${s}'`:`${m}'`}
 function renderHeader(){if(club.primary_colour)document.documentElement.style.setProperty('--blue',club.primary_colour);const venue=String(fixture.venue).toLowerCase(),home=venue==='home'||venue==='h';$('matchEyebrow').textContent=(fixture.competition||'Fixture').toUpperCase();$('matchMeta').textContent=longDate(fixture.kick_off)+' · '+(home?'Home':venue==='away'||venue==='a'?'Away':'Neutral');$('leftTeam').textContent=home?(club.short_name||club.name):fixture.opponent;$('rightTeam').textContent=home?fixture.opponent:(club.short_name||club.name)}
-function ensureFormation(initial=false){const slots=formations[state.formation],old=Object.values(state.xi||{}).filter(Boolean),pool=eligiblePlayers(),ordered=[...new Set(old.concat(pool.map(p=>p.id)))],next={};slots.forEach((s,i)=>next[s.k]=ordered[i]||null);state.xi=next;if(initial&&!old.length)slots.forEach((s,i)=>state.xi[s.k]=pool[i]?.id||null)}
+function ensureFormation(initial=false){
+ const slots=formations[state.formation],oldXi={...(state.xi||{})},next={},used=new Set();
+ // Preserve an existing player's exact tactical slot whenever that slot exists
+ // in the selected formation. Do not rebuild a saved XI from Object.values(),
+ // because JSON object key order is not a tactical ordering.
+ slots.forEach(slot=>{
+   const id=oldXi[slot.k]||null;
+   if(id&&!used.has(id)){next[slot.k]=id;used.add(id)}
+   else next[slot.k]=null;
+ });
+ // When the formation genuinely changes, carry players from removed slots first,
+ // then fill any remaining gaps from the eligible match squad.
+ const carry=Object.entries(oldXi).filter(([key,id])=>id&&!used.has(id)).map(([,id])=>id);
+ const pool=eligiblePlayers().map(p=>p.id);
+ const candidates=[...new Set(carry.concat(pool))].filter(id=>!used.has(id));
+ slots.forEach(slot=>{
+   if(next[slot.k])return;
+   const id=candidates.shift()||null;
+   next[slot.k]=id;
+   if(id)used.add(id);
+ });
+ state.xi=next;
+}
 function render(){if(!state)return;$('formationSelect').value=state.formation;const lineupBtn=$('saveLineupBtn');if(lineupBtn){lineupBtn.textContent=lineupSaved?'Edit starting lineup':'Save starting lineup';lineupBtn.classList.toggle('primary',!lineupSaved);lineupBtn.disabled=false}$('formationSelect').disabled=lineupSaved;$('lineupHint').textContent=lineupSaved?'Starting lineup saved. Choose Edit starting lineup to make a correction.':(matchSquadIds.length?'Using the saved match squad. Tap a player to change them.':'Tap a player to change them');$('formationSelect').value=state.formation;$('formationTitle').textContent=($('formationTitle').dataset.prefix||'Starting XI')+' · '+state.formation;$('score').textContent=state.home+' – '+state.away;$('clock').textContent=time();$('phase').textContent=state.phase;const ap=activePeriod(),bp=breakAfter(),pc=periodCount();const periodBtn=$('startBtn');if(state.phase==='FULL-TIME'){periodBtn.disabled=true;periodBtn.textContent='Match finished'}else if(ap){periodBtn.disabled=false;periodBtn.textContent='End Period '+ap}else if(state.phase==='PRE-MATCH'){periodBtn.disabled=false;periodBtn.textContent='Start Period 1'}else if(bp){periodBtn.disabled=false;periodBtn.textContent='Start Period '+Math.min(pc,bp+1)}else{periodBtn.disabled=true;periodBtn.textContent='Start period'}$('pauseBtn').disabled=!state.running;renderPitch();const xiIds=Object.values(state.xi).filter(Boolean),pool=eligiblePlayers(),bench=pool.filter(p=>!xiIds.includes(p.id)),xi=xiIds.map(playerById).filter(Boolean),opts=a=>a.map(p=>`<option value="${p.id}">${esc(p.display_name)}</option>`).join('');$('pitchBenchCount').textContent=bench.length+' sub'+(bench.length===1?'':'s');$('pitchBenchList').innerHTML=bench.length?bench.map(p=>`<span class="pitchBenchChip">#${esc(p.shirt_number??'–')} ${esc(p.display_name)}</span>`).join(''):'<span class="muted" style="font-size:11px">No substitutes.</span>';$('eventPlayer').innerHTML=opts(xi);const showCards=teamSettings.show_cards!==false;$('cardPlayerWrap').classList.toggle('hidden',!showCards);document.querySelectorAll('.cardAction').forEach(b=>b.classList.toggle('hidden',!showCards));$('subOff').innerHTML=opts(xi);$('subOn').innerHTML=opts(bench);$('eventCount').textContent=state.events.length+' event'+(state.events.length===1?'':'s');$('eventFeed').innerHTML=state.events.length?state.events.slice().reverse().map((e,ri)=>{const i=state.events.length-1-ri;return`<div class="event"><div>${e.icon}</div><div><strong>${esc(e.text)}</strong></div><div class="muted">${esc(e.time)}</div><div class="eventActions"><button class="iconBtn eventEdit" data-edit-event="${i}" aria-label="Edit event">Edit</button><button class="iconBtn" data-delete-event="${i}" aria-label="Delete event">✕</button></div></div>`}).join(''):'<div class="muted">Nothing yet.</div>';const completed=state.phase==='FULL-TIME'||isFinal(fixture);$('shareActions').classList.toggle('hidden',!completed)}
 function pitchName(p){if(!p)return'Unassigned';return p.last_name||String(p.display_name||'').trim().split(/\s+/).slice(1).join(' ')||p.first_name||p.display_name||'Player'}
 function contrastKitText(hex){const h=String(hex||'').replace('#','');if(!/^[0-9a-f]{6}$/i.test(h))return '#FFFFFF';const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16),y=(r*299+g*587+b*114)/1000;return y>165?'#102033':'#FFFFFF'}
