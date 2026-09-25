@@ -103,7 +103,7 @@ const votingOrder=fs.readFileSync('voting.html','utf8');if(!votingOrder.includes
 
 const matchEventsEdit=fs.readFileSync('match-centre.html','utf8');
 if(!matchEventsEdit.includes('data-edit-event')||!matchEventsEdit.includes('saveEventEdit')||!matchEventsEdit.includes('Edit event'))fail('match-centre.html','event editing controls missing');
-if(!matchEventsEdit.includes('Share result')||!matchEventsEdit.includes('FA Full-Time events')||!matchEventsEdit.includes('navigator.share'))fail('match-centre.html','completed-match share tools missing');
+if(!matchEventsEdit.includes('Share result')||!matchEventsEdit.includes('FA Full-Time events')||!matchEventsEdit.includes('navigator.share'))fail('match-centre.html','completed-match share tools missing');if(!matchEventsEdit.includes('Share lineup image')||!matchEventsEdit.includes('Preview image')||!matchEventsEdit.includes('buildLineupCanvas')||!matchEventsEdit.includes("new File([blob],lineupShareFileName()"))fail('match-centre.html','shareable lineup image tools missing');
 if(!matchEventsEdit.includes("String(ev.team_side||'us')!=='opponent'"))fail('match-centre.html','goal score side-aware delete/edit logic missing');
 if(failed)process.exit(1);
 
