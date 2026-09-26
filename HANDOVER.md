@@ -1,6 +1,6 @@
 # Football PA Core Handover
 
-Updated: 21 September 2026
+Updated: 26 September 2026
 
 ## Project
 
@@ -621,3 +621,128 @@ Future unanswered fixtures do not reduce response rate months in advance. A fixt
 The Culdrose away fixture on 26 September 2026 has an Availability poll and is correctly identified as **League GW2**.
 
 No real availability responses were inserted during development tests. Temporary response/squad tests were executed inside rolled-back database transactions.
+
+## Emergency Matchday Handover — 26 September 2026
+
+This section supersedes the older 21 September release checkpoint for anything related to live Matchday behaviour.
+
+### Current repository/deployment state
+
+- Production `main`: `209040dcfb0e8a4158c7ccdde09d407561360f98` (`Protect matchday controls in smoke checks`).
+- Development `dev`: `b9540cf99f9dc38055e919fff1c9d95d3b3a0327`.
+- `main` and `dev` are **diverged**, both 6 commits ahead of merge base `e6df1fc1069f09c5392d84b234a8ed4fe8967949`. Do not fast-forward or blindly merge them. Inspect/compare first.
+- Core smoke checks passed on production main.
+- Vercel status for production main is successful.
+- Customer Perranporth copy `footballpa.com/Perranporth` records Core source `209040dcfb0e8a4158c7ccdde09d407561360f98`, so it is currently aligned with production Core.
+
+### Live-match incident: RNAS Culdrose, 26 September
+
+The first real Perranporth Matchday use exposed regressions that should have been preserved from the known-working legacy Perranporth Match Centre.
+
+User-reported failures during the match included:
+
+- a goal selected for Alex Taylor being recorded/displayed as Leo Osborne
+- confusing/wrong match minute behaviour during the incident
+- no visible **Conceded** action when it was needed
+- Matchday Start/Half Time/Full Time flow not feeling like the old working Perranporth flow
+- player voting not opening automatically at Full Time when expected
+
+The user's explicit requirement is to restore the proven Matchday workflow rather than inventing another new workflow. Before further Matchday changes, inspect the legacy Perranporth implementation and compare behaviour feature-by-feature.
+
+### Emergency changes now present
+
+These changes are in the current production code/database. They are fixes, but **do not treat them as user-verified end-to-end Matchday readiness yet**:
+
+- goal logging now requires an explicit scorer selection; there is no silent first-XI default
+- a **🥅 Conceded** action exists and records an opponent goal with no player selection
+- two-half football controls display **Start Match → Half Time → Start Second Half → Full Time**
+- the match clock was changed to timestamp/anchor-based handling instead of relying on a fragile one-second browser counter plus periodic destructive autosave
+- visibility return resynchronises the local clock
+- server-corrected match events can be marked `server_protected`; stale browser payloads that omit protected events are rejected rather than silently overwriting them
+- Matchday controls are covered by smoke checks
+- Player Portal can resolve its team from the portal token, preventing a shared player-voting link from losing team context
+- database migrations applied during recovery include:
+  - `timestamp_anchored_match_clock`
+  - `protect_server_corrected_match_events`
+  - `resolve_player_portal_team_from_token`
+  - `auto_open_voting_on_match_completion`
+  - `restore_match_start_voting`
+  - `persist_match_clock_anchors`
+  - `open_voting_only_at_full_time`
+
+### Voting auto-open: important nuance
+
+Current `save_match_centre_state` now attempts to call `set_voting_open_event(..., true)` when the fixture transitions to completed, but only when Voting is enabled and the user has Voting management capability.
+
+The Match Centre front end also asks:
+
+`Finish the match and open player voting?`
+
+The front-end confirmation itself does **not** open the vote; the database save RPC is the mechanism that now does it.
+
+This was added after the live-match failure. It still needs a clean end-to-end test on a disposable/test fixture. Do not use the current Culdrose open vote as proof that automatic opening worked during the original live match.
+
+### Authoritative Culdrose recovery snapshot
+
+Fixture: `4e39d643-e7f9-46a3-89da-6e25adc978f7`  
+Opponent: RNAS Culdrose 1st  
+Venue: Away  
+Status: completed  
+Final score: **RNAS Culdrose 2–2 Perranporth**  
+Match state: `FULL-TIME`, 5400 elapsed seconds.
+
+Current authoritative events in Supabase:
+
+1. **5' Perranporth goal — Alex Taylor**, assist Fin Stribley, Central box
+2. **37' RNAS Culdrose goal conceded**
+3. **65' RNAS Culdrose goal conceded**
+4. **89' Perranporth goal — Tom Goodman**
+
+The recovered event rows are currently marked `server_protected`. Do not rewrite/delete these records while testing Matchday unless the user explicitly asks for a correction.
+
+The Culdrose voting event is currently **open**. Do not create a second voting event or reopen/reset it unnecessarily.
+
+### Matchday architecture risk still open
+
+Even after the emergency protection, `save_match_centre_state` still treats the browser event array as a whole-state payload and deletes/reinserts match-event rows during a save.
+
+The new protected-event guard prevents the specific stale-browser overwrite that occurred during recovery, but whole-array replacement is still a risky architecture for a live Matchday product.
+
+Before the next real match, review moving event creation/edit/delete toward stable event-level mutations rather than repeatedly replacing the entire event feed.
+
+### Required next-session priority
+
+Do **not** start new product features.
+
+1. Use legacy Perranporth Matchday as the behaviour reference.
+2. Audit current Core Match Centre against that working flow.
+3. Run a complete clean Matchday simulation on a disposable/test fixture:
+   - Start Match
+   - goal with explicit scorer + assist + zone
+   - conceded goal
+   - cards
+   - single substitution
+   - multiple substitutions
+   - pause/resume
+   - Half Time
+   - Start Second Half
+   - background/return to app
+   - Full Time
+   - fixture completed and score persisted
+   - event feed reloads exactly
+   - Live Score stays correct
+   - Voting opens exactly once at Full Time
+   - player voting link resolves the correct team and candidate list
+4. Verify database state after every critical transition.
+5. Add/extend smoke/integration protection for every regression found.
+6. Only call Matchday ready after the full flow has been tested rather than checking individual buttons in isolation.
+
+### Secondary open issue: Auth confirmation email
+
+Core signup now passes team/club/badge/colour metadata into Supabase Auth, but the hosted Supabase **Confirm signup** HTML template was verified as hard-coded to Harbour United.
+
+A dynamic replacement HTML template was supplied to the user for Supabase Authentication → Email Templates → Confirm signup. It has not been confirmed in this handover as saved/applied.
+
+Also verify Supabase Auth URL Configuration because an inspected confirmation email still used `http://localhost:3000` as its redirect.
+
+Do not return to the GitHub personal-access-token workaround unless the user explicitly wants that route. Direct Supabase Auth settings are the correct place for this template.
