@@ -31,6 +31,7 @@
 const sb=FootballPAClient;const $=id=>document.getElementById(id),q=new URLSearchParams(location.search);
 const target=q.get('return')||'./index.html';
 function msg(t,bad=false){$('status').textContent=t;$('status').className='status'+(bad?' bad':'')}
+let signupBrand={team_id:'',team_name:'',club_name:'Football PA',badge_url:'',primary_colour:''};
 async function loadBrand(){
   const host=String(location.hostname||'').toLowerCase();
   let data=null;
@@ -50,6 +51,7 @@ async function loadBrand(){
     if(team){
       const {data:club}=await sb.from('clubs').select('name,primary_colour,badge_url').eq('id',team.club_id).maybeSingle();
       data={
+        team_id:team.id,
         team_name:team.name,
         club_name:club?.name||team.name,
         badge_url:team.badge_url||club?.badge_url||'',
@@ -63,7 +65,14 @@ async function loadBrand(){
     data=res.data||null;
   }
 
-  if(!data){$('clubBadge').style.display='none';return}
+  if(!data){signupBrand={team_id:'',team_name:'',club_name:'Football PA',badge_url:'',primary_colour:''};$('clubBadge').style.display='none';return}
+  signupBrand={
+    team_id:data.team_id||teamId||'',
+    team_name:data.team_name||'',
+    club_name:data.club_name||data.team_name||'Football PA',
+    badge_url:data.badge_url||'',
+    primary_colour:data.primary_colour||''
+  };
   if(data.primary_colour)document.documentElement.style.setProperty('--blue',data.primary_colour);
   $('clubName').textContent=data.club_name||data.team_name||'Football PA';
   $('clubSub').textContent=data.team_name||'Team workspace';
@@ -71,6 +80,6 @@ async function loadBrand(){
 }
 async function existing(){const {data:{session}}=await sb.auth.getSession();if(session)location.replace(target)}
 $('signIn').onclick=async()=>{const b=$('signIn');b.disabled=true;b.textContent='Signing in…';msg('Checking your account…');const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});b.disabled=false;b.textContent='Sign in';if(error)return msg('Login failed. Check your email and password.',true);location.replace(target)};
-$('signUp').onclick=async()=>{const b=$('signUp');b.disabled=true;b.textContent='Creating…';const returnUrl=new URL('./login.html',location.href).href+'?return='+encodeURIComponent(target);const {data,error}=await sb.auth.signUp({email:$('email').value.trim(),password:$('password').value,options:{emailRedirectTo:returnUrl}});b.disabled=false;b.textContent='Create account';if(error)return msg(error.message,true);if(data.session)location.replace(target);else msg('Account created. Check your email to confirm it, then return here and sign in.')};
+$('signUp').onclick=async()=>{const b=$('signUp');b.disabled=true;b.textContent='Creating…';const returnUrl=new URL('./login.html',location.href).href+'?return='+encodeURIComponent(target);const {data,error}=await sb.auth.signUp({email:$('email').value.trim(),password:$('password').value,options:{emailRedirectTo:returnUrl,data:{footballpa_team_id:signupBrand.team_id||'',footballpa_team_name:signupBrand.team_name||'',footballpa_club_name:signupBrand.club_name||'Football PA',footballpa_badge_url:signupBrand.badge_url||'',footballpa_primary_colour:signupBrand.primary_colour||''}}});b.disabled=false;b.textContent='Create account';if(error)return msg(error.message,true);if(data.session)location.replace(target);else msg('Account created. Check your email to confirm it, then return here and sign in.')};
 loadBrand();existing();
 </script></body></html>
