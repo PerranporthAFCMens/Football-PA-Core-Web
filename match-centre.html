@@ -401,8 +401,8 @@ function buildGoalZonePitch(id,selected){
 }
 function openGoalPicker(){
  const xi=Object.values(state.xi).map(playerById).filter(Boolean),opts=xi.map(p=>'<option value="'+p.id+'">'+esc(p.display_name)+'</option>').join(''),captureAssists=teamSettings.capture_assists!==false;
- $('goalScorer').innerHTML=opts;$('goalAssist').innerHTML='<option value="">No assist</option>'+opts;
- $('goalScorer').value=xi[0]?.id||'';$('goalAssist').value='';
+ $('goalScorer').innerHTML='<option value="">Select scorer</option>'+opts;$('goalAssist').innerHTML='<option value="">No assist</option>'+opts;
+ $('goalScorer').value='';$('goalAssist').value='';
  $('goalAssist').classList.toggle('hidden',!captureAssists);$('originZoneLabel').classList.toggle('hidden',!captureAssists);$('originZonePitch').classList.toggle('hidden',!captureAssists);
  $('goalType').value='Open Play';goalZone='';originZone='';buildGoalZonePitch('goalZonePitch',goalZone);if(captureAssists)buildGoalZonePitch('originZonePitch',originZone);
  $('goalPicker').classList.remove('hidden');
@@ -414,7 +414,7 @@ function pickGoalZone(id,origin=false){
 }
 async function saveGoal(){
  if(actionBusy)return;
- const scorer=playerById($('goalScorer').value);if(!scorer)return;
+ const scorer=playerById($('goalScorer').value);if(!scorer){$('status').textContent='Choose the goalscorer before saving.';$('status').classList.remove('hidden');$('status').classList.add('bad');return}
  if(!goalZone){$('status').textContent='Choose where the goal was scored from.';$('status').classList.remove('hidden');$('status').classList.add('bad');return}
  const captureAssists=teamSettings.capture_assists!==false,assistId=captureAssists?$('goalAssist').value:'',a=assistId?playerById(assistId):null,m=minuteNow(),home=['home','h'].includes(String(fixture.venue).toLowerCase()),zoneMeta=goalZones.find(z=>z.id===goalZone),originMeta=captureAssists?goalZones.find(z=>z.id===originZone):null;
  actionBusy=true;setBusyButton($('saveGoal'),true,'Saving…');
