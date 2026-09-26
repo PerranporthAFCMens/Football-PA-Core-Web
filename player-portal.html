@@ -16,7 +16,7 @@
 <div id="loading" class="card loading"><h2>Player Portal</h2><div class="muted">Loading…</div></div>
 
 <div id="pinLogin" class="card login hidden">
-  <div class="brand"><b>Football PA Player Portal</b><small>Select your name and enter your personal PIN.</small></div>
+  <div class="brand"><b id="portalBrand">Football PA Player Portal</b><small id="portalBrandSub">Select your name and enter your personal PIN.</small></div>
   <div class="field"><label>Player</label><select id="loginPlayer"><option value="">Select player…</option></select></div>
   <div class="field"><label>PIN</label><input id="loginPin" type="password" inputmode="numeric" maxlength="8" autocomplete="current-password" placeholder="PIN"></div>
   <button id="loginBtn" class="btn full" style="margin-top:12px">Log in</button>
@@ -50,7 +50,8 @@
 
 <script>
 const sb=FootballPAClient;
-const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),PIN_MODE=q.get('pin')==='1',TEAM_ID=q.get('team')||'',PORTAL_TOKEN=q.get('portal')||'',STORE='fpa_portal_'+TEAM_ID;
+const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),PIN_MODE=q.get('pin')==='1',PORTAL_TOKEN=q.get('portal')||'';
+let TEAM_ID=q.get('team')||'',STORE='fpa_portal_'+TEAM_ID;
 let D=null,TOKEN='',PAY_LINK=null,AVAIL=null,AUTH_MODE=!PIN_MODE;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=p=>'£'+((Number(p)||0)/100).toFixed(2);
@@ -59,6 +60,23 @@ const fmtDate=v=>v?new Date(v).toLocaleDateString('en-GB',{day:'numeric',month:'
 function saved(){try{return JSON.parse(localStorage.getItem(STORE)||'null')}catch{return null}}
 function saveSession(x){localStorage.setItem(STORE,JSON.stringify(x))}
 function clearSession(){localStorage.removeItem(STORE)}
+function applyPortalBrand(x){
+  if(!x)return;
+  if($('portalBrand'))$('portalBrand').textContent=x.team_name||'Football PA Player Portal';
+  if($('portalBrandSub'))$('portalBrandSub').textContent=(x.club_name?x.club_name+' · ':'')+'Select your name and enter your personal PIN.';
+  if(x.primary_colour)document.documentElement.style.setProperty('--blue',x.primary_colour);
+}
+async function resolvePortalTeam(){
+  if(PORTAL_TOKEN){
+    const {data,error}=await sb.rpc('player_portal_resolve_team',{p_portal_token:PORTAL_TOKEN});
+    if(error)throw error;
+    if(TEAM_ID&&data?.team_id&&TEAM_ID!==data.team_id)throw new Error('This player portal link does not match the selected team.');
+    TEAM_ID=data?.team_id||TEAM_ID;
+    STORE='fpa_portal_'+TEAM_ID;
+    applyPortalBrand(data);
+  }
+  if(!TEAM_ID)throw new Error('This player portal link is missing its team.');
+}
 function busy(btn,on,label){if(!btn)return;if(on){btn.dataset.old=btn.textContent;btn.disabled=true;btn.textContent=label||'Working…'}else{btn.disabled=false;btn.textContent=btn.dataset.old||btn.textContent}}
 function show(id){['loading','pinLogin','firstTime','app'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
 function statsHtml(x={}){return '<div class="stats"><div class="stat"><b>'+(x.appearances||0)+'</b><span>Apps</span></div><div class="stat"><b>'+((x.starts??'—'))+'</b><span>Starts</span></div><div class="stat"><b>'+(x.minutes||0)+'</b><span>Minutes</span></div><div class="stat"><b>'+(x.goals||0)+'</b><span>Goals</span></div><div class="stat"><b>'+(x.assists||0)+'</b><span>Assists</span></div><div class="stat"><b>'+((x.goals||0)+(x.assists||0))+'</b><span>G+A</span></div></div>'}
@@ -111,7 +129,7 @@ async function submitVote(){if(!TOKEN){$('voteStatus').textContent='Player PIN s
 function render(){const p=D.player||{},t=D.team||{},c=D.club||{},fix=D.recent_fixtures||[];if(t.badge_url)$('badge').src=t.badge_url;$('name').textContent=p.name||'Player Portal';$('season').textContent=(c.name||'Club')+' · '+(D.season?.label||'');$('identity').textContent=(p.shirt_number?'#'+p.shirt_number+' · ':'')+(p.position||t.name||'Player');if(c.primary_colour)document.documentElement.style.setProperty('--blue',c.primary_colour);fillSeasonSelectors();renderMy();renderTeam();$('recent').innerHTML=fix.slice(0,4).map(fixtureHtml).join('')||'<div class="empty">No fixtures yet.</div>';$('teamFixtures').innerHTML=fix.map(fixtureHtml).join('')||'<div class="empty">No fixtures yet.</div>';renderAvailability();renderVote();renderSubs();show('app');const wanted=q.get('tab');if(['availability','vote'].includes(wanted))tab(wanted)}
 async function loadPinData(){const {data,error}=await sb.rpc('player_portal_data_v2',{p_token:TOKEN});if(error)throw error;D=data;const pay=await sb.rpc('player_portal_payment_link',{p_token:TOKEN});PAY_LINK=pay.error?null:pay.data;await loadAvailability();render()}
 async function loadPlayers(){if(!TEAM_ID)throw new Error('No team was selected for this player portal.');const call=PORTAL_TOKEN?sb.rpc('player_portal_list_players_v2',{p_team_id:TEAM_ID,p_portal_token:PORTAL_TOKEN}):sb.rpc('player_portal_list_players',{p_team_id:TEAM_ID});const {data,error}=await call;if(error)throw error;const opts='<option value="">Select player…</option>'+(data||[]).map(p=>'<option value="'+esc(p.player_id)+'">'+esc(p.display_name)+'</option>').join('');$('loginPlayer').innerHTML=opts;$('setupPlayer').innerHTML=opts}
-async function startPinMode(){try{await loadPlayers();const s=saved();if(s?.token&&s?.expiresAt>Date.now()){TOKEN=s.token;try{await loadPinData();if(s.pinChosen===false)$('pinModal').classList.remove('hidden');return}catch{clearSession();TOKEN=''}}show('pinLogin')}catch(e){$('loading').innerHTML='<h2>Player Portal</h2><div class="muted">'+esc(e.message)+'</div>'}}
+async function startPinMode(){try{await resolvePortalTeam();await loadPlayers();const s=saved();if(s?.token&&s?.expiresAt>Date.now()){TOKEN=s.token;try{await loadPinData();if(s.pinChosen===false)$('pinModal').classList.remove('hidden');return}catch{clearSession();TOKEN=''}}show('pinLogin')}catch(e){$('loading').innerHTML='<h2>Player Portal</h2><div class="muted">'+esc(e.message)+'</div>'}}
 async function loginPin(){const player=$('loginPlayer').value,pin=$('loginPin').value.trim();if(!player||!pin){$('loginStatus').textContent='Select your name and enter your PIN.';return}const b=$('loginBtn');busy(b,true,'Logging in…');const {data,error}=PORTAL_TOKEN?await sb.rpc('player_portal_login_v2',{p_team_id:TEAM_ID,p_player_id:player,p_pin:pin,p_portal_token:PORTAL_TOKEN}):await sb.rpc('player_portal_login',{p_team_id:TEAM_ID,p_player_id:player,p_pin:pin});busy(b,false);if(error){$('loginStatus').textContent=error.message;return}TOKEN=data.token;saveSession({token:TOKEN,expiresAt:new Date(data.expires_at).getTime(),pinChosen:data.pin_chosen});await loadPinData();if(data.pin_chosen===false)$('pinModal').classList.remove('hidden')}
 async function firstTimeSetup(){const player=$('setupPlayer').value,dob=$('setupDob').value,pin=$('setupPin').value.trim();if(!player||!dob||!/^\d{4}$/.test(pin)){$('setupStatus').textContent='Select your name, enter your date of birth and choose a 4-digit PIN.';return}const b=$('setupBtn');busy(b,true,'Checking…');const {data,error}=PORTAL_TOKEN?await sb.rpc('player_portal_first_time_setup_v2',{p_team_id:TEAM_ID,p_player_id:player,p_date_of_birth:dob,p_new_pin:pin,p_portal_token:PORTAL_TOKEN}):await sb.rpc('player_portal_first_time_setup',{p_team_id:TEAM_ID,p_player_id:player,p_date_of_birth:dob,p_new_pin:pin});busy(b,false);if(error){$('setupStatus').textContent=error.message;return}TOKEN=data.token;saveSession({token:TOKEN,expiresAt:new Date(data.expires_at).getTime(),pinChosen:true});await loadPinData()}
 async function saveNewPin(){const a=$('newPin').value.trim(),b=$('confirmPin').value.trim();if(!/^\d{4}$/.test(a)||a!==b){$('pinStatus').textContent='Enter the same 4-digit PIN twice.';return}const btn=$('savePin');busy(btn,true,'Saving…');const {error}=await sb.rpc('player_portal_change_pin',{p_token:TOKEN,p_new_pin:a});busy(btn,false);if(error){$('pinStatus').textContent=error.message;return}const s=saved()||{};s.pinChosen=true;saveSession(s);$('pinModal').classList.add('hidden')}
