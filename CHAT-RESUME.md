@@ -26,12 +26,11 @@ Treat the **26 September Emergency Matchday Handover** section in `HANDOVER.md` 
 
 ## Current refs
 
-At handover creation:
+The documentation commits will be newer than the application refs below. Use these as the **latest functional application checkpoints**:
 
-- production `main`: `441708b8269aa47eb0fc2455d4c939656e9dfc4a`  
-  - application code immediately before docs update: `209040dcfb0e8a4158c7ccdde09d407561360f98`
-- `dev`: `c973ac1b8d6f1f72c8090d182d567bf0ac0df2e2`
-  - application code immediately before docs update: `b9540cf99f9dc38055e919fff1c9d95d3b3a0327`
+- production application: `209040dcfb0e8a4158c7ccdde09d407561360f98`
+- dev application: `b9540cf99f9dc38055e919fff1c9d95d3b3a0327`
+- pre-divergence merge base: `e6df1fc1069f09c5392d84b234a8ed4fe8967949`
 
 **main and dev are intentionally divergent right now. Do not blindly merge or fast-forward them.** Compare first and reconcile deliberately.
 
