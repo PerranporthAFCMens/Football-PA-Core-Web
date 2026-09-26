@@ -628,8 +628,8 @@ This section supersedes the older 21 September release checkpoint for anything r
 
 ### Current repository/deployment state
 
-- Production `main`: `209040dcfb0e8a4158c7ccdde09d407561360f98` (`Protect matchday controls in smoke checks`).
-- Development `dev`: `b9540cf99f9dc38055e919fff1c9d95d3b3a0327`.
+- Latest functional application commit on production `main` before documentation-only handover commits: `209040dcfb0e8a4158c7ccdde09d407561360f98` (`Protect matchday controls in smoke checks`).
+- Latest functional application commit on `dev` before documentation-only handover commits: `b9540cf99f9dc38055e919fff1c9d95d3b3a0327`.
 - `main` and `dev` are **diverged**, both 6 commits ahead of merge base `e6df1fc1069f09c5392d84b234a8ed4fe8967949`. Do not fast-forward or blindly merge them. Inspect/compare first.
 - Core smoke checks passed on production main.
 - Vercel status for production main is successful.
