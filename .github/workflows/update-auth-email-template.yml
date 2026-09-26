@@ -1,0 +1,52 @@
+name: Update Football PA auth email branding
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/update-auth-email-template.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update-auth-template:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: hennzggqaquevqgiucqn
+    steps:
+      - name: Check Supabase management token
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN is not configured for this repository."
+            exit 2
+          fi
+
+      - name: Build branded confirmation template
+        run: |
+          cat > /tmp/auth-template.json <<'JSON'
+          {
+            "mailer_subjects_confirmation": "Confirm your Football PA email address",
+            "mailer_templates_confirmation_content": "{{ $club := index .Data \"footballpa_club_name\" }}{{ $team := index .Data \"footballpa_team_name\" }}{{ $badge := index .Data \"footballpa_badge_url\" }}{{ $colour := index .Data \"footballpa_primary_colour\" }}<div style=\"margin:0;padding:32px 16px;background:#eef3f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#17212b\"><div style=\"max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #dbe4ec;border-radius:18px;overflow:hidden\"><div style=\"height:8px;background:{{ if $colour }}{{ $colour }}{{ else }}#1357A6{{ end }}\"></div><div style=\"padding:36px 30px;text-align:center\">{{ if $badge }}<img src=\"{{ $badge }}\" alt=\"\" style=\"display:block;max-width:120px;max-height:120px;margin:0 auto 20px;object-fit:contain\">{{ else }}<img src=\"https://footballpa.com/FootballPALogo%20-%20PNG.png\" alt=\"Football PA\" style=\"display:block;width:110px;height:auto;margin:0 auto 20px\">{{ end }}<div style=\"font-size:14px;font-weight:800;letter-spacing:1.5px;color:#657589;text-transform:uppercase;margin-bottom:18px\">{{ if $club }}{{ $club }}{{ else }}Football PA{{ end }}</div><h1 style=\"font-size:32px;line-height:1.15;margin:0 0 14px;color:#17212b\">Confirm your email address</h1><p style=\"font-size:17px;line-height:1.55;color:#657589;margin:0 auto 26px;max-width:470px\">Confirm your email address to finish setting up your {{ if $team }}{{ $team }} {{ end }}Football PA account.</p><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;background:{{ if $colour }}{{ $colour }}{{ else }}#1357A6{{ end }};color:#ffffff;text-decoration:none;font-size:17px;font-weight:800;padding:15px 28px;border-radius:10px\">Confirm email address</a><p style=\"font-size:13px;line-height:1.5;color:#8996a5;margin:28px 0 0\">If you didn't create this account, you can safely ignore this email.</p></div><div style=\"border-top:1px solid #e6edf3;padding:18px;text-align:center;color:#8996a5;font-size:12px\">Football PA · Your digital football assistant</div></div></div>"
+          }
+          JSON
+
+      - name: Update hosted Supabase Auth template
+        run: |
+          curl --fail-with-body -sS -X PATCH             "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth"             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             -H "Content-Type: application/json"             --data-binary @/tmp/auth-template.json
+
+      - name: Verify Harbour branding is gone
+        run: |
+          curl --fail-with-body -sS             "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth"             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             > /tmp/auth-config.json
+          python - <<'PY'
+          import json
+          cfg=json.load(open('/tmp/auth-config.json'))
+          body=cfg.get('mailer_templates_confirmation_content','')
+          subject=cfg.get('mailer_subjects_confirmation','')
+          assert 'Harbour United' not in body
+          assert 'footballpa_club_name' in body
+          assert 'Football PA' in subject
+          print('Dynamic Football PA confirmation template verified.')
+          PY
