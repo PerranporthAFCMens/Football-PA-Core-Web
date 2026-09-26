@@ -105,6 +105,10 @@ const matchEventsEdit=fs.readFileSync('match-centre.html','utf8');
 if(!matchEventsEdit.includes('data-edit-event')||!matchEventsEdit.includes('saveEventEdit')||!matchEventsEdit.includes('Edit event'))fail('match-centre.html','event editing controls missing');
 if(!matchEventsEdit.includes('Share result')||!matchEventsEdit.includes('FA Full-Time events')||!matchEventsEdit.includes('navigator.share'))fail('match-centre.html','completed-match share tools missing');if(!matchEventsEdit.includes('Share lineup image')||!matchEventsEdit.includes('Preview image')||!matchEventsEdit.includes('buildLineupCanvas')||!matchEventsEdit.includes("new File([blob],lineupShareFileName()"))fail('match-centre.html','shareable lineup image tools missing');
 if(!matchEventsEdit.includes("String(ev.team_side||'us')!=='opponent'"))fail('match-centre.html','goal score side-aware delete/edit logic missing');
+if(!matchEventsEdit.includes('id="concededBtn"')||!matchEventsEdit.includes("team_side:'opponent'")||!matchEventsEdit.includes('🥅 Conceded'))fail('match-centre.html','conceded goal action missing');
+if(!matchEventsEdit.includes('<option value="">Select scorer</option>')||!matchEventsEdit.includes('Choose the goalscorer before saving.'))fail('match-centre.html','explicit goalscorer selection safeguard missing');
+if(!matchEventsEdit.includes("periodBtn.textContent='Start Match'")||!matchEventsEdit.includes("periodBtn.textContent='Half Time'")||!matchEventsEdit.includes("periodBtn.textContent='Start Second Half'")||!matchEventsEdit.includes("periodBtn.textContent='Full Time'"))fail('match-centre.html','football matchday phase controls missing');
+if(!matchEventsEdit.includes("confirm('Finish the match and open player voting?')"))fail('match-centre.html','Full Time voting confirmation missing');
 if(failed)process.exit(1);
 
 const matchDeps=fs.readFileSync('match-centre.html','utf8');
