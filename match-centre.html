@@ -104,7 +104,7 @@
 </div>
 <script>
 const sb=FootballPAClient;
-const $=id=>document.getElementById(id);let club,team,season,teamSettings={},players=[],fixtures=[],fixture,state,timer,syncTimer,pickerSlot=null,dragSlot=null,saving=false,saveDirty=false,savePromise=null,actionBusy=false,lineupSaved=false,goalZone='',originZone='',startingXi={},matchSquadIds=[],editingEventIndex=null,lineupShareBlob=null,lineupShareUrl='',clockAnchorSeconds=0,clockAnchorMs=Date.now(),lastCompletionSyncAt=0;
+const $=id=>document.getElementById(id);let club,team,season,teamSettings={},players=[],fixtures=[],fixture,state,timer,syncTimer,pickerSlot=null,dragSlot=null,saving=false,saveDirty=false,savePromise=null,actionBusy=false,lineupSaved=false,goalZone='',originZone='',startingXi={},matchSquadIds=[],editingEventIndex=null,lineupShareBlob=null,lineupShareUrl='',clockAnchorSeconds=0,clockAnchorMs=Date.now(),lastCompletionSyncAt=0,stateVersion='';
 const formations11={
 '4-2-3-1':[{k:'gk',x:50,y:91},{k:'lb',x:16,y:73},{k:'lcb',x:38,y:77},{k:'rcb',x:62,y:77},{k:'rb',x:84,y:73},{k:'lcm',x:36,y:56},{k:'rcm',x:64,y:56},{k:'lw',x:18,y:32},{k:'am',x:50,y:37},{k:'rw',x:82,y:32},{k:'st',x:50,y:14}],
 '4-3-3':[{k:'gk',x:50,y:91},{k:'lb',x:16,y:73},{k:'lcb',x:38,y:77},{k:'rcb',x:62,y:77},{k:'rb',x:84,y:73},{k:'lcm',x:28,y:53},{k:'cm',x:50,y:58},{k:'rcm',x:72,y:53},{k:'lw',x:20,y:27},{k:'st',x:50,y:14},{k:'rw',x:80,y:27}],
@@ -138,21 +138,21 @@ function configureMatchFormat(){
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function playerById(id){return players.find(p=>p.id===id)}function eligiblePlayers(){if(!matchSquadIds.length)return players;const keep=new Set(matchSquadIds.concat(Object.values(state?.xi||{}).filter(Boolean)));return players.filter(p=>keep.has(p.id))}function resetClockAnchor(seconds=state?.seconds||0){clockAnchorSeconds=Math.max(0,Math.floor(Number(seconds)||0));clockAnchorMs=Date.now();if(state)state.seconds=clockAnchorSeconds}function syncLocalClock(){if(!state)return 0;if(state.running){state.seconds=Math.max(0,clockAnchorSeconds+Math.floor((Date.now()-clockAnchorMs)/1000))}return state.seconds}function time(){syncLocalClock();const total=Math.max(0,Math.floor(state.seconds||0)),m=Math.floor(total/60),s=total%60;return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}function minuteNow(){syncLocalClock();return Math.max(0,Math.floor(state.seconds/60))}function periodCount(){return Number(teamSettings.period_count)||({halves:2,thirds:3,quarters:4}[teamSettings.period_type]||2)}function periodMinutes(){return Number(teamSettings.period_minutes)||45}function activePeriod(){const p=String(state?.phase||'');if(p==='1ST HALF')return 1;if(p==='2ND HALF')return 2;const m=p.match(/PERIOD\s+(\d+)/i);return m?Number(m[1]):0}function breakAfter(){const p=String(state?.phase||'');if(p==='HALF-TIME')return 1;const m=p.match(/BREAK\s+(\d+)/i);return m?Number(m[1]):0}function periodPhase(n){if(periodCount()===2)return n===1?'1ST HALF':'2ND HALF';return 'PERIOD '+n}function breakPhase(n){return periodCount()===2&&n===1?'HALF-TIME':'BREAK '+n}function isFinal(f){return['ft','full_time','completed','complete','finished'].includes(String(f.status||'').toLowerCase())}function longDate(v){return v?new Date(v).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}):''}
 async function boot(){try{const ctx=await FootballPAContext.resolve();if(!ctx.access?.can_manage_match)throw new Error('You do not have permission to manage matches for this team.');team=ctx.team;club=ctx.club;season=ctx.season;teamSettings=ctx.settings||{};configureMatchFormat();let squadQuery=sb.from('team_players').select('players(id,display_name,first_name,last_name,shirt_number,preferred_position)').eq('team_id',team.id).eq('active',true),fixtureQuery=sb.from('fixtures').select('id,team_id,season_id,opponent,venue,competition,kick_off,status,home_score,away_score').eq('team_id',team.id).order('kick_off');if(ctx.season?.id){squadQuery=squadQuery.eq('season_id',ctx.season.id);fixtureQuery=fixtureQuery.eq('season_id',ctx.season.id)}let r=await squadQuery;if(r.error)throw r.error;players=(r.data||[]).map(x=>x.players).filter(Boolean).sort((a,b)=>(a.shirt_number??999)-(b.shirt_number??999));r=await fixtureQuery;if(r.error)throw r.error;fixtures=r.data||[];const q=new URLSearchParams(location.search),requestedFixture=q.get('fixture');fixture=fixtures.find(f=>f.id===requestedFixture)||fixtures.find(f=>!isFinal(f))||fixtures[fixtures.length-1];if(!fixture)throw new Error('No fixture is available.');$('fixtureSelect').innerHTML=fixtures.map(f=>'<option value="'+f.id+'">'+esc(longDate(f.kick_off))+' · '+esc(f.opponent)+' · '+(String(f.venue).toLowerCase()==='home'?'Home':String(f.venue).toLowerCase()==='away'?'Away':'Neutral')+'</option>').join('');$('fixtureSelect').value=fixture.id;FootballPANav.mount({teamId:team.id});await loadMatch();renderHeader();render();$('status').classList.add('hidden');$('app').classList.remove('hidden');startTimers()}catch(e){$('status').textContent='Could not load Match Centre: '+e.message;$('status').classList.add('bad')}}
 async function loadMatch(){
- const {data,error}=await sb.rpc('load_match_centre_state',{p_fixture_id:fixture.id});if(error)throw error;
+ const {data,error}=await sb.rpc('load_match_centre_state_v2',{p_fixture_id:fixture.id});if(error)throw error;
  const d=data||{},db=d.state||{};
  startingXi=d.starting_xi||{};
  const loadedXi=d.xi||startingXi||{},loadedSubs=d.substitutions||[],
    loadedEvents=(d.events||[]).map(x=>eventFromDb(x)).concat(loadedSubs.map(x=>substitutionFromDb(x))).sort(compareLoadedEvents);
  const squadResult=await sb.from('match_squads').select('player_id,selected').eq('fixture_id',fixture.id).eq('selected',true);
  matchSquadIds=squadResult.error?[]:(squadResult.data||[]).map(x=>x.player_id);
- state={phase:db.phase||'PRE-MATCH',seconds:Number(db.seconds||0),running:!!db.running,home:Number(db.home??fixture.home_score??0),away:Number(db.away??fixture.away_score??0),formation:formations[db.formation]?db.formation:Object.keys(formations)[0],xi:loadedXi,events:loadedEvents,subs:loadedSubs,match_started_at:db.match_started_at||null,running_started_at:db.running_started_at||null};
+ state={phase:db.phase||'PRE-MATCH',seconds:Number(db.seconds||0),running:!!db.running,home:Number(db.home??fixture.home_score??0),away:Number(db.away??fixture.away_score??0),formation:formations[db.formation]?db.formation:Object.keys(formations)[0],xi:loadedXi,events:loadedEvents,subs:loadedSubs,match_started_at:db.match_started_at||null,running_started_at:db.running_started_at||null};stateVersion=db.updated_at||'';
  lineupSaved=Object.values(startingXi).filter(Boolean).length>0;
  resetClockAnchor(state.seconds);
  ensureFormation(!Object.keys(state.xi).length);
  $('saveState').textContent=Object.keys(db).length?'Saved':'Ready'
 }
-function eventFromDb(x){const p=playerById(x.player_id),a=playerById(x.related_player_id);const type=x.type||'note',icon=type==='goal'?'⚽':type==='yellow'?'🟨':type==='red'?'🟥':type==='substitution'?'🔁':'•',captureAssists=teamSettings.capture_assists!==false;let text;if(type==='goal'&&!captureAssists){text='Goal · '+(p?.display_name||'Player');if(x.details?.goal_zone_label)text+=' · '+x.details.goal_zone_label}else{text=x.details?.label||((type==='goal'?'Goal':type==='yellow'?'Yellow card':type==='red'?'Red card':type)+' · '+(p?.display_name||'Player'));if(type==='goal'&&a&&!x.details?.label)text+=' · assist '+a.display_name}return{type,icon,text,time:formatMinute(x.minute,x.stoppage_minute),player_id:x.player_id||'',related_player_id:x.related_player_id||'',minute:Number(x.minute||0),stoppage_minute:Number(x.stoppage_minute||0),team_side:x.team_side||'us',zone:x.zone||'',details:x.details||{},created_at:x.created_at||''}}
-function substitutionFromDb(x){const on=playerById(x.player_on_id),off=playerById(x.player_off_id),m=Number(x.minute||0),s=Number(x.stoppage_minute||0);return{type:'substitution',icon:'🔁',text:`${on?.display_name||'Player'} on · ${off?.display_name||'Player'} off`,time:formatMinute(m,s),player_id:x.player_on_id||'',related_player_id:x.player_off_id||'',minute:m,stoppage_minute:s,team_side:'us',details:{},created_at:x.created_at||''}}
+function eventFromDb(x){const p=playerById(x.player_id),a=playerById(x.related_player_id);const type=x.type||'note',icon=type==='goal'?'⚽':type==='yellow'?'🟨':type==='red'?'🟥':type==='substitution'?'🔁':'•',captureAssists=teamSettings.capture_assists!==false;let text;if(type==='goal'&&!captureAssists){text='Goal · '+(p?.display_name||'Player');if(x.details?.goal_zone_label)text+=' · '+x.details.goal_zone_label}else{text=x.details?.label||((type==='goal'?'Goal':type==='yellow'?'Yellow card':type==='red'?'Red card':type)+' · '+(p?.display_name||'Player'));if(type==='goal'&&a&&!x.details?.label)text+=' · assist '+a.display_name}return{id:x.id||'',type,icon,text,time:formatMinute(x.minute,x.stoppage_minute),player_id:x.player_id||'',related_player_id:x.related_player_id||'',minute:Number(x.minute||0),stoppage_minute:Number(x.stoppage_minute||0),team_side:x.team_side||'us',zone:x.zone||'',details:x.details||{},created_at:x.created_at||'',updated_at:x.updated_at||''}}
+function substitutionFromDb(x){const on=playerById(x.player_on_id),off=playerById(x.player_off_id),m=Number(x.minute||0),s=Number(x.stoppage_minute||0);return{id:x.id||'',type:'substitution',icon:'🔁',text:`${on?.display_name||'Player'} on · ${off?.display_name||'Player'} off`,time:formatMinute(m,s),player_id:x.player_on_id||'',related_player_id:x.player_off_id||'',minute:m,stoppage_minute:s,team_side:'us',details:{},created_at:x.created_at||''}}
 function compareLoadedEvents(a,b){const minute=Number(a.minute||0)-Number(b.minute||0);if(minute)return minute;const stoppage=Number(a.stoppage_minute||0)-Number(b.stoppage_minute||0);if(stoppage)return stoppage;return String(a.created_at||'').localeCompare(String(b.created_at||''))}
 function formatMinute(m,s=0){return s>0?`${m}+${s}'`:`${m}'`}
 function renderHeader(){if(club.primary_colour)document.documentElement.style.setProperty('--blue',club.primary_colour);const venue=String(fixture.venue).toLowerCase(),home=venue==='home'||venue==='h';$('matchEyebrow').textContent=(fixture.competition||'Fixture').toUpperCase();$('matchMeta').textContent=longDate(fixture.kick_off)+' · '+(home?'Home':venue==='away'||venue==='a'?'Away':'Neutral');$('leftTeam').textContent=home?(club.short_name||club.name):fixture.opponent;$('rightTeam').textContent=home?fixture.opponent:(club.short_name||club.name)}
@@ -337,23 +337,25 @@ function openEventEdit(index){
 function closeEventEdit(){editingEventIndex=null;$('eventEditPicker').classList.add('hidden')}
 async function saveEventEdit(){
  if(editingEventIndex===null||actionBusy)return;const ev=state.events[editingEventIndex];if(!ev)return;
- const old={...ev};actionBusy=true;setBusyButton($('saveEventEdit'),true,'Saving…');
+ const old={...ev};let persistedSub=null;actionBusy=true;setBusyButton($('saveEventEdit'),true,'Saving…');
  try{
    ev.minute=Math.max(0,Number($('editMinute').value||0));ev.stoppage_minute=Math.max(0,Number($('editStoppage').value||0));
    ev.details={...(ev.details||{}),notes:$('editNotes').value.trim()||null};
    if(ev.type==='substitution'){
      const off=$('editPrimary').value,on=$('editSecondary').value;if(!off||!on||off===on)throw new Error('Choose different players off and on.');
-     const si=state.subs.findIndex(s=>s.player_on_id===old.player_id&&s.player_off_id===old.related_player_id&&Number(s.minute)===Number(old.minute)&&Number(s.stoppage_minute||0)===Number(old.stoppage_minute||0));
-     const next={player_off_id:off,player_on_id:on,minute:ev.minute,stoppage_minute:ev.stoppage_minute};if(si>=0)state.subs[si]=next;else state.subs.push(next);
+     const si=state.subs.findIndex(s=>s.id===ev.id||(s.player_on_id===old.player_id&&s.player_off_id===old.related_player_id&&Number(s.minute)===Number(old.minute)&&Number(s.stoppage_minute||0)===Number(old.stoppage_minute||0)));
+     const next={id:(si>=0?state.subs[si].id:ev.id)||newMatchRecordId(),player_off_id:off,player_on_id:on,minute:ev.minute,stoppage_minute:ev.stoppage_minute};if(si>=0)state.subs[si]=next;else state.subs.push(next);persistedSub=next;ev.id=next.id;
      ev.related_player_id=off;ev.player_id=on;
    }else if(ev.type==='goal'){
-     if(String(ev.team_side||'us')!=='opponent'){ev.player_id=$('editPrimary').value;ev.related_player_id=$('editSecondary').value||'';if(!ev.player_id)throw new Error('Choose the scorer.')}
+     if(String(ev.team_side||'us')!=='opponent'){ev.player_id=$('editPrimary').value;ev.related_player_id=$('editSecondary').value||'';if(!ev.player_id)throw new Error('Choose the scorer.');}
      const zone=$('editGoalZone').value,origin=$('editOriginZone').value,zm=goalZones.find(z=>z.id===zone),om=goalZones.find(z=>z.id===origin);
      ev.zone=zone?'Zone '+zone:'';ev.details={...ev.details,goal_type:$('editGoalType').value,goal_zone:zone||null,goal_zone_label:zm?.label||null,origin_zone:origin||null,origin_zone_label:om?.label||null};
    }else if(ev.type==='yellow'||ev.type==='red'){
      ev.player_id=$('editPrimary').value;if(!ev.player_id)throw new Error('Choose a player.');ev.details={...ev.details,card_reason:$('editReason').value.trim()||null};
    }
-   rebuildEventDisplay(ev);state.events.sort(compareLoadedEvents);closeEventEdit();render();await requestSave();
+   rebuildEventDisplay(ev);state.events.sort(compareLoadedEvents);closeEventEdit();render();
+   if(ev.type==='substitution')await persistSubstitutions([persistedSub]);else await persistMatchEvent(ev);
+   render();
  }catch(err){$('status').textContent=err.message;$('status').classList.remove('hidden');$('status').classList.add('bad')}
  finally{actionBusy=false;setBusyButton($('saveEventEdit'),false)}
 }
@@ -420,9 +422,9 @@ async function saveGoal(){
  actionBusy=true;setBusyButton($('saveGoal'),true,'Saving…');
  try{
    let text='Goal · '+scorer.display_name;if(captureAssists&&a)text+=' · assist '+a.display_name;text+=' · '+zoneMeta.label;
-   state.events.push({type:'goal',icon:'⚽',text,time:formatMinute(m),player_id:scorer.id,related_player_id:assistId||'',minute:m,stoppage_minute:0,team_side:'us',zone:'Zone '+goalZone,details:{goal_type:$('goalType').value,goal_zone:goalZone,goal_zone_label:zoneMeta.label,origin_zone:captureAssists?(originZone||null):null,origin_zone_label:captureAssists?(originMeta?.label||null):null}});
-   if(home)state.home++;else state.away++;
-   closeGoalPicker();render();await requestSave();
+   const ev={id:newMatchRecordId(),type:'goal',icon:'⚽',text,time:formatMinute(m),player_id:scorer.id,related_player_id:assistId||'',minute:m,stoppage_minute:0,team_side:'us',zone:'Zone '+goalZone,details:{goal_type:$('goalType').value,goal_zone:goalZone,goal_zone_label:zoneMeta.label,origin_zone:captureAssists?(originZone||null):null,origin_zone_label:captureAssists?(originMeta?.label||null):null}};
+   state.events.push(ev);if(home)state.home++;else state.away++;
+   closeGoalPicker();render();await persistMatchEvent(ev);render();
  }finally{actionBusy=false;setBusyButton($('saveGoal'),false)}
 }
 function openBatchSubs(){
@@ -452,35 +454,62 @@ function updateBatchSummary(){
   $('applyBatchSubs').disabled=duplicate||!chosen.length;
 }
 async function applyBatchSubs(){
-  if(actionBusy)return;
-  const selections=[...document.querySelectorAll('[data-batch-select]')].filter(x=>x.value);
-  if(!selections.length)return;
-  const ids=selections.map(x=>x.value);
-  if(ids.some((id,i)=>ids.indexOf(id)!==i)){updateBatchSummary();return}
-  actionBusy=true;setBusyButton($('applyBatchSubs'),true,'Saving');
-  try{
-    const m=minuteNow(),changes=[];
-    for(const select of selections){
-      const slot=select.dataset.batchSelect,off=state.xi[slot],on=select.value;
-      if(!off||!on||off===on)continue;
-      const outgoing=playerById(off),incoming=playerById(on);
-      changes.push({slot,off,on,outgoing,incoming});
-    }
-    if(!changes.length)return;
-    for(const ch of changes){
-      state.xi[ch.slot]=ch.on;
-      state.subs.push({player_off_id:ch.off,player_on_id:ch.on,minute:m,stoppage_minute:0});
-      state.events.push({type:'substitution',icon:'🔁',text:`${ch.incoming?.display_name||'Player'} on · ${ch.outgoing?.display_name||'Player'} off`,time:formatMinute(m),player_id:ch.on,related_player_id:ch.off,minute:m,stoppage_minute:0,team_side:'us',details:{batch:true}});
-    }
-    closeBatchSubs();render();await requestSave();
-  }finally{actionBusy=false;setBusyButton($('applyBatchSubs'),false)}
+ if(actionBusy)return;
+ const selections=[...document.querySelectorAll('[data-batch-select]')].filter(x=>x.value);
+ if(!selections.length)return;
+ const ids=selections.map(x=>x.value);
+ if(ids.some((id,i)=>ids.indexOf(id)!==i)){updateBatchSummary();return}
+ actionBusy=true;setBusyButton($('applyBatchSubs'),true,'Saving');
+ try{
+   const m=minuteNow(),changes=[],savedSubs=[];
+   for(const select of selections){
+     const slot=select.dataset.batchSelect,off=state.xi[slot],on=select.value;
+     if(!off||!on||off===on)continue;
+     const outgoing=playerById(off),incoming=playerById(on);changes.push({slot,off,on,outgoing,incoming});
+   }
+   if(!changes.length)return;
+   for(const ch of changes){
+     state.xi[ch.slot]=ch.on;
+     const sub={id:newMatchRecordId(),player_off_id:ch.off,player_on_id:ch.on,minute:m,stoppage_minute:0};
+     state.subs.push(sub);savedSubs.push(sub);
+     state.events.push({id:sub.id,type:'substitution',icon:'🔁',text:(ch.incoming?.display_name||'Player')+' on · '+(ch.outgoing?.display_name||'Player')+' off',time:formatMinute(m),player_id:ch.on,related_player_id:ch.off,minute:m,stoppage_minute:0,team_side:'us',details:{batch:true}});
+   }
+   closeBatchSubs();render();await persistSubstitutions(savedSubs);await requestSave();render();
+ }finally{actionBusy=false;setBusyButton($('applyBatchSubs'),false)}
 }
-function rpcEvents(){return state.events.filter(e=>e.type!=='substitution').map(e=>({type:e.type,player_id:e.player_id||null,related_player_id:e.related_player_id||null,minute:e.minute,stoppage_minute:e.stoppage_minute||0,team_side:e.team_side||'us',zone:e.zone||null,details:{...e.details,label:e.text}}))}function rpcSubs(){return(state.subs||[]).map(s=>({player_off_id:s.player_off_id,player_on_id:s.player_on_id,minute:s.minute,stoppage_minute:s.stoppage_minute||0}))}
+function newMatchRecordId(){return crypto.randomUUID()}
+function applyPersistedState(data){
+ if(!data||!state)return;
+ if(data.home_score!==undefined&&data.home_score!==null)state.home=Number(data.home_score);
+ if(data.away_score!==undefined&&data.away_score!==null)state.away=Number(data.away_score);
+ if(data.updated_at)stateVersion=data.updated_at;
+}
+async function persistMatchEvent(ev){
+ if(!ev.id)ev.id=newMatchRecordId();
+ const {data,error}=await sb.rpc('upsert_match_event',{p_fixture_id:fixture.id,p_event_id:ev.id,p_type:ev.type,p_player_id:ev.player_id||null,p_related_player_id:ev.related_player_id||null,p_minute:Number(ev.minute||0),p_stoppage_minute:Number(ev.stoppage_minute||0),p_team_side:ev.team_side||'us',p_zone:ev.zone?String(ev.zone):null,p_details:{...(ev.details||{}),label:ev.text}});
+ if(error)throw error;if(data?.id)ev.id=data.id;applyPersistedState(data);return data;
+}
+async function deletePersistedEvent(ev){
+ if(!ev?.id)throw new Error('This event has no server ID. Refresh Match Centre and try again.');
+ const {data,error}=await sb.rpc('delete_match_event',{p_fixture_id:fixture.id,p_event_id:ev.id});if(error)throw error;applyPersistedState(data);return data;
+}
+async function persistSubstitutions(subs){
+ const payload=(subs||[]).map(s=>({id:s.id||newMatchRecordId(),player_off_id:s.player_off_id,player_on_id:s.player_on_id,minute:Number(s.minute||0),stoppage_minute:Number(s.stoppage_minute||0)}));
+ payload.forEach((s,i)=>{if(subs[i])subs[i].id=s.id});if(!payload.length)return null;
+ const {data,error}=await sb.rpc('upsert_match_substitutions',{p_fixture_id:fixture.id,p_substitutions:payload});if(error)throw error;if(data?.updated_at)stateVersion=data.updated_at;return data;
+}
+async function deletePersistedSubstitution(sub){
+ if(!sub?.id)throw new Error('This substitution has no server ID. Refresh Match Centre and try again.');
+ const {data,error}=await sb.rpc('delete_match_substitution',{p_fixture_id:fixture.id,p_substitution_id:sub.id});if(error)throw error;if(data?.updated_at)stateVersion=data.updated_at;return data;
+}
 function requestSave(){saveDirty=true;if(!savePromise)savePromise=drainSaves();return savePromise}
-async function drainSaves(){try{while(saveDirty){saveDirty=false;saving=true;syncLocalClock();$('saveState').textContent='Saving…';const payload={p_fixture_id:fixture.id,p_phase:state.phase,p_elapsed_seconds:Math.floor(state.seconds),p_running:state.running,p_home_score:state.home,p_away_score:state.away,p_formation:state.formation,p_xi:{...state.xi},p_events:rpcEvents(),p_substitutions:rpcSubs()};const {error}=await sb.rpc('save_match_centre_state',payload);if(error){$('saveState').textContent='Save failed';$('status').textContent=error.message;$('status').classList.remove('hidden');$('status').classList.add('bad');throw error}$('saveState').textContent='Saved · '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});$('status').classList.add('hidden')}}finally{saving=false;savePromise=null;if(saveDirty)savePromise=drainSaves()}return true}
+async function drainSaves(){try{while(saveDirty){saveDirty=false;saving=true;syncLocalClock();$('saveState').textContent='Saving…';const payload={p_fixture_id:fixture.id,p_phase:state.phase,p_elapsed_seconds:Math.floor(state.seconds),p_running:state.running,p_formation:state.formation,p_xi:{...state.xi}};const {data,error}=await sb.rpc('save_match_runtime_state',payload);if(error){$('saveState').textContent='Save failed';$('status').textContent=error.message;$('status').classList.remove('hidden');$('status').classList.add('bad');throw error}applyPersistedState(data);$('saveState').textContent='Saved · '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});$('status').classList.add('hidden')}}finally{saving=false;savePromise=null;if(saveDirty)savePromise=drainSaves()}return true}
 function queueSave(immediate=false){clearTimeout(syncTimer);if(immediate)return requestSave();syncTimer=setTimeout(()=>requestSave(),700)}
-async function syncCompletedState(){if(!fixture||!state||state.phase==='FULL-TIME'||saving||actionBusy)return;try{const {data,error}=await sb.rpc('load_match_centre_state',{p_fixture_id:fixture.id});if(error)return;const remotePhase=String(data?.state?.phase||'').toUpperCase();if(['FULL-TIME','FULL TIME','FT'].includes(remotePhase)){await loadMatch();fixture.status='completed';renderHeader();render();$('saveState').textContent='Full-time synced'}}catch(e){}}
-function startTimers(){clearInterval(timer);lastCompletionSyncAt=Date.now();timer=setInterval(()=>{if(state?.running)$('clock').textContent=time();if(state&&Date.now()-lastCompletionSyncAt>=5000){lastCompletionSyncAt=Date.now();syncCompletedState()}},1000)}
+async function syncRemoteState(){
+ if(!fixture||!state||saving||saveDirty||actionBusy)return;
+ try{const {data,error}=await sb.rpc('load_match_centre_state_v2',{p_fixture_id:fixture.id});if(error)return;const remoteVersion=data?.state?.updated_at||'';if(remoteVersion&&remoteVersion!==stateVersion){await loadMatch();const phase=String(state.phase||'').toUpperCase();fixture.status=['FULL-TIME','FULL TIME','FT'].includes(phase)?'completed':phase==='PRE-MATCH'?'scheduled':'live';renderHeader();render();$('saveState').textContent='Synced · '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}}catch(e){}
+}
+function startTimers(){clearInterval(timer);lastCompletionSyncAt=Date.now();timer=setInterval(()=>{if(state?.running)$('clock').textContent=time();if(state&&Date.now()-lastCompletionSyncAt>=5000){lastCompletionSyncAt=Date.now();syncRemoteState()}},1000)}
 function setBusyButton(btn,busy,label){if(!btn)return;if(busy){btn.dataset.oldText=btn.textContent;btn.disabled=true;btn.classList.add('busy');if(label)btn.textContent=label}else{btn.disabled=false;btn.classList.remove('busy');if(btn.dataset.oldText)btn.textContent=btn.dataset.oldText;delete btn.dataset.oldText}}
 $('formationSelect').onchange=e=>{if(lineupSaved){e.target.value=state.formation;return}state.formation=e.target.value;ensureFormation();render();requestSave()};
 $('shareLineupBtn').onclick=()=>shareLineupImage(false);
@@ -494,13 +523,13 @@ $('pitch').addEventListener('dragstart',e=>{if(lineupSaved){e.preventDefault();r
 $('playerSearch').addEventListener('input',renderPickerList);$('pickerList').addEventListener('click',e=>{const b=e.target.closest('[data-pick-player]');if(b)chooseTacticalPlayer(b.dataset.pickPlayer)});$('closePicker').onclick=closePicker;$('playerPicker').addEventListener('click',e=>{if(e.target===$('playerPicker'))closePicker()});
 $('startBtn').onclick=async()=>{if(actionBusy||state.phase==='FULL-TIME')return;syncLocalClock();const ap=activePeriod(),bp=breakAfter(),pc=periodCount();if(ap>=pc&&!confirm('Finish the match and open player voting?'))return;actionBusy=true;setBusyButton($('startBtn'),true,'Saving…');try{if(ap){state.running=false;state.seconds=Math.max(state.seconds,ap*periodMinutes()*60);state.phase=ap>=pc?'FULL-TIME':breakPhase(ap)}else{const next=state.phase==='PRE-MATCH'?1:Math.min(pc,bp+1);state.phase=periodPhase(next);state.seconds=Math.max(state.seconds,(next-1)*periodMinutes()*60);state.running=true}resetClockAnchor(state.seconds);render();await requestSave();await loadMatch();render()}finally{actionBusy=false;setBusyButton($('startBtn'),false);render()}};$('pauseBtn').onclick=async()=>{syncLocalClock();state.running=false;resetClockAnchor(state.seconds);render();await requestSave();await loadMatch();render()};
 $('fixtureSelect').onchange=async()=>{const next=fixtures.find(f=>f.id===$('fixtureSelect').value);if(!next||next.id===fixture.id)return;fixture=next;const q=new URLSearchParams(location.search);q.set('fixture',fixture.id);history.replaceState(null,'',location.pathname+'?'+q.toString());await loadMatch();renderHeader();render()};
-$('resetBtn').onclick=async()=>{if(!confirm('Reset this match? This will clear its saved events and substitutions.'))return;state={phase:'PRE-MATCH',seconds:0,running:false,home:0,away:0,formation:Object.keys(formations)[0],xi:{},events:[],subs:[],match_started_at:null,running_started_at:null};resetClockAnchor(0);ensureFormation(true);render();await requestSave()};
+$('resetBtn').onclick=async()=>{if(!confirm('Reset this match? This will clear its saved events and substitutions.'))return;actionBusy=true;setBusyButton($('resetBtn'),true,'Resetting…');try{const nextFormation=Object.keys(formations)[0];const {error}=await sb.rpc('reset_match_centre_state',{p_fixture_id:fixture.id,p_formation:nextFormation,p_xi:{}});if(error)throw error;await loadMatch();fixture.status='scheduled';renderHeader();render();$('saveState').textContent='Match reset'}finally{actionBusy=false;setBusyButton($('resetBtn'),false)}};
 $('goalBtn').onclick=openGoalPicker;
-$('concededBtn').onclick=async()=>{if(actionBusy)return;actionBusy=true;setBusyButton($('concededBtn'),true,'Saving…');try{const m=minuteNow(),home=['home','h'].includes(String(fixture.venue).toLowerCase());state.events.push({type:'goal',icon:'⚽',text:'Conceded goal',time:formatMinute(m),player_id:'',related_player_id:'',minute:m,stoppage_minute:0,team_side:'opponent',zone:'',details:{label:'Conceded goal'}});if(home)state.away++;else state.home++;render();await requestSave()}finally{actionBusy=false;setBusyButton($('concededBtn'),false)}};
+$('concededBtn').onclick=async()=>{if(actionBusy)return;actionBusy=true;setBusyButton($('concededBtn'),true,'Saving…');try{const m=minuteNow(),home=['home','h'].includes(String(fixture.venue).toLowerCase()),ev={id:newMatchRecordId(),type:'goal',icon:'⚽',text:'Conceded goal',time:formatMinute(m),player_id:'',related_player_id:'',minute:m,stoppage_minute:0,team_side:'opponent',zone:'',details:{label:'Conceded goal'}};state.events.push(ev);if(home)state.away++;else state.home++;render();await persistMatchEvent(ev);render()}finally{actionBusy=false;setBusyButton($('concededBtn'),false)}};
 $('cancelGoal').onclick=closeGoalPicker;$('goalPicker').addEventListener('click',e=>{if(e.target===$('goalPicker'))closeGoalPicker()});$('cancelEventEdit').onclick=closeEventEdit;$('saveEventEdit').onclick=saveEventEdit;$('eventEditPicker').addEventListener('click',e=>{if(e.target===$('eventEditPicker'))closeEventEdit()});$('shareResultBtn').onclick=shareResult;$('faEventsBtn').onclick=showFaEvents;$('closeFaEvents').onclick=()=> $('faEventsPicker').classList.add('hidden');$('copyFaEvents').onclick=copyFaEvents;$('faEventsPicker').addEventListener('click',e=>{if(e.target===$('faEventsPicker'))$('faEventsPicker').classList.add('hidden')});$('goalZonePitch').addEventListener('click',e=>{const b=e.target.closest('[data-goal-zone]');if(b)pickGoalZone(b.dataset.goalZone,false)});$('originZonePitch').addEventListener('click',e=>{const b=e.target.closest('[data-goal-zone]');if(b)pickGoalZone(b.dataset.goalZone,true)});$('saveGoal').onclick=saveGoal;
-document.querySelectorAll('[data-event]').forEach(btn=>btn.onclick=async()=>{if(actionBusy)return;const p=playerById($('eventPlayer').value);if(!p)return;const type=btn.dataset.event,icon=type==='yellow'?'🟨':'🟥';actionBusy=true;setBusyButton(btn,true,'Saving');document.querySelectorAll('[data-event]').forEach(x=>{if(x!==btn)x.disabled=true});try{const m=minuteNow(),text=(type==='yellow'?'Yellow card':'Red card')+' · '+p.display_name;state.events.push({type,icon,text,time:formatMinute(m),player_id:p.id,related_player_id:'',minute:m,stoppage_minute:0,team_side:'us',details:{}});render();await requestSave()}finally{actionBusy=false;setBusyButton(btn,false);document.querySelectorAll('[data-event]').forEach(x=>x.disabled=false)}});
+document.querySelectorAll('[data-event]').forEach(btn=>btn.onclick=async()=>{if(actionBusy)return;const p=playerById($('eventPlayer').value);if(!p)return;const type=btn.dataset.event,icon=type==='yellow'?'🟨':'🟥';actionBusy=true;setBusyButton(btn,true,'Saving');document.querySelectorAll('[data-event]').forEach(x=>{if(x!==btn)x.disabled=true});try{const m=minuteNow(),text=(type==='yellow'?'Yellow card':'Red card')+' · '+p.display_name,ev={id:newMatchRecordId(),type,icon,text,time:formatMinute(m),player_id:p.id,related_player_id:'',minute:m,stoppage_minute:0,team_side:'us',details:{}};state.events.push(ev);render();await persistMatchEvent(ev);render()}finally{actionBusy=false;setBusyButton(btn,false);document.querySelectorAll('[data-event]').forEach(x=>x.disabled=false)}});
 $('batchSubBtn').onclick=openBatchSubs;$('cancelBatchSubs').onclick=closeBatchSubs;$('batchSubPicker').addEventListener('click',e=>{if(e.target===$('batchSubPicker'))closeBatchSubs()});$('batchSubList').addEventListener('change',updateBatchSummary);$('applyBatchSubs').onclick=applyBatchSubs;
-$('subBtn').onclick=async()=>{if(actionBusy)return;const off=$('subOff').value,on=$('subOn').value;if(!off||!on)return;actionBusy=true;setBusyButton($('subBtn'),true,'Saving');try{const slot=Object.entries(state.xi).find(([,id])=>id===off);if(slot)state.xi[slot[0]]=on;const a=playerById(on),b=playerById(off),m=minuteNow();state.subs.push({player_off_id:off,player_on_id:on,minute:m,stoppage_minute:0});state.events.push({type:'substitution',icon:'🔁',text:`${a?.display_name||'Player'} on · ${b?.display_name||'Player'} off`,time:formatMinute(m),player_id:on,related_player_id:off,minute:m,stoppage_minute:0,team_side:'us',details:{}});render();await requestSave()}finally{actionBusy=false;setBusyButton($('subBtn'),false)}};
+$('subBtn').onclick=async()=>{if(actionBusy)return;const off=$('subOff').value,on=$('subOn').value;if(!off||!on)return;actionBusy=true;setBusyButton($('subBtn'),true,'Saving');try{const slot=Object.entries(state.xi).find(([,id])=>id===off);if(slot)state.xi[slot[0]]=on;const a=playerById(on),b=playerById(off),m=minuteNow(),sub={id:newMatchRecordId(),player_off_id:off,player_on_id:on,minute:m,stoppage_minute:0};state.subs.push(sub);state.events.push({id:sub.id,type:'substitution',icon:'🔁',text:(a?.display_name||'Player')+' on · '+(b?.display_name||'Player')+' off',time:formatMinute(m),player_id:on,related_player_id:off,minute:m,stoppage_minute:0,team_side:'us',details:{}});render();await persistSubstitutions([sub]);await requestSave();render()}finally{actionBusy=false;setBusyButton($('subBtn'),false)}};
 $('eventFeed').addEventListener('click',async e=>{
  const edit=e.target.closest('[data-edit-event]');if(edit&&!actionBusy){openEventEdit(Number(edit.dataset.editEvent));return}
  const b=e.target.closest('[data-delete-event]');if(!b||actionBusy)return;
@@ -508,15 +537,14 @@ $('eventFeed').addEventListener('click',async e=>{
  if(!confirm('Delete this event?'))return;
  actionBusy=true;b.disabled=true;
  try{
-   eventGoalDelta(ev,-1);
    if(ev.type==='substitution'){
-     const si=state.subs.findIndex(s=>s.player_on_id===ev.player_id&&s.player_off_id===ev.related_player_id&&Number(s.minute)===Number(ev.minute)&&Number(s.stoppage_minute||0)===Number(ev.stoppage_minute||0));
-     if(si>=0)state.subs.splice(si,1)
-   }
-   state.events.splice(i,1);render();await requestSave()
+     const si=state.subs.findIndex(s=>s.id===ev.id||(s.player_on_id===ev.player_id&&s.player_off_id===ev.related_player_id&&Number(s.minute)===Number(ev.minute)&&Number(s.stoppage_minute||0)===Number(ev.stoppage_minute||0)));
+     const sub=si>=0?state.subs[si]:null;if(sub)await deletePersistedSubstitution(sub);if(si>=0)state.subs.splice(si,1);
+   }else{eventGoalDelta(ev,-1);await deletePersistedEvent(ev);}
+   state.events.splice(i,1);render();
  }finally{actionBusy=false}
 });
-sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('./login.html')});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state){syncLocalClock();$('clock').textContent=time();syncCompletedState()}});
+sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('./login.html')});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state){syncLocalClock();$('clock').textContent=time();syncRemoteState()}});
 async function ensureCoreDependency(globalName,src){
   if(window[globalName])return;
   await new Promise((resolve,reject)=>{
