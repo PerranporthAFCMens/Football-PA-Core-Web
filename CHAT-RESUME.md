@@ -27,18 +27,14 @@ Treat `CHANGE-CONTROL.md` as the authoritative product-intent/regression registe
 
 ## Current refs
 
-The documentation commits will be newer than the application refs below. Use these as the **latest functional application checkpoints**:
+Current repository checkpoint:
 
-- production application: `209040dcfb0e8a4158c7ccdde09d407561360f98`
-- dev application: `b9540cf99f9dc38055e919fff1c9d95d3b3a0327`
-- pre-divergence merge base: `e6df1fc1069f09c5392d84b234a8ed4fe8967949`
+- `main`: `a0b82495aeeba32ed575d30b51b707e95605b918`
+- `dev`: `a0b82495aeeba32ed575d30b51b707e95605b918`
+- branches were deliberately reconciled on 27 September after comparing both emergency recovery histories
+- Vercel status for the reconciled head: success
 
-**main and dev are intentionally divergent right now. Do not blindly merge or fast-forward them.** Compare first and reconcile deliberately.
-
-The production application commit `209040dc...` had:
-- Core smoke checks: success
-- Vercel: success
-- Perranporth customer sync source: `209040dc...`
+Before changing code, still fetch and compare both refs. Do not assume alignment will remain true in a future session.
 
 ## Absolute priority
 
@@ -119,7 +115,7 @@ Reverified in live Supabase on 27 September:
 - completed
 - fixture score **2–3**
 - match state **FULL-TIME**
-- match-state score **2–2**
+- match-state score **2–3**
 - elapsed 5400 seconds
 - voting event **open**
 
@@ -131,7 +127,7 @@ Protected events:
 4. **85' Tyreece Gallaway goal**, assist Alfie Cunningham
 5. **89' Tom Goodman goal**, assist Luke Watson-Read
 
-**Important:** fixture/event data and `match_states` are currently inconsistent on score. This is an open data-integrity issue, not a solved item.
+Fixture score, match-state score and protected event feed are currently aligned at **2–3**. Preserve this recovered production state.
 
 The recovered event rows are `server_protected`.
 
