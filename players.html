@@ -20,7 +20,7 @@
 .muted{color:var(--muted);font-size:12px}.btn{border:1px solid var(--line);border-radius:11px;padding:10px 13px;background:#fff;font-weight:800;cursor:pointer}
 .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn.danger{color:#b42318}.btn:disabled{opacity:.55;cursor:not-allowed}
 .hidden{display:none!important}.status{min-height:0;font-size:12px}.status.ok{color:#187747}.status.bad{color:#b42318}
-.formGrid{display:grid;grid-template-columns:1fr 1fr 1fr 90px auto;gap:8px;margin-top:12px}.formGrid input,.sessionGrid input,.sessionSelect{min-width:0;border:1px solid var(--line);border-radius:11px;padding:11px;background:#fff;font:inherit}
+.formGrid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 90px auto;gap:8px;margin-top:12px}.formGrid input,.sessionGrid input,.sessionSelect{min-width:0;border:1px solid var(--line);border-radius:11px;padding:11px;background:#fff;font:inherit}
 .roster{margin-top:12px;border-top:1px solid #edf1f5;min-width:0}.playerRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #edf1f5;min-width:0}
 .playerName{font-size:19px;line-height:1.18;font-weight:900}.playerMeta{margin-top:4px;color:var(--muted);font-size:13px}.rowActions{display:flex;gap:6px}.manageActions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.sortSelect{min-width:150px}
 .sessionCreate{margin-top:12px;padding:12px;border:1px solid #e2e9f0;border-radius:14px;background:#f8fafc}.sessionSetup{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(150px,.6fr);gap:8px}.sessionSetup label,.sessionGrid label{display:grid;gap:6px;min-width:0}.sessionSetup label>span,.sessionGrid label>span{font-size:10px;font-weight:900;letter-spacing:.06em;color:var(--muted)}.sessionSetup input,.sessionSetup select{width:100%;min-width:0;border:1px solid var(--line);border-radius:11px;padding:11px;background:#fff;font:inherit}.sessionGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;margin-top:8px;align-items:end}.recurrenceHint{margin-top:8px}.review{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-top:14px}
@@ -58,6 +58,7 @@
     <div id="playerForm" class="formGrid hidden">
       <input id="firstName" placeholder="First name" autocomplete="off">
       <input id="lastName" placeholder="Surname" autocomplete="off">
+      <input id="lineupAlias" placeholder="Lineup alias (optional)" autocomplete="off" maxlength="24">
       <input id="position" placeholder="Position" autocomplete="off">
       <input id="shirtNumber" type="number" min="0" max="99" placeholder="No.">
       <button id="savePlayer" class="btn primary">Add to squad</button>
@@ -120,7 +121,7 @@ function setTab(tab,{replaceUrl=true}={}){
 }
 function resetPlayerForm(){
   editingPlayerId=null;
-  $('firstName').value='';$('lastName').value='';$('position').value='';$('shirtNumber').value='';
+  $('firstName').value='';$('lastName').value='';$('lineupAlias').value='';$('position').value='';$('shirtNumber').value='';
   $('savePlayer').textContent='Add to squad';$('playerForm').classList.add('hidden');
 }
 function renderRoster(){
@@ -155,7 +156,7 @@ async function load(){
   $('teamLabel').textContent=ctx.club.name+' · '+ctx.team.name+' · '+(ctx.season?.label||ctx.team.season_label||'Current season');
   $('toggleAdd').classList.toggle('hidden',!(ctx.access?.can_manage_players??ctx.canManage));$('sessionCreate').classList.toggle('hidden',!(ctx.access?.can_manage_players??ctx.canManage));
 
-  let pq=sb.from('team_players').select('players(id,display_name,first_name,last_name,preferred_position,shirt_number)').eq('team_id',ctx.team.id).eq('active',true);
+  let pq=sb.from('team_players').select('players(id,display_name,first_name,last_name,lineup_alias,preferred_position,shirt_number)').eq('team_id',ctx.team.id).eq('active',true);
   if(ctx.season?.id)pq=pq.eq('season_id',ctx.season.id);
   const [pr,sr]=await Promise.all([pq,sb.from('training_sessions').select('*').eq('team_id',ctx.team.id).order('session_date',{ascending:false})]);
   if(pr.error)throw pr.error;if(sr.error)throw sr.error;
@@ -177,16 +178,16 @@ $('savePlayer').onclick=async()=>{
   if(!(ctx.access?.can_manage_players??ctx.canManage))return;
   const first=$('firstName').value.trim(),last=$('lastName').value.trim();
   if(!first||!last){showStatus('Enter the player’s first name and surname.','bad');return}
-  const btn=$('savePlayer'),name=(first+' '+last).trim(),position=$('position').value.trim()||null,number=$('shirtNumber').value===''?null:Number($('shirtNumber').value);
+  const btn=$('savePlayer'),name=(first+' '+last).trim(),alias=$('lineupAlias').value.trim()||null,position=$('position').value.trim()||null,number=$('shirtNumber').value===''?null:Number($('shirtNumber').value);
   btn.disabled=true;btn.textContent='Saving…';
   try{
     if(editingPlayerId){
-      const {data,error}=await sb.from('players').update({first_name:first,last_name:last,display_name:name,preferred_position:position,shirt_number:number,updated_at:new Date().toISOString()}).eq('id',editingPlayerId).select('id,display_name,first_name,last_name,preferred_position,shirt_number').single();
+      const {data,error}=await sb.from('players').update({first_name:first,last_name:last,display_name:name,lineup_alias:alias,preferred_position:position,shirt_number:number,updated_at:new Date().toISOString()}).eq('id',editingPlayerId).select('id,display_name,first_name,last_name,lineup_alias,preferred_position,shirt_number').single();
       if(error)throw error;players=players.map(p=>p.id===data.id?data:p);showStatus(data.display_name+' updated.','ok');
     }else{
-      let existing=await sb.from('players').select('id,display_name,first_name,last_name,preferred_position,shirt_number,active').eq('club_id',ctx.team.club_id).ilike('first_name',first).ilike('last_name',last).limit(1).maybeSingle();
+      let existing=await sb.from('players').select('id,display_name,first_name,last_name,lineup_alias,preferred_position,shirt_number,active').eq('club_id',ctx.team.club_id).ilike('first_name',first).ilike('last_name',last).limit(1).maybeSingle();
       if(existing.error)throw existing.error;let p=existing.data;
-      if(!p){const r=await sb.from('players').insert({club_id:ctx.team.club_id,first_name:first,last_name:last,display_name:name,preferred_position:position,shirt_number:number,active:true}).select('id,display_name,first_name,last_name,preferred_position,shirt_number,active').single();if(r.error)throw r.error;p=r.data}
+      if(!p){const r=await sb.from('players').insert({club_id:ctx.team.club_id,first_name:first,last_name:last,display_name:name,lineup_alias:alias,preferred_position:position,shirt_number:number,active:true}).select('id,display_name,first_name,last_name,lineup_alias,preferred_position,shirt_number,active').single();if(r.error)throw r.error;p=r.data}
       let mq=sb.from('team_players').select('id,active').eq('team_id',ctx.team.id).eq('player_id',p.id);if(ctx.season?.id)mq=mq.eq('season_id',ctx.season.id);
       const membership=await mq.maybeSingle();if(membership.error)throw membership.error;
       if(membership.data){if(membership.data.active)throw new Error(p.display_name+' is already in this squad.');const r=await sb.from('team_players').update({active:true,updated_at:new Date().toISOString()}).eq('id',membership.data.id);if(r.error)throw r.error}
@@ -199,7 +200,7 @@ $('savePlayer').onclick=async()=>{
 };
 $('roster').onclick=async e=>{
   const edit=e.target.closest('[data-edit]'),remove=e.target.closest('[data-remove]');
-  if(edit){const p=players.find(x=>x.id===edit.dataset.edit);if(!p)return;editingPlayerId=p.id;$('firstName').value=p.first_name||'';$('lastName').value=p.last_name||'';$('position').value=p.preferred_position||'';$('shirtNumber').value=p.shirt_number??'';$('savePlayer').textContent='Save changes';$('playerForm').classList.remove('hidden');$('firstName').focus();return}
+  if(edit){const p=players.find(x=>x.id===edit.dataset.edit);if(!p)return;editingPlayerId=p.id;$('firstName').value=p.first_name||'';$('lastName').value=p.last_name||'';$('lineupAlias').value=p.lineup_alias||'';$('position').value=p.preferred_position||'';$('shirtNumber').value=p.shirt_number??'';$('savePlayer').textContent='Save changes';$('playerForm').classList.remove('hidden');$('firstName').focus();return}
   if(remove){const p=players.find(x=>x.id===remove.dataset.remove);if(!p||!confirm('Remove '+p.display_name+' from this squad?'))return;remove.disabled=true;let q=sb.from('team_players').update({active:false,updated_at:new Date().toISOString()}).eq('team_id',ctx.team.id).eq('player_id',p.id);if(ctx.season?.id)q=q.eq('season_id',ctx.season.id);const {error}=await q;if(error){showStatus(error.message,'bad');remove.disabled=false;return}players=players.filter(x=>x.id!==p.id);showStatus(p.display_name+' removed from this squad.','ok');renderRoster();renderTraining()}
 };
 function syncTrainingRepeat(){
