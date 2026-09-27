@@ -15,6 +15,7 @@ Customer Perranporth: `https://footballpa.com/Perranporth`
 
 Before changing anything, read the current versions of:
 
+- `CHANGE-CONTROL.md` **first**
 - `README.md`
 - `HANDOVER.md`
 - `CODE-AUDIT.md`
@@ -22,7 +23,7 @@ Before changing anything, read the current versions of:
 - `CHAT-RESUME.md`
 - `scripts/smoke-check.mjs`
 
-Treat the **26 September Emergency Matchday Handover** section in `HANDOVER.md` as the authoritative continuation point for Matchday.
+Treat `CHANGE-CONTROL.md` as the authoritative product-intent/regression register, then use the **26 September Emergency Matchday Handover** section in `HANDOVER.md` for incident detail.
 
 ## Current refs
 
@@ -105,33 +106,38 @@ That confirmation text alone does not open voting. The database save RPC now doe
 
 This was added after the failure. Test it cleanly on a disposable/test fixture before saying it works.
 
-## Culdrose data is now authoritative and must be preserved
+## Culdrose production data must be preserved
 
 Fixture ID:
 
 `4e39d643-e7f9-46a3-89da-6e25adc978f7`
 
-Current Supabase state:
+Reverified in live Supabase on 27 September:
 
 - RNAS Culdrose 1st v Perranporth
 - Away
 - completed
-- final score **2–2**
-- state **FULL-TIME**
-- 5400 elapsed seconds
+- fixture score **2–3**
+- match state **FULL-TIME**
+- match-state score **2–2**
+- elapsed 5400 seconds
+- voting event **open**
 
-Events:
+Protected events:
 
 1. **5' Alex Taylor goal**, assist Fin Stribley, Central box
 2. **37' conceded**
 3. **65' conceded**
-4. **89' Tom Goodman goal**
+4. **85' Tyreece Gallaway goal**, assist Alfie Cunningham
+5. **89' Tom Goodman goal**, assist Luke Watson-Read
 
-The recovered event rows are marked `server_protected`.
+**Important:** fixture/event data and `match_states` are currently inconsistent on score. This is an open data-integrity issue, not a solved item.
 
-Do not alter, delete or use Culdrose as a destructive test fixture unless the user explicitly asks.
+The recovered event rows are `server_protected`.
 
-The Culdrose voting event is already **open**. Do not create another one.
+Do not alter/delete them or use Culdrose as a destructive test fixture unless the user explicitly asks.
+
+Do not create another Culdrose voting event.
 
 ## The architectural problem still to review
 
@@ -142,6 +148,8 @@ A guard now rejects stale payloads that omit protected server-corrected events, 
 Review whether Matchday events should move to stable event-level create/edit/delete RPCs before the next real match.
 
 ## What to do first in this new chat
+
+Review the relevant `CHANGE-CONTROL.md` IDs before editing existing behaviour.
 
 Do this in order:
 
