@@ -109,6 +109,12 @@ if(!matchEventsEdit.includes('id="concededBtn"')||!matchEventsEdit.includes("tea
 if(!matchEventsEdit.includes('<option value="">Select scorer</option>')||!matchEventsEdit.includes('Choose the goalscorer before saving.'))fail('match-centre.html','explicit goalscorer selection safeguard missing');
 if(!matchEventsEdit.includes("periodBtn.textContent='Start Match'")||!matchEventsEdit.includes("periodBtn.textContent='Half Time'")||!matchEventsEdit.includes("periodBtn.textContent='Start Second Half'")||!matchEventsEdit.includes("periodBtn.textContent='Full Time'"))fail('match-centre.html','football matchday phase controls missing');
 if(!matchEventsEdit.includes("confirm('Finish the match and open player voting?')"))fail('match-centre.html','Full Time voting confirmation missing');
+if(!matchEventsEdit.includes("sb.rpc('load_match_centre_state_v2'")||!matchEventsEdit.includes("sb.rpc('save_match_runtime_state'"))fail('match-centre.html','event-level Matchday runtime persistence missing');
+if(!matchEventsEdit.includes("sb.rpc('upsert_match_event'")||!matchEventsEdit.includes("sb.rpc('delete_match_event'"))fail('match-centre.html','stable event-level create/edit/delete persistence missing');
+if(!matchEventsEdit.includes("sb.rpc('upsert_match_substitutions'")||!matchEventsEdit.includes("sb.rpc('delete_match_substitution'"))fail('match-centre.html','stable substitution persistence missing');
+if(!matchEventsEdit.includes("sb.rpc('reset_match_centre_state'"))fail('match-centre.html','explicit destructive reset RPC missing');
+if(matchEventsEdit.includes("sb.rpc('save_match_centre_state'"))fail('match-centre.html','destructive whole-array Matchday save RPC is still used by the browser');
+if(!matchEventsEdit.includes('newMatchRecordId')||!matchEventsEdit.includes('syncRemoteState'))fail('match-centre.html','stable IDs or cross-device Matchday sync missing');
 if(failed)process.exit(1);
 
 const matchDeps=fs.readFileSync('match-centre.html','utf8');
