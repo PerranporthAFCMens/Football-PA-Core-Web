@@ -1,6 +1,6 @@
 # Football PA Core Handover
 
-Updated: 26 September 2026
+Updated: 27 September 2026
 
 ## Project
 
@@ -11,6 +11,19 @@ Supabase project: `hennzggqaquevqgiucqn`
 Primary domain: `https://core.footballpa.com`
 
 Do not modify the separate live Perranporth app unless explicitly asked.
+
+## Change control — read this before changing behaviour
+
+`CHANGE-CONTROL.md` is now the living record of intentional product decisions, regressions, verification status and “do not undo” rules.
+
+Before modifying an existing feature:
+
+1. read `CHANGE-CONTROL.md`
+2. identify the affected CC IDs
+3. inspect the legacy Perranporth implementation when the workflow previously worked there
+4. update the register in the same work session with the reason, source commit/migration and verification status
+
+Do not infer intent from the newest code alone. A newer implementation can still be a regression.
 
 ## Intended navigation
 
@@ -633,7 +646,7 @@ This section supersedes the older 21 September release checkpoint for anything r
 - `main` and `dev` are **diverged**, both 6 commits ahead of merge base `e6df1fc1069f09c5392d84b234a8ed4fe8967949`. Do not fast-forward or blindly merge them. Inspect/compare first.
 - Core smoke checks passed on production main.
 - Vercel status for production main is successful.
-- Customer Perranporth copy `footballpa.com/Perranporth` records Core source `209040dcfb0e8a4158c7ccdde09d407561360f98`, so it is currently aligned with production Core.
+- Customer Perranporth copy is synced from Core. The source marker may point at a later documentation-only commit, but the latest known functional Matchday application checkpoint remains `209040dcfb0e8a4158c7ccdde09d407561360f98`.
 
 ### Live-match incident: RNAS Culdrose, 26 September
 
@@ -682,25 +695,35 @@ The front-end confirmation itself does **not** open the vote; the database save 
 
 This was added after the live-match failure. It still needs a clean end-to-end test on a disposable/test fixture. Do not use the current Culdrose open vote as proof that automatic opening worked during the original live match.
 
-### Authoritative Culdrose recovery snapshot
+### Culdrose production snapshot — reverified 27 September
 
 Fixture: `4e39d643-e7f9-46a3-89da-6e25adc978f7`  
 Opponent: RNAS Culdrose 1st  
 Venue: Away  
-Status: completed  
-Final score: **RNAS Culdrose 2–2 Perranporth**  
-Match state: `FULL-TIME`, 5400 elapsed seconds.
+Fixture status: completed
 
-Current authoritative events in Supabase:
+Live Supabase now shows:
+
+- fixture score: **RNAS Culdrose 2–3 Perranporth**
+- Match Centre state: `FULL-TIME`, 5400 elapsed seconds
+- **match-state score is still 2–2**
+- voting event status: **open**
+
+Current protected events:
 
 1. **5' Perranporth goal — Alex Taylor**, assist Fin Stribley, Central box
 2. **37' RNAS Culdrose goal conceded**
 3. **65' RNAS Culdrose goal conceded**
-4. **89' Perranporth goal — Tom Goodman**
+4. **85' Perranporth goal — Tyreece Gallaway**, assist Alfie Cunningham
+5. **89' Perranporth goal — Tom Goodman**, assist Luke Watson-Read
 
-The recovered event rows are currently marked `server_protected`. Do not rewrite/delete these records while testing Matchday unless the user explicitly asks for a correction.
+The three Perranporth goals plus two conceded goals align with the fixture score of 2–3 because Perranporth were away.
 
-The Culdrose voting event is currently **open**. Do not create a second voting event or reopen/reset it unnecessarily.
+**Known data-integrity issue:** `fixtures.home_score/away_score` and the event feed indicate 2–3, while `match_states.home_score/away_score` remains 2–2. Do not claim the recovered Matchday state is internally consistent until this mismatch has been reviewed.
+
+The recovered event rows are marked `server_protected`. Do not rewrite/delete them while testing Matchday unless the user explicitly asks for a factual correction.
+
+The Culdrose voting event is already open. Do not create a second voting event or use Culdrose as a destructive Matchday test fixture.
 
 ### Matchday architecture risk still open
 
@@ -746,3 +769,21 @@ A dynamic replacement HTML template was supplied to the user for Supabase Authen
 Also verify Supabase Auth URL Configuration because an inspected confirmation email still used `http://localhost:3000` as its redirect.
 
 Do not return to the GitHub personal-access-token workaround unless the user explicitly wants that route. Direct Supabase Auth settings are the correct place for this template.
+
+
+## Change-control checkpoint — 27 September 2026
+
+A new living register, `CHANGE-CONTROL.md`, is authoritative for product intent and regression protection.
+
+It records:
+
+- intentional behaviours that future refactors must preserve
+- source commits/migrations
+- verification level
+- known open/broken items
+- Culdrose production-data protection
+- the mandatory Matchday acceptance test
+- branch-divergence rules
+- a template for every future material change
+
+Every future development session must update that register when it changes existing behaviour. Git history alone is not enough because it does not explain which changes were deliberate, which were emergency fixes, and which remain unverified.
