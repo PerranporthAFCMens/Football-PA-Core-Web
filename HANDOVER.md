@@ -736,6 +736,22 @@ The recovered event rows are marked `server_protected`. Do not rewrite/delete th
 
 The Culdrose voting event is already open. Do not create a second voting event or use Culdrose as a destructive Matchday test fixture.
 
+### Football clock and player-minute semantics restored
+
+The legacy Perranporth timing model has now been restored in Core using cleaner storage:
+
+- Match event timestamps use separate `minute` and `stoppage_minute` fields rather than the old numeric `45.02` workaround.
+- For a 2 x 45 team, 45:10 is 45+1, 46:10 is 45+2, second-half restart is exactly 45:00, 90:10 is 90+1.
+- The same calculation derives from `team_settings.period_count` and `period_minutes`, so youth/custom formats are not hard-coded to 45/90.
+- Starting a new period resets football elapsed time to the configured boundary. First-half added time does not carry into the second-half clock.
+- Pause now resumes from the persisted timestamp anchor rather than leaving the match stuck.
+- Player minutes use football minutes only: stoppage time does not inflate totals, rolling substitution intervals are accumulated, and a red card ends the player's minutes.
+- Supabase migration: `normalise_match_stoppage_player_minutes`.
+- Rollback-only stats verification passed: rolling intervals + red = 42 minutes; off at 45+3 = 45; on at 45+3 then off at 83 = 38.
+- Culdrose remained untouched at completed 2-3 with five events after verification.
+
+Authenticated browser/device E2E is still required before calling Matchday fully ready.
+
 ### Event-level Matchday persistence now implemented
 
 Supabase migration `event_level_matchday_persistence` adds stable event/substitution mutation RPCs, server score recalculation triggers, an explicit reset RPC and a runtime-only save path for clock/phase/formation/current XI.
