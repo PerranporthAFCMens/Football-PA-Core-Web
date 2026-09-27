@@ -6,6 +6,16 @@ Updated: 27 September 2026
 
 Football PA Core is the generic multi-team version of Football PA. Perranporth is the UX reference only. Core must stay team-agnostic and configurable.
 
+### Current control checkpoint — 27 September 2026
+
+- `main` and `dev` were deliberately reconciled and aligned after the emergency Matchday recovery review.
+- Reconciled repository head at this checkpoint: `a0b82495aeeba32ed575d30b51b707e95605b918`.
+- Vercel reports success for the reconciled head.
+- Live Culdrose recovery state is authoritative: completed **RNAS Culdrose 2–3 Perranporth**, FULL-TIME, match-state **2–3**, voting open.
+- Protected events: Alex Taylor 5' (Fin Stribley assist), conceded 37', conceded 65', Tyreece Gallaway 85' (Alfie Cunningham assist), Tom Goodman 89' (Luke Watson-Read assist).
+- Matchday remains the highest-priority workflow until a clean disposable-fixture browser E2E proves the complete legacy-parity flow.
+- Read `CHANGE-CONTROL.md` before modifying Matchday behaviour.
+
 Repository: `PerranporthAFCMens/Football-PA-Core-Web`  
 Supabase project: `hennzggqaquevqgiucqn`  
 Primary domain: `https://core.footballpa.com`
