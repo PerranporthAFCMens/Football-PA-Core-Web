@@ -93,6 +93,17 @@ Relevant recent migrations include:
 - `persist_match_clock_anchors`
 - `open_voting_only_at_full_time`
 - `event_level_matchday_persistence`
+- `normalise_match_stoppage_player_minutes`
+
+The legacy football-time model is also restored:
+- event timestamps use separate `minute` + `stoppage_minute`
+- normal football minutes are 1-based
+- added time is derived from the configured period length
+- a new period restarts from the exact configured football-time boundary
+- stoppage time does not inflate player-minute totals
+- rolling on/off intervals are accumulated
+- a red card stops that player's minutes
+- pause/resume uses the timestamp anchor
 
 Important: these changes are **not yet a substitute for an end-to-end Matchday test**.
 
