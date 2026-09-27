@@ -88,6 +88,17 @@ There are five completed fixtures marked `Demo / Test` to populate dashboards.
 
 ## Match Centre
 
+### Free lineup positioning restored
+
+- Formation selections are starting presets, not fixed movement slots.
+- `state.xi` remains a slot→player mapping so saved XI identity and substitution logic stay stable.
+- Live visual coordinates are stored separately in `match_states.lineup_positions` as x/y percentages and loaded through `load_match_centre_state_v2`.
+- Dragging uses pointer events, so mouse/touch positions persist after reload and can sync to another browser.
+- Shared lineup images use the saved free coordinates rather than reverting to the formation preset.
+- 11-a-side shirt display was reduced modestly again to 112×104 desktop and 73×68 mobile. Number sizing is 24 desktop / 16 mobile through a CSS variable so the mobile rule is no longer overridden by inline SVG styling. 7-a-side sizing remains unchanged.
+- Migration: `persist_free_lineup_positions`.
+
+
 Current intended behaviour:
 - match-format-specific formations
 - configurable kit and shirt-number colour
