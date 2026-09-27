@@ -131,6 +131,7 @@ The Culdrose events are marked `server_protected`. Preserve them unless the user
 | CC-031 | Auth redirect | Production confirmation links must not redirect to `http://localhost:3000`. | Invalid production confirmation destination. | Supabase Auth URL Configuration | **OPEN** |
 | CC-032 | Perranporth customer path | `footballpa.com/Perranporth` is a synced customer copy of Core and must preserve its stable customer-facing URL. | Perranporth users should not be sent to dev/legacy URLs. | marketing sync workflow | **INTENTIONAL** |
 | CC-033 | St Agnes QA | St Agnes is a real QA team: 7-a-side, four 12-minute periods, Voting and Subs intentionally hidden. | Ensures Core works beyond Perranporth. | Team config | **INTENTIONAL** |
+| CC-034 | Football clock / stoppage-time semantics | Match events use configured football periods: normal minutes are 1-based, added time is stored separately as `minute` + `stoppage_minute` (for example 45 + 2), a new period restarts from its configured football-time boundary, and stoppage time must never inflate player-minute totals. Red cards stop that player's minutes. | Preserves the proven legacy Perranporth behaviour without the old `45.02` storage workaround and works for non-45-minute formats. | dev `3b99850...`, `8567502...`; migration `normalise_match_stoppage_player_minutes`; smoke `c0d08e2...` / `57abf48...` | **CODE/DB ROLLBACK VERIFIED; AUTH BROWSER E2E OPEN** |
 | CC-034 | Match kit | Goalkeeper kit colour is separately configurable; keeper uses solid colour. Assist capture can be disabled and then assist UI must hide. | Per-team match configuration. | settings + Match Centre | **INTENTIONAL** |
 | CC-035 | Branch handling | main/dev emergency divergence was reconciled deliberately on 27 September after comparing both histories. Keep branches aligned unless a future dev-only change intentionally requires divergence. | Prevent accidental branch drift while preserving reviewed recovery changes. | reconciliation commit `a0b82495...` | **VERIFIED / RECONCILED** |
 
@@ -199,6 +200,9 @@ Only after all of these pass should Matchday be marked **VERIFIED** here.
 - The test deliberately raised `MATCHDAY_EVENT_LEVEL_TEST_PASS` and rolled back. Post-check confirmed zero test fixtures and Culdrose remained FULL-TIME 2–3 with five protected events and one open voting event.
 - JavaScript parse check passed for the updated Match Centre with no missing DOM IDs.
 - Vercel production deployment for merge `3927a365f78ce89179e55832231d793deadde5db` is `READY` and aliases include `core.footballpa.com`.
+- Restored legacy football-time semantics: first-half added time is stored/displayed as 45+N, second-half added time as 90+N for a 2x45 configuration, with the same rule derived from team-configured period lengths for other formats.
+- Starting a new period now resets the football clock to the exact configured period boundary, so first-half stoppage does not leak into second-half minutes.
+- Player-minute calculations now ignore stoppage-time additions, support repeated on/off intervals, and stop at a red card. Rollback-only test results: rolling + red = 42, off at 45+3 = 45, on at 45+3 then off at 83 = 38.
 - An authenticated browser/device E2E remains required before calling the entire Matchday workflow fully closed.
 
 ## Recent emergency change chronology
