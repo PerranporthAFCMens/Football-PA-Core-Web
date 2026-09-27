@@ -36,7 +36,7 @@ Run:
 node scripts/smoke-check.mjs
 ```
 
-For active project state and deployment caveats, read [HANDOVER.md](HANDOVER.md). For a ready-to-paste prompt for a new ChatGPT conversation, read [CHAT-RESUME.md](CHAT-RESUME.md).
+Before changing existing behaviour, read [CHANGE-CONTROL.md](CHANGE-CONTROL.md). For active project state and deployment caveats, read [HANDOVER.md](HANDOVER.md). For a ready-to-paste prompt for a new ChatGPT conversation, read [CHAT-RESUME.md](CHAT-RESUME.md).
 
 
 ## Reference migrations
