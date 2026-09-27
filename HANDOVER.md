@@ -10,7 +10,7 @@ Repository: `PerranporthAFCMens/Football-PA-Core-Web`
 Supabase project: `hennzggqaquevqgiucqn`  
 Primary domain: `https://core.footballpa.com`
 
-Do not modify the separate live Perranporth app unless explicitly asked.
+The old standalone Perranporth app is a frozen behaviour/reference source. The customer-facing `footballpa.com/Perranporth` copy is synced from Core; do not develop the legacy standalone as the new source of truth.
 
 ## Change control — read this before changing behaviour
 
@@ -140,10 +140,11 @@ Calendar subscriptions use Edge Function `team-calendar` and a per-team UUID tok
 
 ## Edge Functions
 
-- `perranporth-matchday` v18
-- `fa-fulltime-preview` v13
-- `team-calendar` v1
-- `team-scoreboard` public read-only scoreboard endpoint
+- `perranporth-matchday` v19
+- `fa-fulltime-preview` v14
+- `team-calendar` v2
+- `team-scoreboard` v2, public read-only scoreboard endpoint
+- `perranporth-classic-dashboard` v1
 
 ## Feature flags
 
