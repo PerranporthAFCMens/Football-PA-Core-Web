@@ -74,7 +74,7 @@ Live database currently shows:
 - fixture status: completed
 - fixture score: **RNAS Culdrose 2–3 Perranporth**
 - match state: FULL-TIME
-- match-state score: **2–2**
+- match-state score: **2–3**
 - match-state elapsed: 5400 seconds
 - voting event: open
 
@@ -88,7 +88,7 @@ Current protected event feed:
 
 The event feed supports three Perranporth goals and two conceded goals, which aligns with the fixture score of 2–3 because Perranporth were away.
 
-**OPEN DATA-INTEGRITY ISSUE:** `match_states.home_score/away_score` is still 2–2 while the fixture and event feed indicate 2–3. Do not treat the live Matchday state as internally consistent until this has been reviewed. Do not destructively “fix” Culdrose as a test fixture.
+The Culdrose fixture score, match-state score and event feed are now aligned at **2–3**. The match-state score was reconciled on 27 September after verification against the fixture and protected event feed. Culdrose remains production data and must not be used as a destructive test fixture.
 
 The Culdrose events are marked `server_protected`. Preserve them unless the user explicitly requests a factual correction.
 
@@ -121,7 +121,7 @@ The Culdrose events are marked `server_protected`. Preserve them unless the user
 | CC-023 | Match clock | Live clock is timestamp/anchor-based and must resynchronise after backgrounding/returning. Do not return to a fragile client-only one-second counter as authoritative time. | Phone backgrounding and autosaves caused confusing time behaviour. | migration `timestamp_anchored_match_clock`; commit `5d1d27a...` | **CODE/DB VERIFIED, E2E OPEN** |
 | CC-024 | Event persistence safety | Server-corrected events can be `server_protected`; stale browser payloads must not silently delete them. | Recovery exposed whole-array autosave overwrite risk. | migration `protect_server_corrected_match_events` | **VERIFIED guard; architecture still OPEN** |
 | CC-025 | Event persistence architecture | Whole-array delete/reinsert in `save_match_centre_state` is a known risk. Preferred future direction is stable event-level create/edit/delete mutations. | A stale browser can otherwise overwrite authoritative live events. | Emergency handover | **OPEN / architectural review required** |
-| CC-026 | Voting at Full Time | Voting is intended to open **exactly once at Full Time**, not at match start and not merely because a confirmation dialog was shown. | Automatic opening failed during Culdrose. | migrations `auto_open_voting_on_match_completion`, `restore_match_start_voting`, `open_voting_only_at_full_time` | **CODE/DB PRESENT, CLEAN E2E TEST REQUIRED** |
+| CC-026 | Voting at Full Time | Voting is intended to open **exactly once at Full Time**, not at match start and not merely because a confirmation dialog was shown. | Automatic opening failed during Culdrose. | migrations `auto_open_voting_on_match_completion`, `restore_match_start_voting`, `open_voting_only_at_full_time` | **DB TRANSACTION FLOW VERIFIED 27 SEP; BROWSER E2E OPEN** |
 | CC-027 | Player Portal team context | Shared player portal/voting links must resolve the correct team from the portal token when team query context is absent. | Prevent voting link landing in wrong/unknown team context. | migration `resolve_player_portal_team_from_token`; commit `11644cb...` | **CODE/DB VERIFIED, E2E OPEN** |
 | CC-028 | Culdrose recovery data | Current protected Culdrose event feed listed above is production data, not a disposable test. | Preserve recovered real-match history. | Supabase live snapshot 27 Sep | **INTENTIONAL DATA PROTECTION** |
 | CC-029 | Auth signup branding | Core signup passes team ID/name, club name, badge and primary colour in Auth metadata. | Confirmation email must be team-aware. | `20357fb7...` | **DEPLOYED** |
@@ -137,8 +137,8 @@ The Culdrose events are marked `server_protected`. Preserve them unless the user
 These are not optional polish. They are known risks or regressions that must remain visible:
 
 1. **Matchday full-flow validation is incomplete.**
-2. **Culdrose fixture score and match-state score are inconsistent (2–3 vs 2–2).**
-3. **Voting auto-open at Full Time has implementation but has not passed a clean disposable-fixture end-to-end test.**
+2. **Culdrose fixture score and match-state score were reconciled to 2–3 on 27 September.**
+3. **Voting auto-open passed a clean rollback-only database flow test on 27 September, including repeated Full Time save without duplicate voting event. Browser E2E remains open.**
 4. **Whole-array event replacement remains architecturally risky.**
 5. **Confirm-signup email template still needs confirmation that the dynamic team-aware HTML was saved in Supabase.**
 6. **Supabase Auth URL configuration still needs verification that localhost is gone.**
@@ -176,6 +176,15 @@ The test must cover, in order:
 24. Change that vote and verify no duplicate ballot
 
 Only after all of these pass should Matchday be marked **VERIFIED** here.
+
+### 27 September Matchday verification
+
+- Reconciled the protected Culdrose `match_states` score to **2–3**, matching the completed fixture and five protected events.
+- Ran a rollback-only disposable fixture simulation through the real `save_match_centre_state` RPC.
+- Verified Start Match, explicit Alex Taylor goal at 5', conceded at 37', yellow card, substitution, Half Time, Second Half, final 2–3 score, FULL-TIME completion and automatic voting.
+- Verified a repeated FULL-TIME save does **not** create a duplicate voting event.
+- The transaction deliberately raised `MATCHDAY_TEST_PASS` and rolled back. Post-check confirmed zero test fixtures remained and the real Culdrose voting event stayed open.
+- This is a backend/database flow verification, not a substitute for a browser/device end-to-end Matchday test.
 
 ## Recent emergency change chronology
 
