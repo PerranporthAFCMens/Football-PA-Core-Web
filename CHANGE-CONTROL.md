@@ -51,13 +51,15 @@ As of 27 September 2026:
 - customer Perranporth: `https://footballpa.com/Perranporth`
 - legacy Perranporth reference: `https://perranporthafcmens.github.io/Perranporth/`
 
-Latest known functional application checkpoints before documentation-only commits:
+Current repository checkpoint:
 
-- production application: `209040dcfb0e8a4158c7ccdde09d407561360f98`
-- dev application: `b9540cf99f9dc38055e919fff1c9d95d3b3a0327`
-- pre-divergence merge base: `e6df1fc1069f09c5392d84b234a8ed4fe8967949`
+- `main`: `a0b82495aeeba32ed575d30b51b707e95605b918`
+- `dev`: `a0b82495aeeba32ed575d30b51b707e95605b918`
+- branches were deliberately reconciled on 27 September after comparing the emergency recovery histories
+- Vercel status for the reconciled head: success
+- customer Perranporth is synced from the same functional recovery state; documentation-only reconciliation commits do not change customer behaviour
 
-**main and dev are intentionally divergent. Do not blindly merge, fast-forward or copy one over the other. Compare first.**
+**main and dev are aligned at this checkpoint. Future work should still compare refs before changing behaviour, but do not preserve the old divergence as an intentional state.**
 
 ## Current critical Matchday state
 
@@ -130,7 +132,7 @@ The Culdrose events are marked `server_protected`. Preserve them unless the user
 | CC-032 | Perranporth customer path | `footballpa.com/Perranporth` is a synced customer copy of Core and must preserve its stable customer-facing URL. | Perranporth users should not be sent to dev/legacy URLs. | marketing sync workflow | **INTENTIONAL** |
 | CC-033 | St Agnes QA | St Agnes is a real QA team: 7-a-side, four 12-minute periods, Voting and Subs intentionally hidden. | Ensures Core works beyond Perranporth. | Team config | **INTENTIONAL** |
 | CC-034 | Match kit | Goalkeeper kit colour is separately configurable; keeper uses solid colour. Assist capture can be disabled and then assist UI must hide. | Per-team match configuration. | settings + Match Centre | **INTENTIONAL** |
-| CC-035 | Branch handling | main/dev divergence is deliberate during current recovery. Do not “clean it up” by blindly copying one branch over the other. | Both received equivalent emergency fixes as separate commits. | refs above | **INTENTIONAL UNTIL RECONCILED** |
+| CC-035 | Branch handling | main/dev emergency divergence was reconciled deliberately on 27 September after comparing both histories. Keep branches aligned unless a future dev-only change intentionally requires divergence. | Prevent accidental branch drift while preserving reviewed recovery changes. | reconciliation commit `a0b82495...` | **VERIFIED / RECONCILED** |
 
 ## Current known open items
 
@@ -142,7 +144,7 @@ These are not optional polish. They are known risks or regressions that must rem
 4. **Whole-array event replacement remains architecturally risky.**
 5. **Confirm-signup email template still needs confirmation that the dynamic team-aware HTML was saved in Supabase.**
 6. **Supabase Auth URL configuration still needs verification that localhost is gone.**
-7. **main/dev remain divergent and must be deliberately reconciled, not blindly merged.**
+7. **main/dev were deliberately reconciled on 27 September and are aligned at `a0b82495...`.**
 
 ## Matchday acceptance test required before next real match
 
