@@ -27,14 +27,16 @@ Treat `CHANGE-CONTROL.md` as the authoritative product-intent/regression registe
 
 ## Current refs
 
-Current repository checkpoint:
+Current functional production checkpoint:
 
-- `main`: `a0b82495aeeba32ed575d30b51b707e95605b918`
-- `dev`: `a0b82495aeeba32ed575d30b51b707e95605b918`
-- branches were deliberately reconciled on 27 September after comparing both emergency recovery histories
-- Vercel status for the reconciled head: success
+- production `main` Matchday merge: `3927a365f78ce89179e55832231d793deadde5db`
+- event-level browser persistence originated on `dev`: `e6ca612b0132d53e7c0d71fd0752b819844aad65`
+- regression smoke protection: `626bc3d258c8b0e7b0c6127cc4fe9a29155203aa`
+- production was merged through PR #1
+- Vercel deployment `dpl_59sZoeQW3kECF6Qu1PrDkx9UzpXR` for `3927a365...` is `READY` and serves `core.footballpa.com`
+- `dev` may contain newer documentation/control commits and branch ancestry may differ by merge commits even when functional files match
 
-Before changing code, still fetch and compare both refs. Do not assume alignment will remain true in a future session.
+Before changing code, fetch and compare both refs. Do not infer drift from an old handover SHA.
 
 ## Absolute priority
 
@@ -73,10 +75,13 @@ Current production code/database now includes:
   - Full Time
 - timestamp/anchor-based match clock
 - clock resync when returning to the app
-- server-protected recovered events so stale browser state cannot silently wipe them
-- Matchday smoke guards for conceded/scorer/phase controls
+- server-protected recovered events so stale legacy payloads cannot silently wipe them
+- **event-level Matchday persistence**: stable event/substitution IDs, individual create/edit/delete RPCs, and runtime clock/XI saves that do not carry the event feed
+- server-side score recalculation from persisted goal rows
+- five-second cross-device version checking so remote Matchday changes are reloaded instead of replaced
+- Matchday smoke guards for conceded/scorer/phase controls and event-level persistence
 - Player Portal resolves team context from the portal token
-- database auto-open voting logic at match completion
+- database auto-open voting logic at match completion through `save_match_runtime_state`
 
 Relevant recent migrations include:
 
@@ -87,20 +92,21 @@ Relevant recent migrations include:
 - `restore_match_start_voting`
 - `persist_match_clock_anchors`
 - `open_voting_only_at_full_time`
+- `event_level_matchday_persistence`
 
 Important: these changes are **not yet a substitute for an end-to-end Matchday test**.
 
 ## Voting nuance
 
-Current `save_match_centre_state` now calls `set_voting_open_event(..., true)` when a fixture becomes completed, provided Voting is enabled and the user has Voting management capability.
+Current Match Centre completion persists through `save_match_runtime_state`. When the fixture becomes completed, that RPC calls `set_voting_open_event(..., true)` provided Voting is enabled and the user has Voting management capability.
 
 The Match Centre front end asks:
 
 `Finish the match and open player voting?`
 
-That confirmation text alone does not open voting. The database save RPC now does it.
+That confirmation text alone does not open voting. The server-side runtime save does it.
 
-This was added after the failure. Test it cleanly on a disposable/test fixture before saying it works.
+A rollback-only disposable fixture test on 27 September verified that Full Time opens voting and a repeated Full Time save does not create a duplicate event. Authenticated browser/device E2E remains open.
 
 ## Culdrose production data must be preserved
 
@@ -135,13 +141,22 @@ Do not alter/delete them or use Culdrose as a destructive test fixture unless th
 
 Do not create another Culdrose voting event.
 
-## The architectural problem still to review
+## Event-level persistence is now the current architecture
 
-`save_match_centre_state` still accepts the whole browser event array and deletes/reinserts event rows on save.
+Current `match-centre.html` does **not** call `save_match_centre_state`.
 
-A guard now rejects stale payloads that omit protected server-corrected events, but the whole-array replacement model is still risky for a live Matchday app.
+It loads stable database IDs and uses:
 
-Review whether Matchday events should move to stable event-level create/edit/delete RPCs before the next real match.
+- `upsert_match_event`
+- `delete_match_event`
+- `upsert_match_substitutions`
+- `delete_match_substitution`
+- `save_match_runtime_state` for phase/clock/formation/current XI only
+- `reset_match_centre_state` only for an explicit destructive reset
+
+`save_match_centre_state` remains only as a legacy compatibility endpoint. Do not reconnect current Match Centre to it.
+
+A rollback-only database test passed create/edit/delete, conceded scoring, substitutions, Half Time/Second Half, runtime saves preserving events, Full Time voting exactly once, score recalculation and reset. The updated Match Centre JavaScript also parsed cleanly with no missing DOM IDs. Authenticated browser/device E2E is still required.
 
 ## What to do first in this new chat
 
@@ -149,10 +164,9 @@ Review the relevant `CHANGE-CONTROL.md` IDs before editing existing behaviour.
 
 Do this in order:
 
-1. Inspect current `main`, current `dev`, and the 26 September handover. Do not assume branches are aligned.
-2. Inspect the **legacy Perranporth Matchday** implementation and make a parity checklist.
-3. Inspect current Core `match-centre.html`, `save_match_centre_state`, `load_match_centre_state`, voting RPCs and current migrations.
-4. Use a disposable/test fixture, not Culdrose, and run the whole match:
+1. Fetch current `main`, current `dev`, and read `CHANGE-CONTROL.md` first.
+2. Do **not** repeat the legacy parity audit or event-level persistence redesign unless new evidence shows a regression. Those were completed on 27 September.
+3. Use a disposable/test fixture, not Culdrose, and run the current production Match Centre in an authenticated browser/device session:
    - Start Match
    - our goal with scorer, assist and zone
    - conceded goal
@@ -163,15 +177,16 @@ Do this in order:
    - background/return
    - Half Time
    - Start Second Half
+   - verify a second signed-in device sees event changes without overwriting them
    - Full Time
    - correct final score/status
    - exact event reload
    - Live Score
    - voting auto-opens exactly once
    - player voting link opens correct team and correct saved-squad candidates
-5. Check Supabase state after each critical transition.
-6. Add smoke/integration protection for every regression.
-7. Only then call Matchday ready.
+4. Check Supabase state after each critical transition.
+5. Add smoke/integration protection for any browser-only regression found.
+6. Only then call Matchday fully ready.
 
 ## Secondary issue after Matchday
 
