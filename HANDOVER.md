@@ -8,9 +8,9 @@ Football PA Core is the generic multi-team version of Football PA. Perranporth i
 
 ### Current control checkpoint — 27 September 2026
 
-- `main` and `dev` were deliberately reconciled and aligned after the emergency Matchday recovery review.
-- Reconciled repository head at this checkpoint: `a0b82495aeeba32ed575d30b51b707e95605b918`.
-- Vercel reports success for the reconciled head.
+- `main` and `dev` were deliberately reconciled before the event-level Matchday persistence work. The current functional production merge is `3927a365f78ce89179e55832231d793deadde5db`; `dev` contains the same functional files plus later control-document commits.
+- Event-level Matchday persistence was developed on `dev` (`e6ca612b...`) with smoke protection in `626bc3d...`, then merged through PR #1.
+- Vercel reports the exact production merge `3927a365...` as `READY`, with `core.footballpa.com` assigned.
 - Live Culdrose recovery state is authoritative: completed **RNAS Culdrose 2–3 Perranporth**, FULL-TIME, match-state **2–3**, voting open.
 - Protected events: Alex Taylor 5' (Fin Stribley assist), conceded 37', conceded 65', Tyreece Gallaway 85' (Alfie Cunningham assist), Tom Goodman 89' (Luke Watson-Read assist).
 - Matchday remains the highest-priority workflow until a clean disposable-fixture browser E2E proves the complete legacy-parity flow.
@@ -652,12 +652,12 @@ This section supersedes the older 21 September release checkpoint for anything r
 
 ### Current repository/deployment state
 
-- Latest functional application commit on production `main` before documentation-only handover commits: `209040dcfb0e8a4158c7ccdde09d407561360f98` (`Protect matchday controls in smoke checks`).
-- Latest functional application commit on `dev` before documentation-only handover commits: `b9540cf99f9dc38055e919fff1c9d95d3b3a0327`.
-- `main` and `dev` are **diverged**, both 6 commits ahead of merge base `e6df1fc1069f09c5392d84b234a8ed4fe8967949`. Do not fast-forward or blindly merge them. Inspect/compare first.
-- Core smoke checks passed on production main.
-- Vercel status for production main is successful.
-- Customer Perranporth copy is synced from Core. The source marker may point at a later documentation-only commit, but the latest known functional Matchday application checkpoint remains `209040dcfb0e8a4158c7ccdde09d407561360f98`.
+- Current functional production merge: `3927a365f78ce89179e55832231d793deadde5db` (`Move Matchday to event-level persistence`).
+- Functional `dev` commits: `e6ca612b0132d53e7c0d71fd0752b819844aad65` (event-level browser persistence) and `626bc3d258c8b0e7b0c6127cc4fe9a29155203aa` (smoke protection).
+- These changes were merged to `main` through PR #1 after JavaScript parse/DOM checks and a rollback-only database lifecycle test. Branch history may differ by merge commits; compare before future promotion.
+- The GitHub connector used in this session does not expose push-triggered smoke-run results, so do not claim that specific Actions run was observed here. The smoke source itself was updated and the page parsed successfully.
+- Vercel deployment `dpl_59sZoeQW3kECF6Qu1PrDkx9UzpXR` for `3927a365...` is `READY` and aliases include `core.footballpa.com`.
+- Customer Perranporth remains a synced customer copy of Core. Do not edit the legacy standalone as the source of truth.
 
 ### Live-match incident: RNAS Culdrose, 26 September
 
@@ -717,7 +717,7 @@ Live Supabase now shows:
 
 - fixture score: **RNAS Culdrose 2–3 Perranporth**
 - Match Centre state: `FULL-TIME`, 5400 elapsed seconds
-- **match-state score is still 2–2**
+- match-state score is **2–3**
 - voting event status: **open**
 
 Current protected events:
@@ -730,27 +730,29 @@ Current protected events:
 
 The three Perranporth goals plus two conceded goals align with the fixture score of 2–3 because Perranporth were away.
 
-**Known data-integrity issue:** `fixtures.home_score/away_score` and the event feed indicate 2–3, while `match_states.home_score/away_score` remains 2–2. Do not claim the recovered Matchday state is internally consistent until this mismatch has been reviewed.
+`fixtures.home_score/away_score`, `match_states.home_score/away_score` and the five protected events are aligned at **2–3**. The state was reverified after the event-level persistence migration; do not use Culdrose as a destructive test.
 
 The recovered event rows are marked `server_protected`. Do not rewrite/delete them while testing Matchday unless the user explicitly asks for a factual correction.
 
 The Culdrose voting event is already open. Do not create a second voting event or use Culdrose as a destructive Matchday test fixture.
 
-### Matchday architecture risk still open
+### Event-level Matchday persistence now implemented
 
-Even after the emergency protection, `save_match_centre_state` still treats the browser event array as a whole-state payload and deletes/reinserts match-event rows during a save.
+Supabase migration `event_level_matchday_persistence` adds stable event/substitution mutation RPCs, server score recalculation triggers, an explicit reset RPC and a runtime-only save path for clock/phase/formation/current XI.
 
-The new protected-event guard prevents the specific stale-browser overwrite that occurred during recovery, but whole-array replacement is still a risky architecture for a live Matchday product.
+Current `match-centre.html` loads stable database IDs, creates/updates/deletes individual goals/cards/substitutions, and no longer calls `save_match_centre_state`. A five-second version check reloads remote state when another device changes the match, instead of rewriting that device's event history.
 
-Before the next real match, review moving event creation/edit/delete toward stable event-level mutations rather than repeatedly replacing the entire event feed.
+`save_match_centre_state` still exists as a legacy compatibility endpoint. Do not reintroduce it into current Match Centre browser code. The `server_protected` safeguard remains in place for recovered production data.
+
+A rollback-only disposable fixture test passed event insert/edit/delete, conceded scoring, substitution insert/delete, runtime saves preserving event history, Full Time voting exactly once, score recalculation and explicit reset. JavaScript parse and DOM-reference checks also passed. An authenticated browser/device E2E is still required before Matchday is called fully closed.
 
 ### Required next-session priority
 
-Do **not** start new product features.
+Do **not** start new product features until the authenticated browser/device acceptance run is complete.
 
-1. Use legacy Perranporth Matchday as the behaviour reference.
-2. Audit current Core Match Centre against that working flow.
-3. Run a complete clean Matchday simulation on a disposable/test fixture:
+The legacy parity audit and backend rollback simulation are now done. The remaining priority is to run the current production Match Centre end to end on a disposable/test fixture in an authenticated browser/device session:
+
+1. Run a complete clean Matchday simulation on a disposable/test fixture:
    - Start Match
    - goal with explicit scorer + assist + zone
    - conceded goal
@@ -767,9 +769,10 @@ Do **not** start new product features.
    - Live Score stays correct
    - Voting opens exactly once at Full Time
    - player voting link resolves the correct team and candidate list
-4. Verify database state after every critical transition.
-5. Add/extend smoke/integration protection for every regression found.
-6. Only call Matchday ready after the full flow has been tested rather than checking individual buttons in isolation.
+2. Verify database state after every critical transition and confirm a second signed-in device sees event changes without overwriting them.
+3. Confirm Live Score and player voting from the completed disposable fixture.
+4. Add/extend smoke/integration protection for any browser-only regression found.
+5. Only call Matchday fully ready after this browser/device flow has passed.
 
 ### Secondary open issue: Auth confirmation email
 
