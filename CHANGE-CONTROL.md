@@ -65,7 +65,7 @@ Current repository checkpoint:
 
 Matchday remains the highest-priority area and is **not yet approved as stable end-to-end**.
 
-The 26 September Culdrose match exposed regressions in behaviour that had existed in the old working Perranporth Matchday implementation. The recovery work added safeguards, but a clean disposable-fixture simulation is still required before Matchday is called ready.
+The 26 September Culdrose match exposed regressions in behaviour that had existed in the old working Perranporth Matchday implementation. Event-level persistence and the backend lifecycle have now passed a rollback-only disposable-fixture simulation, but an authenticated browser/device end-to-end run is still required before Matchday is called fully ready.
 
 ### Live Culdrose snapshot verified 27 September
 
@@ -121,9 +121,9 @@ The Culdrose events are marked `server_protected`. Preserve them unless the user
 | CC-021 | Conceded goal | Match Centre must have an explicit **🥅 Conceded** action. It records `team_side='opponent'`, no player, and increments only the opposition score. | Missing during live Culdrose match. | `7b5480f6...`; dev `e7a4cf0...` | **CODE VERIFIED, E2E OPEN** |
 | CC-022 | Two-half phase controls | Standard 11-a-side flow should read **Start Match → Half Time → Start Second Half → Full Time**. Preserve period-specific behaviour for formats such as St Agnes four-quarter games. | User expects football terminology and the old working flow. | `3aa0f670...`; smoke `209040dc...` | **CODE VERIFIED, E2E OPEN** |
 | CC-023 | Match clock | Live clock is timestamp/anchor-based and must resynchronise after backgrounding/returning. Do not return to a fragile client-only one-second counter as authoritative time. | Phone backgrounding and autosaves caused confusing time behaviour. | migration `timestamp_anchored_match_clock`; commit `5d1d27a...` | **CODE/DB VERIFIED, E2E OPEN** |
-| CC-024 | Event persistence safety | Server-corrected events can be `server_protected`; stale browser payloads must not silently delete them. | Recovery exposed whole-array autosave overwrite risk. | migration `protect_server_corrected_match_events` | **VERIFIED guard; architecture still OPEN** |
-| CC-025 | Event persistence architecture | Whole-array delete/reinsert in `save_match_centre_state` is a known risk. Preferred future direction is stable event-level create/edit/delete mutations. | A stale browser can otherwise overwrite authoritative live events. | Emergency handover | **OPEN / architectural review required** |
-| CC-026 | Voting at Full Time | Voting is intended to open **exactly once at Full Time**, not at match start and not merely because a confirmation dialog was shown. | Automatic opening failed during Culdrose. | migrations `auto_open_voting_on_match_completion`, `restore_match_start_voting`, `open_voting_only_at_full_time` | **DB TRANSACTION FLOW VERIFIED 27 SEP; BROWSER E2E OPEN** |
+| CC-024 | Event persistence safety | Server-corrected events can be `server_protected`; stale legacy payloads must not silently delete them. Current Match Centre no longer sends the whole event feed during runtime saves. | Recovery exposed whole-array autosave overwrite risk. | migrations `protect_server_corrected_match_events`, `event_level_matchday_persistence` | **VERIFIED guard; current browser migrated** |
+| CC-025 | Event persistence architecture | Current Match Centre uses stable event/substitution IDs and event-level upsert/delete RPCs. Clock, phase and XI saves are separate and do not carry event history. `save_match_centre_state` remains as a legacy compatibility endpoint but is not called by the current Match Centre browser. | Prevent stale/open devices from replacing authoritative live event history. | migration `event_level_matchday_persistence`; dev `e6ca612b...`; smoke `626bc3d...`; production merge `3927a365...` | **CODE/DB/DEPLOYMENT VERIFIED; AUTH BROWSER E2E OPEN** |
+| CC-026 | Voting at Full Time | Voting is intended to open **exactly once at Full Time**, not at match start and not merely because a confirmation dialog was shown. Current Match Centre completion persists through `save_match_runtime_state`, which opens voting server-side. | Automatic opening failed during Culdrose. | migrations `auto_open_voting_on_match_completion`, `restore_match_start_voting`, `open_voting_only_at_full_time`, `event_level_matchday_persistence` | **DB ROLLBACK FLOW + PRODUCTION CODE VERIFIED 27 SEP; BROWSER E2E OPEN** |
 | CC-027 | Player Portal team context | Shared player portal/voting links must resolve the correct team from the portal token when team query context is absent. | Prevent voting link landing in wrong/unknown team context. | migration `resolve_player_portal_team_from_token`; commit `11644cb...` | **CODE/DB VERIFIED, E2E OPEN** |
 | CC-028 | Culdrose recovery data | Current protected Culdrose event feed listed above is production data, not a disposable test. | Preserve recovered real-match history. | Supabase live snapshot 27 Sep | **INTENTIONAL DATA PROTECTION** |
 | CC-029 | Auth signup branding | Core signup passes team ID/name, club name, badge and primary colour in Auth metadata. | Confirmation email must be team-aware. | `20357fb7...` | **DEPLOYED** |
@@ -141,10 +141,10 @@ These are not optional polish. They are known risks or regressions that must rem
 1. **Matchday full-flow validation is incomplete.**
 2. **Culdrose fixture score and match-state score were reconciled to 2–3 on 27 September.**
 3. **Voting auto-open passed a clean rollback-only database flow test on 27 September, including repeated Full Time save without duplicate voting event. Browser E2E remains open.**
-4. **Whole-array event replacement remains architecturally risky.**
+4. **Current Match Centre no longer uses whole-array event replacement. The legacy `save_match_centre_state` compatibility RPC still exists and should not be reintroduced into current browser code.**
 5. **Confirm-signup email template still needs confirmation that the dynamic team-aware HTML was saved in Supabase.**
 6. **Supabase Auth URL configuration still needs verification that localhost is gone.**
-7. **main/dev were deliberately reconciled on 27 September and are aligned at `a0b82495...`.**
+7. **Functional Matchday changes were developed on `dev` and merged to production through PR #1. Production functional merge is `3927a365...`; branch ancestry may differ by merge commits even when file content is aligned.**
 
 ## Matchday acceptance test required before next real match
 
@@ -187,6 +187,19 @@ Only after all of these pass should Matchday be marked **VERIFIED** here.
 - Verified a repeated FULL-TIME save does **not** create a duplicate voting event.
 - The transaction deliberately raised `MATCHDAY_TEST_PASS` and rolled back. Post-check confirmed zero test fixtures remained and the real Culdrose voting event stayed open.
 - This is a backend/database flow verification, not a substitute for a browser/device end-to-end Matchday test.
+
+### 27 September event-level persistence verification
+
+- Applied Supabase migration `event_level_matchday_persistence`.
+- Added stable event and substitution IDs to the Match Centre load path plus individual create/edit/delete RPCs.
+- Split runtime persistence so clock, phase, formation and current XI save through `save_match_runtime_state` without sending or rewriting the event feed.
+- Added match-event/substitution triggers so server scores and cross-device version timestamps update from persisted rows.
+- Added a five-second remote-version check in Match Centre so another device's saved changes are reloaded instead of overwritten.
+- Ran a second rollback-only disposable fixture test through the new RPCs. It verified event insert/update without duplication, conceded scoring, substitution insert/delete, runtime saves preserving events, Full Time voting opening exactly once, score recalculation after event delete and explicit reset.
+- The test deliberately raised `MATCHDAY_EVENT_LEVEL_TEST_PASS` and rolled back. Post-check confirmed zero test fixtures and Culdrose remained FULL-TIME 2–3 with five protected events and one open voting event.
+- JavaScript parse check passed for the updated Match Centre with no missing DOM IDs.
+- Vercel production deployment for merge `3927a365f78ce89179e55832231d793deadde5db` is `READY` and aliases include `core.footballpa.com`.
+- An authenticated browser/device E2E remains required before calling the entire Matchday workflow fully closed.
 
 ## Recent emergency change chronology
 
