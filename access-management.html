@@ -21,7 +21,7 @@
 </style></head>
 <body><main class="fpa-page"><div id="loading" class="fpa-card" style="padding:28px;text-align:center">Loading access management…</div>
 <div id="app" class="page hidden">
-<section class="fpa-card hero"><div class="eyebrow">Football PA</div><h1>Access Management</h1><div id="teamLabel" class="muted"></div>
+<section class="fpa-card hero"><div class="sectionHead"><div><div class="eyebrow">Football PA</div><h1>Access Management</h1><div id="teamLabel" class="muted"></div></div><button id="backToSettings" class="btn">← Team Settings</button></div>
 <div class="tabs"><button class="tab active" data-tab="staff">Staff</button><button class="tab" data-tab="players">Players</button><button class="tab" data-tab="levels">Access Levels</button></div></section>
 <div id="status" class="status info hidden"></div>
 
@@ -80,8 +80,16 @@ function render(){
  renderLevelList();
  bind();
 }
+function orderedLevels(){
+ return [...(data.levels||[])].sort((a,b)=>{
+   const ao=a.name==='Manager'?0:1,bo=b.name==='Manager'?0:1;
+   if(ao!==bo)return ao-bo;
+   return displayLevelName(a).localeCompare(displayLevelName(b),undefined,{sensitivity:'base'});
+ });
+}
 function renderLevelList(){
- $('levelList').innerHTML=data.levels.length?data.levels.map(l=>{const owner=l.name==='Manager';return '<button class="levelButton '+(l.id===selectedLevelId?'active':'')+'" data-open-level="'+l.id+'"><b>'+esc(displayLevelName(l))+(owner?' <span class="pill good">Protected</span>':'')+'</b><small>'+esc(owner?'Full Football PA ownership for this team':(l.description||((l.permissions||[]).length+' permissions')))+'</small></button>'}).join(''):'<div class="empty">No access levels yet.</div>';
+ const levels=orderedLevels();
+ $('levelList').innerHTML=levels.length?levels.map(l=>{const owner=l.name==='Manager';return '<button class="levelButton '+(l.id===selectedLevelId?'active':'')+'" data-open-level="'+l.id+'"><b>'+esc(displayLevelName(l))+(owner?' <span class="pill good">Protected</span>':'')+'</b><small>'+esc(owner?'Full Football PA ownership for this team':(l.description||((l.permissions||[]).length+' permissions')))+'</small></button>'}).join(''):'<div class="empty">No access levels yet.</div>';
  if(selectedLevelId&&selectedLevelId!=='new'&&!data.levels.some(x=>x.id===selectedLevelId)){selectedLevelId=null;$('levelForm').classList.add('hidden');$('levelEmpty').classList.remove('hidden')}
 }
 function editLevel(id){
@@ -91,7 +99,7 @@ function editLevel(id){
  $('levelName').disabled=owner;$('levelDescription').disabled=owner;
  $('permissions').innerHTML=defs.map(([key,label,desc])=>'<label class="perm"><input type="checkbox" data-perm="'+key+'" '+((owner||((l.permissions||[]).includes(key)))?'checked':'')+' '+(owner?'disabled':'')+'><div><b>'+esc(label)+'</b><span>'+esc(desc)+'</span></div></label>').join('');
  $('saveLevel').disabled=owner;$('deleteLevel').disabled=id==='new'||owner;$('saveLevel').textContent=owner?'Protected level':'Save level';
- if(owner)showStatus('Team Owner is the protected Football PA ownership level. Its name and permissions cannot be changed.','info');
+ if(owner)showStatus('Team Owner is the protected Football PA ownership level. Its name and permissions cannot be changed.','info');else showStatus('');
  if(id==='new')$('levelName').focus();
 }
 function bind(){
@@ -99,7 +107,6 @@ function bind(){
  document.querySelectorAll('[data-save-staff]').forEach(b=>b.onclick=()=>saveStaff(b.dataset.saveStaff,b));
  document.querySelectorAll('[data-remove-staff]').forEach(b=>b.onclick=()=>removeStaff(b.dataset.removeStaff,b));
  document.querySelectorAll('[data-player-access]').forEach(b=>b.onclick=()=>setPlayerAccess(b.dataset.playerAccess,b.dataset.active==='true',b));
- document.querySelectorAll('[data-open-level]').forEach(b=>b.onclick=()=>editLevel(b.dataset.openLevel));
 }
 async function reload(){const r=await sb.rpc('list_team_access_management',{p_team_id:ctx.team.id});if(r.error)throw r.error;data=r.data||{};render()}
 async function sendInvite(){
@@ -115,5 +122,7 @@ async function saveLevel(){let name=$('levelName').value.trim(),description=$('l
 async function deleteLevel(){if(selectedLevelId==='new'||!selectedLevelId)return;const current=data.levels.find(x=>x.id===selectedLevelId);if(current?.name==='Manager')return showStatus('Team Owner is protected and cannot be deleted.','bad');if(!confirm('Delete this Access Level? It can only be deleted when nobody is assigned to it.'))return;const r=await sb.rpc('delete_team_access_level',{p_team_id:ctx.team.id,p_level_id:selectedLevelId});if(r.error)return showStatus(r.error.message,'bad');selectedLevelId=null;$('levelForm').classList.add('hidden');$('levelEmpty').classList.remove('hidden');showStatus('Access Level deleted.','ok');await reload()}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));['staff','players','levels'].forEach(x=>$(x+'Pane').classList.toggle('hidden',x!==b.dataset.tab))});
 $('sendInvite').onclick=sendInvite;$('newLevel').onclick=()=>editLevel('new');$('saveLevel').onclick=saveLevel;$('deleteLevel').onclick=deleteLevel;
+$('levelList').onclick=e=>{const b=e.target.closest('[data-open-level]');if(b)editLevel(b.dataset.openLevel)};
+$('backToSettings').onclick=()=>location.href=ctx.href('/team-settings.html');
 (async()=>{try{ctx=await FootballPAContext.resolve();if(!ctx.access?.can_manage_access)throw new Error('You do not have permission to manage access for this team.');$('teamLabel').textContent=ctx.club.name+' · '+ctx.team.name;await reload();$('loading').classList.add('hidden');$('app').classList.remove('hidden');FootballPANav.mount()}catch(e){$('loading').textContent=e.message;}})();
 </script></body></html>
