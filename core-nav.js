@@ -41,11 +41,6 @@ async function mount(opts={}){
   ['settings','Settings',teamHref('/team-settings.html'),null,!!access.can_manage_team]
  ].filter(x=>(!x[3]||features[x[3]]!==false)&&x[4]);
  const fallbackOrder=['home','match','players','fixtures','availability','dashboard','voting','subs','live','settings'],rank=new Map([...navOrder,...fallbackOrder.filter(k=>!navOrder.includes(k))].map((k,i)=>[k,i]));teamItems.sort((a,b)=>(rank.get(a[0])??999)-(rank.get(b[0])??999));
- if(tid==='d5bcdf95-40a2-4596-b044-e9c8bcabecbc'){
-   const classic=['classic','Classic Dashboard',teamHref('/classic-dashboard.html'),null,true];
-   const dashboardIndex=teamItems.findIndex(x=>x[0]==='dashboard');
-   teamItems.splice(dashboardIndex>=0?dashboardIndex+1:teamItems.length,0,classic);
- }
  const shade=document.createElement('div');shade.className='fpa-nav-shade';shade.id='fpaSharedNavShade';
  const nav=document.createElement('aside');nav.className='fpa-nav';nav.id='fpaSharedNav';
  const badge=team.badge_url?'<img src="'+team.badge_url+'" alt="">':'FP';
