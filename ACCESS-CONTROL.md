@@ -30,6 +30,7 @@ Team admins and managers receive the standard team-management capabilities:
 - settings
 - voting
 - subs
+- access
 
 ### Coach
 
@@ -63,6 +64,9 @@ Supported capability names are:
 - settings
 - voting
 - subs
+- access
+
+`access` controls the Access Management surface. It is included by default for Team Admin / Manager, but not Coach. It can be delegated through an Access Level.
 
 `subs_admin` is treated as the Subs capability. `admin` grants all capabilities.
 
@@ -83,6 +87,7 @@ The shared database contract is implemented through:
 - `can_manage_fixtures(team_id)`
 - `can_manage_voting(team_id)`
 - `can_manage_subs(team_id)`
+- `can_manage_access(team_id)`
 - `can_access_fixture(fixture_id)`
 - `can_access_player(player_id)`
 - `get_team_access_context(team_id)`
@@ -103,6 +108,7 @@ Management surfaces use their own capability:
 - Voting Centre: `can_manage_voting`
 - Subs Tracker: `can_manage_subs`
 - Team Settings: `can_manage_team`
+- Access Management: `can_manage_access`
 
 ## RLS rules
 
@@ -113,6 +119,20 @@ A team member can read players linked to their team. A user with Players managem
 Club owners/admins and platform admins receive the same team access through RLS that the frontend advertises.
 
 Fixture writes, team settings, team features, training writes and player-management writes use the matching capability helper.
+
+## Access Management
+
+Football PA uses one shared access engine for all teams.
+
+- `team_memberships` remains the authoritative team account link.
+- Reusable team-specific `team_access_levels` provide HybridOne-style permission bundles without creating a second permission matrix.
+- If a team membership has an `access_level_id`, that level's permissions are authoritative for the team. Existing memberships without a level retain the legacy role/default-permission behaviour.
+- Standard levels are seeded per team: **Team Admin**, **Manager**, **Coach**, and **Treasurer**.
+- Team Admin / Manager have `access` by default. Coach and Treasurer do not unless an assigned Access Level explicitly grants it.
+- Staff invitations are staged in `pending_team_access`. New Auth users receive the staged team role/access level through the existing Auth-user trigger; an existing Football PA account can be activated directly for the team.
+- Removing staff access deactivates only that `team_memberships` row. The person's Auth account and access to other Football PA teams remain intact.
+- Player Portal access is a separate PIN/session boundary. Removing a player from portal access disables their `player_portal_credentials` row and deletes active portal sessions, while preserving the player record, match history and statistics.
+- The management UI must use `list_team_access_management` and the constrained access-management RPCs rather than direct table writes.
 
 ## Regression tests completed
 
