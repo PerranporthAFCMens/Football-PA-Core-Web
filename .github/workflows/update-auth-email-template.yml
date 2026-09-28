@@ -18,13 +18,17 @@ jobs:
       PROJECT_REF: hennzggqaquevqgiucqn
     steps:
       - name: Check Supabase management token
+        id: management-token
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
-            echo "::error::SUPABASE_ACCESS_TOKEN is not configured for this repository."
-            exit 2
+            echo "::warning::SUPABASE_ACCESS_TOKEN is not configured. Hosted Auth email branding update will be skipped."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build branded confirmation and invitation templates
+        if: steps.management-token.outputs.available == 'true'
         run: |
           cat > /tmp/auth-template.json <<'JSON'
           {
@@ -37,6 +41,7 @@ jobs:
           JSON
 
       - name: Preserve existing redirects and allow Football PA production URLs
+        if: steps.management-token.outputs.available == 'true'
         run: |
           curl --fail-with-body -sS \
             "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
@@ -59,10 +64,12 @@ jobs:
           PY
 
       - name: Update hosted Supabase Auth template
+        if: steps.management-token.outputs.available == 'true'
         run: |
           curl --fail-with-body -sS -X PATCH             "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth"             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             -H "Content-Type: application/json"             --data-binary @/tmp/auth-template.json
 
       - name: Verify Harbour branding is gone
+        if: steps.management-token.outputs.available == 'true'
         run: |
           curl --fail-with-body -sS             "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth"             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             > /tmp/auth-config.json
           python - <<'PY'
