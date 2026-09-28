@@ -129,7 +129,7 @@ if(!matchEventsEdit.includes('newMatchRecordId')||!matchEventsEdit.includes('syn
 if(failed)process.exit(1);
 
 const matchDeps=fs.readFileSync('match-centre.html','utf8');
-if(!matchDeps.includes('src="./core-context.js"')||!matchDeps.includes('src="./core-nav.js"'))fail('match-centre.html','relative Core dependencies missing');
+if(!matchDeps.includes('src="./core-context.js"')||!matchDeps.includes('src="./core-nav.js"'))fail('match-centre.html','relative Core dependencies missing');if(matchDeps.includes('offsetX:e.clientX-anchorX')||matchDeps.includes('offsetY:e.clientY-anchorY'))fail('match-centre.html','lineup drag still preserves grab offset instead of tracking directly under the pointer');if(!matchDeps.includes("((e.clientX-rect.left)/rect.width)*100")||!matchDeps.includes("((e.clientY-rect.top)/rect.height)*100"))fail('match-centre.html','lineup drag does not map pointer coordinates directly to pitch position');
 if(!matchDeps.includes("ensureCoreDependency('FootballPAContext'")||!matchDeps.includes("ensureCoreDependency('FootballPANav'"))fail('match-centre.html','Core dependency fallback loader missing');
 if(failed)process.exit(1);
 
