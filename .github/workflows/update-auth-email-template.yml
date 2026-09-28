@@ -24,14 +24,39 @@ jobs:
             exit 2
           fi
 
-      - name: Build branded confirmation template
+      - name: Build branded confirmation and invitation templates
         run: |
           cat > /tmp/auth-template.json <<'JSON'
           {
+            "site_url": "https://core.footballpa.com",
             "mailer_subjects_confirmation": "Confirm your Football PA email address",
+            "mailer_subjects_invite": "You’ve been invited to Football PA",
+            "mailer_templates_invite_content": "{{ $club := index .Data \"footballpa_club_name\" }}{{ $team := index .Data \"footballpa_team_name\" }}{{ $badge := index .Data \"footballpa_badge_url\" }}{{ $colour := index .Data \"footballpa_primary_colour\" }}<div style=\"margin:0;padding:32px 16px;background:#eef3f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#17212b\"><div style=\"max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #dbe4ec;border-radius:18px;overflow:hidden\"><div style=\"height:8px;background:{{ if $colour }}{{ $colour }}{{ else }}#1357A6{{ end }}\"></div><div style=\"padding:36px 30px;text-align:center\">{{ if $badge }}<img src=\"{{ $badge }}\" alt=\"\" style=\"display:block;max-width:120px;max-height:120px;margin:0 auto 20px;object-fit:contain\">{{ else }}<img src=\"https://footballpa.com/FootballPALogo%20-%20PNG.png\" alt=\"Football PA\" style=\"display:block;width:110px;height:auto;margin:0 auto 20px\">{{ end }}<div style=\"font-size:14px;font-weight:800;letter-spacing:1.5px;color:#657589;text-transform:uppercase;margin-bottom:18px\">{{ if $club }}{{ $club }}{{ else }}Football PA{{ end }}</div><h1 style=\"font-size:32px;line-height:1.15;margin:0 0 14px;color:#17212b\">You’re invited to Football PA</h1><p style=\"font-size:17px;line-height:1.55;color:#657589;margin:0 auto 26px;max-width:470px\">You’ve been invited to join {{ if $team }}<b>{{ $team }}</b>{{ else }}your team{{ end }}. Use the secure link below to activate your access and create a password.</p><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;background:{{ if $colour }}{{ $colour }}{{ else }}#1357A6{{ end }};color:#ffffff;text-decoration:none;font-size:17px;font-weight:800;padding:15px 28px;border-radius:10px\">Accept invitation</a><p style=\"font-size:13px;line-height:1.5;color:#8996a5;margin:28px 0 0\">If you weren’t expecting this invitation, you can safely ignore this email.</p></div><div style=\"border-top:1px solid #e6edf3;padding:18px;text-align:center;color:#8996a5;font-size:12px\">Football PA · Your digital football assistant</div></div></div>",
             "mailer_templates_confirmation_content": "{{ $club := index .Data \"footballpa_club_name\" }}{{ $team := index .Data \"footballpa_team_name\" }}{{ $badge := index .Data \"footballpa_badge_url\" }}{{ $colour := index .Data \"footballpa_primary_colour\" }}<div style=\"margin:0;padding:32px 16px;background:#eef3f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#17212b\"><div style=\"max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #dbe4ec;border-radius:18px;overflow:hidden\"><div style=\"height:8px;background:{{ if $colour }}{{ $colour }}{{ else }}#1357A6{{ end }}\"></div><div style=\"padding:36px 30px;text-align:center\">{{ if $badge }}<img src=\"{{ $badge }}\" alt=\"\" style=\"display:block;max-width:120px;max-height:120px;margin:0 auto 20px;object-fit:contain\">{{ else }}<img src=\"https://footballpa.com/FootballPALogo%20-%20PNG.png\" alt=\"Football PA\" style=\"display:block;width:110px;height:auto;margin:0 auto 20px\">{{ end }}<div style=\"font-size:14px;font-weight:800;letter-spacing:1.5px;color:#657589;text-transform:uppercase;margin-bottom:18px\">{{ if $club }}{{ $club }}{{ else }}Football PA{{ end }}</div><h1 style=\"font-size:32px;line-height:1.15;margin:0 0 14px;color:#17212b\">Confirm your email address</h1><p style=\"font-size:17px;line-height:1.55;color:#657589;margin:0 auto 26px;max-width:470px\">Confirm your email address to finish setting up your {{ if $team }}{{ $team }} {{ end }}Football PA account.</p><a href=\"{{ .ConfirmationURL }}\" style=\"display:inline-block;background:{{ if $colour }}{{ $colour }}{{ else }}#1357A6{{ end }};color:#ffffff;text-decoration:none;font-size:17px;font-weight:800;padding:15px 28px;border-radius:10px\">Confirm email address</a><p style=\"font-size:13px;line-height:1.5;color:#8996a5;margin:28px 0 0\">If you didn't create this account, you can safely ignore this email.</p></div><div style=\"border-top:1px solid #e6edf3;padding:18px;text-align:center;color:#8996a5;font-size:12px\">Football PA · Your digital football assistant</div></div></div>"
           }
           JSON
+
+      - name: Preserve existing redirects and allow Football PA production URLs
+        run: |
+          curl --fail-with-body -sS \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            > /tmp/current-auth.json
+          python - <<'PY'
+          import json
+          payload=json.load(open('/tmp/auth-template.json'))
+          current=json.load(open('/tmp/current-auth.json'))
+          raw=current.get('uri_allow_list') or ''
+          existing=[x.strip() for x in raw.split(',') if x.strip()]
+          required=[
+            'https://core.footballpa.com/**',
+            'https://footballpa.com/**',
+            'https://www.footballpa.com/**',
+            'https://perranporthafcmens.github.io/Football-PA-Core-Web/**'
+          ]
+          payload['uri_allow_list']=','.join(dict.fromkeys(existing+required))
+          json.dump(payload,open('/tmp/auth-template.json','w'))
+          PY
 
       - name: Update hosted Supabase Auth template
         run: |
@@ -44,9 +69,17 @@ jobs:
           import json
           cfg=json.load(open('/tmp/auth-config.json'))
           body=cfg.get('mailer_templates_confirmation_content','')
+          invite=cfg.get('mailer_templates_invite_content','')
           subject=cfg.get('mailer_subjects_confirmation','')
+          invite_subject=cfg.get('mailer_subjects_invite','')
           assert 'Harbour United' not in body
+          assert 'Harbour United' not in invite
           assert 'footballpa_club_name' in body
+          assert 'footballpa_club_name' in invite
           assert 'Football PA' in subject
-          print('Dynamic Football PA confirmation template verified.')
+          assert 'Football PA' in invite_subject
+          assert cfg.get('site_url')=='https://core.footballpa.com'
+          allow=cfg.get('uri_allow_list','')
+          assert 'https://core.footballpa.com/**' in allow
+          print('Dynamic Football PA confirmation + invite templates and production redirects verified.')
           PY
