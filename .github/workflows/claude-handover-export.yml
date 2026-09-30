@@ -1,0 +1,36 @@
+name: Claude handover export
+on:
+  push:
+    branches:
+      - claude-handover-export-20260930
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          path: dev
+      - name: Write manifest
+        run: |
+          cat > EXPORT_MANIFEST.txt <<'EOF'
+          Claude handover source export.
+          Contains clean working-tree snapshots of the repository's main and dev branches.
+          Generated for architecture/code analysis only.
+          EOF
+      - name: Upload source package
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-handover-source
+          path: |
+            main
+            dev
+            EXPORT_MANIFEST.txt
+          include-hidden-files: true
+          retention-days: 14
