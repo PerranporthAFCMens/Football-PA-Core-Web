@@ -1,0 +1,168 @@
+name: Manual production release
+
+# Football PA Core: the ONLY way dev reaches main (and therefore the live site).
+# Nothing runs on a schedule. A person has to press "Run workflow".
+
+on:
+  workflow_dispatch:
+    inputs:
+      dev_sha:
+        description: "Exact 40-character dev commit SHA to release"
+        required: true
+        type: string
+      rehearsal_done:
+        description: "I have run a dummy match on the dev preview with this exact version and it worked"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: "production-release"
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse during the matchday freeze (Fri 18:00 to Sun 23:59, UK time)
+        shell: bash
+        run: |
+          set -euo pipefail
+          DOW="$(TZ=Europe/London date +%u)"   # 1 = Monday ... 7 = Sunday
+          HOUR="$(TZ=Europe/London date +%H)"
+          echo "UK time now: $(TZ=Europe/London date '+%A %H:%M')"
+          if [ "$DOW" -eq 6 ] || [ "$DOW" -eq 7 ] || { [ "$DOW" -eq 5 ] && [ "$((10#$HOUR))" -ge 18 ]; }; then
+            echo "Release refused: matchday freeze (Friday 18:00 to Sunday 23:59 UK time)."
+            echo "If something is broken on a matchday, roll back in Vercel instead of releasing."
+            exit 1
+          fi
+
+      - name: Require the matchday rehearsal
+        shell: bash
+        env:
+          REHEARSAL: ${{ inputs.rehearsal_done }}
+        run: |
+          set -euo pipefail
+          if [ "$REHEARSAL" != "true" ]; then
+            echo "Release refused: tick the box to confirm you ran a dummy match on the dev preview with this exact version."
+            exit 1
+          fi
+
+      - name: Checkout current production
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fetch dev and production tags
+        run: git fetch origin dev --tags --force
+
+      - name: Verify exact dev commit
+        id: candidate
+        shell: bash
+        env:
+          REQUESTED_SHA: ${{ inputs.dev_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Release refused: dev_sha must be a full 40-character commit SHA."
+            exit 1
+          fi
+          DEV_SHA="$(git rev-parse origin/dev)"
+          if [ "$REQUESTED_SHA" != "$DEV_SHA" ]; then
+            echo "Release refused: the SHA you entered is not the current dev head."
+            echo "Entered:     $REQUESTED_SHA"
+            echo "Current dev: $DEV_SHA"
+            exit 1
+          fi
+          echo "sha=$DEV_SHA" >> "$GITHUB_OUTPUT"
+          echo "Exact dev candidate confirmed: $DEV_SHA"
+
+      - name: Require successful checks for this exact commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ steps.candidate.outputs.sha }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          sha = os.environ["TARGET_SHA"]
+          token = os.environ["GH_TOKEN"]
+
+          # Add the Match Centre browser test here once it exists (Stage 3).
+          required = [
+              "Core smoke checks",
+          ]
+
+          url = f"https://api.github.com/repos/{repo}/actions/runs?head_sha={sha}&per_page=100"
+          req = urllib.request.Request(url, headers={
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "X-GitHub-Api-Version": "2022-11-28",
+          })
+          with urllib.request.urlopen(req, timeout=30) as r:
+              runs = json.load(r).get("workflow_runs", [])
+
+          print(f"Exact candidate: {sha}")
+          failed = []
+          for name in required:
+              matches = [x for x in runs if x.get("name") == name]
+              ok = [x for x in matches if x.get("conclusion") == "success"]
+              if ok:
+                  latest = sorted(ok, key=lambda x: x.get("created_at", ""), reverse=True)[0]
+                  print(f"PASS  {name}  run={latest.get('id')}")
+              else:
+                  detail = ", ".join(f"run={x.get('id')} {x.get('status')}/{x.get('conclusion')}" for x in matches) or "no run found for this exact SHA"
+                  print(f"FAIL  {name}  {detail}")
+                  failed.append(name)
+
+          if failed:
+              raise SystemExit("Release refused: required checks have not passed: " + ", ".join(failed))
+          print("All required checks passed for the exact candidate SHA.")
+          PY
+
+      - name: Verify the release is fast-forward only
+        shell: bash
+        env:
+          TARGET_SHA: ${{ steps.candidate.outputs.sha }}
+        run: |
+          set -euo pipefail
+          MAIN_SHA="$(git rev-parse HEAD)"
+          echo "Current main: $MAIN_SHA"
+          echo "Candidate:    $TARGET_SHA"
+          if ! git merge-base --is-ancestor "$MAIN_SHA" "$TARGET_SHA"; then
+            echo "Release refused: main has changes that dev does not. Reconcile them before releasing."
+            exit 1
+          fi
+
+      - name: Tag current production for rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="prod-$(TZ=Europe/London date +%F)"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Release refused: rollback tag $TAG already exists (one release per day)."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Production rollback point before release ${{ steps.candidate.outputs.sha }}"
+          git push origin "$TAG"
+          echo "Rollback tag created: $TAG -> $(git rev-parse HEAD)"
+
+      - name: Release the exact tested commit to main
+        shell: bash
+        env:
+          TARGET_SHA: ${{ steps.candidate.outputs.sha }}
+        run: |
+          set -euo pipefail
+          git push origin "$TARGET_SHA:refs/heads/main"
+          echo "Released: $TARGET_SHA"
+          echo "Vercel will now deploy this to footballpa.com, app.footballpa.com and core.footballpa.com."
