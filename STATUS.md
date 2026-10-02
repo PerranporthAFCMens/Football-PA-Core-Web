@@ -34,11 +34,11 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 2. The only automated check (`Core smoke checks`) searches source files for text. It does not test real behaviour. Until the browser test exists, the release requires a manual dummy match on the dev preview.
 3. Database changes are not yet in the repo (Stage 2).
 4. A "MATCHDAY TEST - DELETE" fixture sits in Perranporth's live data.
-5. The old Perranporth copy on the Football PA website is frozen at `5f475da` and its sync is manual-only. It uses the same live database, so it must not be used to run a match. Adam prefers its layout; bring that layout into Football PA after stabilisation.
+5. The old Perranporth copy on the Football PA website is frozen at `5f475da` and its sync workflow is disabled. It uses the same live database, so it must not be used to run a match. Adam prefers its layout; bring that layout into Football PA after stabilisation.
 
 ## Plan
 
-- Stage 1: release gate (PR `fix/release-gate`), Perranporth sync made manual-only, GitHub rulesets on `main` and `dev`.
+- Stage 1: release gate (PR #16), GitHub rulesets on `main` and `dev`.
 - Fix: failed-save warning and retry in Match Centre. Dummy match on Thu 8 Oct.
 - After Falmouth: Stage 2 database in repo, Stage 3 Match Centre browser test, Stage 4 refactor (clock/events state machine).
 
