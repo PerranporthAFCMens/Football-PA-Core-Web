@@ -32,6 +32,7 @@
     requestSave: requestSave,
     syncRemoteState: syncRemoteState,
     loadMatch: loadMatch,
+    saveLineupPositions: saveLineupPositions,
     render: render
   };
 
@@ -60,6 +61,8 @@
     const n = pending.length + (runtimeFailed ? 1 : 0);
     if (!n) { el.classList.add('hidden'); el.innerHTML = ''; return; }
     el.classList.remove('hidden');
+    const status = $('status');
+    if (status && status.classList.contains('bad')) status.classList.add('hidden'); // the banner replaces raw error text
     el.innerHTML =
       '<span>⚠ ' + n + ' change' + (n === 1 ? '' : 's') + ' NOT SAVED yet' +
       (message ? ' (' + esc(message) + ')' : '') +
@@ -68,7 +71,24 @@
     document.getElementById('retryUnsavedBtn').onclick = () => retryAll();
   }
 
-  function errorText(err) { return (err && err.message) ? err.message : 'no connection'; }
+  // Turn browser network errors into plain English
+  function errorText(err) {
+    const msg = (err && err.message) ? String(err.message) : '';
+    if (!msg || /load failed|failed to fetch|networkerror|network request failed|fetch failed|timeout/i.test(msg)) return 'no signal';
+    return msg;
+  }
+
+  // Once everything has saved, clear any old red error message
+  function clearOldErrors() {
+    const status = $('status');
+    if (status && status.classList.contains('bad')) {
+      status.classList.add('hidden');
+      status.classList.remove('bad');
+      status.textContent = '';
+    }
+    const saveState = $('saveState');
+    if (saveState) saveState.textContent = 'Saved · ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
 
   async function retryAll() {
     if (retrying || !hasUnsaved()) { showBanner(); return; }
@@ -90,6 +110,7 @@
       retrying = false;
       showBanner(lastError);
       render();
+      if (!hasUnsaved()) clearOldErrors();
     }
   }
 
@@ -128,11 +149,22 @@
     }
   };
 
+  // Shirt positions on the lineup pitch
+  window.saveLineupPositions = async function () {
+    try { return await orig.saveLineupPositions(); }
+    catch (err) {
+      addPending('positions', () => orig.saveLineupPositions());
+      $('saveState').textContent = 'Positions not saved yet';
+      showBanner(errorText(err));
+      return null;
+    }
+  };
+
   // Clock, phase and lineup
   window.requestSave = function () {
     return orig.requestSave().then(
       r => { if (runtimeFailed) { runtimeFailed = false; showBanner(); } return r; },
-      err => { runtimeFailed = true; showBanner(errorText(err)); throw err; }
+      err => { runtimeFailed = true; showBanner(errorText(err)); $('saveState').textContent = 'Not saved yet'; throw err; }
     );
   };
 
