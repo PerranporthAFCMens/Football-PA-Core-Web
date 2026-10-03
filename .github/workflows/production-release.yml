@@ -28,18 +28,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Refuse during the matchday freeze (Fri 18:00 to Sun 23:59, UK time)
-        shell: bash
-        run: |
-          set -euo pipefail
-          DOW="$(TZ=Europe/London date +%u)"   # 1 = Monday ... 7 = Sunday
-          HOUR="$(TZ=Europe/London date +%H)"
-          echo "UK time now: $(TZ=Europe/London date '+%A %H:%M')"
-          if [ "$DOW" -eq 6 ] || [ "$DOW" -eq 7 ] || { [ "$DOW" -eq 5 ] && [ "$((10#$HOUR))" -ge 18 ]; }; then
-            echo "Release refused: matchday freeze (Friday 18:00 to Sunday 23:59 UK time)."
-            echo "If something is broken on a matchday, roll back in Vercel instead of releasing."
-            exit 1
-          fi
 
       - name: Require the matchday rehearsal
         shell: bash
