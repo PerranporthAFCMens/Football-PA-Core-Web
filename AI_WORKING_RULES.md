@@ -16,10 +16,9 @@ Adapted from the HybridOne rules. These apply to every task, every time.
 10. **Say which team a change affects.** Perranporth 1st Team and Dynamos Girls U10 are real teams using the app.
 11. **Plain English.** The owner is not a developer. Explain what each step does and what a pass or fail looks like.
 
-## 2. Matchday freeze
+## 2. Matchdays
 
-- No releases, no live database changes and no feature work from **Friday 18:00 to Sunday 23:59 UK time**, or on any day a team using the app has a match.
-- If something breaks on a matchday, the only allowed action is a rollback (Vercel Instant Rollback to the last good deployment). Investigate afterwards.
+- If something breaks during a match, roll back first (Vercel Instant Rollback to the last good deployment) and investigate afterwards. Never fix forward on the live site mid-match.
 
 ## 3. Definition of done
 
@@ -34,7 +33,7 @@ A change is not done until you have shown:
 ## 4. Database rules
 
 - Every schema change is a migration file in the repo, reviewed in a PR. Never change the database only through the dashboard or an ad-hoc SQL call.
-- Live Supabase is read-only unless the owner approves the exact SQL, outside the matchday freeze.
+- Live Supabase is read-only unless the owner approves the exact SQL.
 - Never remove or loosen an RLS policy to make a feature work.
 - No service-role keys in frontend code, chat, SQL or the repo.
 - Every live change is recorded in `STATUS.md` with its rollback.
