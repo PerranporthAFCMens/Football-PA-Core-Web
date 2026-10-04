@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eef3f8"><title>Join your team · Football PA</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./core-client.js"></script><link rel="stylesheet" href="./core-ui.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef3f8;color:#102033;font-family:Arial,Helvetica,sans-serif}
+.wrap{width:min(440px,calc(100% - 24px));margin:6vh auto}.card{background:#fff;border:1px solid #dbe4ed;border-radius:18px;padding:24px;box-shadow:0 10px 30px #173d6814;text-align:center}
+.logo{width:76px;height:76px;object-fit:contain;margin:0 auto 12px;display:block}.eyebrow{font-size:10px;font-weight:900;letter-spacing:.1em;color:#1357A6;text-transform:uppercase}
+h1{margin:7px 0;font-size:24px}.muted{color:#6d7b8a;font-size:13px;line-height:1.45}.field{text-align:left;margin-top:12px}.field label{display:block;font-size:11px;font-weight:900;margin-bottom:6px}
+.field input{width:100%;border:1px solid #cfd9e3;border-radius:11px;padding:12px;font-size:16px}.btn{width:100%;border:0;border-radius:11px;padding:12px 14px;background:var(--blue,#1357A6);color:#fff;font-weight:900;margin-top:14px;cursor:pointer;font-size:15px}
+.btn.secondary{background:#fff;color:#102033;border:1px solid #cfd9e3}.btn:disabled{opacity:.55}.status{margin-top:12px;font-size:13px}.bad{color:#b42318}.good{color:#187747}.hidden{display:none!important}
+.switch{margin-top:12px;font-size:13px}.switch a{color:var(--blue,#1357A6);font-weight:800;cursor:pointer}
+</style></head>
+<body><main class="wrap"><section class="card">
+<img id="badge" class="logo" alt="" src="https://footballpa.com/FootballPALogo%20-%20PNG.png">
+<div class="eyebrow">Football PA invitation</div>
+<h1 id="heading">Join your team</h1>
+<div id="sub" class="muted">Checking your invite…</div>
+
+<div id="signedIn" class="hidden">
+  <div class="muted" id="signedInAs" style="margin-top:12px"></div>
+  <button id="acceptSignedIn" class="btn">Accept invite</button>
+  <button id="useOther" class="btn secondary">Use a different account</button>
+</div>
+
+<div id="newForm" class="hidden">
+  <div class="field"><label>Your name</label><input id="name" autocomplete="name" maxlength="80"></div>
+  <div class="field"><label>Email</label><input id="email" type="email" autocomplete="email"></div>
+  <div class="field"><label>Create password</label><input id="password" type="password" autocomplete="new-password" minlength="8"></div>
+  <div class="field"><label>Confirm password</label><input id="confirm" type="password" autocomplete="new-password" minlength="8"></div>
+  <button id="create" class="btn">Join team</button>
+  <div class="switch">Already use Football PA? <a id="toSignIn">Sign in instead</a></div>
+</div>
+
+<div id="signInForm" class="hidden">
+  <div class="field"><label>Email</label><input id="siEmail" type="email" autocomplete="email"></div>
+  <div class="field"><label>Password</label><input id="siPassword" type="password" autocomplete="current-password"></div>
+  <button id="signIn" class="btn">Sign in and join</button>
+  <div class="switch">New to Football PA? <a id="toNew">Create an account</a></div>
+</div>
+
+<div id="status" class="status"></div>
+</section></main>
+<script>
+const sb=FootballPAClient,$=id=>document.getElementById(id);
+const token=new URLSearchParams(location.search).get('t')||'';
+const FN='https://hennzggqaquevqgiucqn.supabase.co/functions/v1/team-invite-link-signup';
+const KEY='sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW';
+let invite=null;
+
+function status(text,cls){$('status').textContent=text||'';$('status').className='status'+(cls?' '+cls:'')}
+function show(id){['signedIn','newForm','signInForm'].forEach(x=>$(x).classList.toggle('hidden',x!==id));status('')}
+function busy(b,on,label){b.disabled=on;if(label)b.textContent=label}
+function done(teamId){status('You\u2019re in. Opening Football PA\u2026','good');setTimeout(()=>location.replace('./index.html?team='+encodeURIComponent(teamId)),600)}
+
+async function claimAsSignedIn(){
+  const r=await sb.rpc('claim_team_invite_link',{p_token:token});
+  if(r.error)throw r.error;
+  return r.data?.team_id||invite.team_id;
+}
+
+async function boot(){
+  if(!token){$('sub').textContent='This invite link is incomplete. Ask your team for a new one.';return}
+  const {data,error}=await sb.rpc('peek_team_invite_link',{p_token:token});
+  if(error||!data?.valid){$('heading').textContent='Invite not available';$('sub').textContent=data?.reason||error?.message||'This invite link is not valid.';return}
+  invite=data;
+  $('heading').textContent='Join '+data.team_name;
+  $('sub').textContent=(data.club_name?data.club_name+' \u00b7 ':'')+'You\u2019ve been invited as '+data.level_name+'.';
+  if(data.badge_url)$('badge').src=data.badge_url;
+  if(data.primary_colour)document.documentElement.style.setProperty('--blue',data.primary_colour);
+  const {data:{session}}=await sb.auth.getSession();
+  if(session){$('signedInAs').textContent='Signed in as '+(session.user.email||'');show('signedIn')}else show('newForm');
+}
+
+$('acceptSignedIn').onclick=async()=>{const b=$('acceptSignedIn');busy(b,true,'Joining\u2026');try{done(await claimAsSignedIn())}catch(e){status(e.message,'bad');busy(b,false,'Accept invite')}};
+$('useOther').onclick=async()=>{await sb.auth.signOut();show('newForm')};
+$('toSignIn').onclick=()=>show('signInForm');
+$('toNew').onclick=()=>show('newForm');
+
+$('create').onclick=async()=>{
+  const name=$('name').value.trim(),email=$('email').value.trim(),password=$('password').value,confirm=$('confirm').value;
+  if(!name)return status('Enter your name.','bad');
+  if(!email.includes('@'))return status('Enter a valid email address.','bad');
+  if(password.length<8)return status('Use a password of at least 8 characters.','bad');
+  if(password!==confirm)return status('The passwords do not match.','bad');
+  const b=$('create');busy(b,true,'Joining\u2026');status('');
+  try{
+    const r=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY},body:JSON.stringify({token,email,password,name})});
+    const j=await r.json().catch(()=>({}));
+    if(j.status==='existing_account'){$('siEmail').value=email;show('signInForm');status(j.message,'bad');return}
+    if(!r.ok||!j.ok)throw new Error(j.error||'Could not join the team.');
+    const s=await sb.auth.signInWithPassword({email,password});
+    if(s.error)throw s.error;
+    done(j.team_id);
+  }catch(e){status(e.message,'bad')}finally{busy(b,false,'Join team')}
+};
+
+$('signIn').onclick=async()=>{
+  const email=$('siEmail').value.trim(),password=$('siPassword').value;
+  if(!email||!password)return status('Enter your email and password.','bad');
+  const b=$('signIn');busy(b,true,'Signing in\u2026');status('');
+  try{
+    const s=await sb.auth.signInWithPassword({email,password});
+    if(s.error)throw s.error;
+    done(await claimAsSignedIn());
+  }catch(e){status(e.message,'bad')}finally{busy(b,false,'Sign in and join')}
+};
+
+boot();
+</script></body></html>
