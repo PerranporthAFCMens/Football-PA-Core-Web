@@ -30,6 +30,9 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 | 4 Oct 2026 | Migration `team_invite_links` applied (new table + 4 functions, additive) | Claude, approved by Adam | Drop the table and the four `*team_invite_link*` functions |
 | 4 Oct 2026 | Edge function `team-invite-link-signup` deployed (verify_jwt off; the invite token is the check) | Claude, approved by Adam | Delete the function in Supabase |
 | 4 Oct 2026 | Release: invite by text (`join.html`, Share invite link) | Adam | Tag `prod-2026-10-04` / Vercel Instant Rollback |
+| 4 Oct 2026 | Supabase Auth URL Configuration: Site URL https://footballpa.com, redirect URLs for footballpa.com, core. and app. (was localhost:3000, which broke email invites) | Adam | Supabase dashboard |
+| 4 Oct 2026 | `grant_core_demo_access` no longer adds invited staff to the Harbour Athletic demo club | Claude, approved by Adam | Re-apply previous function body |
+| 4 Oct 2026 | Deleted Fiona Humber's half-created account (invite email bounced to localhost) so she can be re-invited by share link | Claude, approved by Adam | None needed |
 | 4 Oct 2026 | Dynamos: deleted 5 demo fixtures (Demo United, Test Town, Sample City, Trial Athletic, Practice Rovers) and their events/subs; Falmouth 20 Sep set to completed, 1-10 | Claude, approved by Adam | None for the deletes (demo data); Falmouth score editable on Fixtures page |
 
 ## Culdrose (26 Sep) findings
