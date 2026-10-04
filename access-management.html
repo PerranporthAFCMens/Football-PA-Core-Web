@@ -121,7 +121,7 @@ async function shareInviteLink(){
  const b=$('shareInvite');b.disabled=true;b.textContent='Creating…';showStatus('');
  try{
   const r=await sb.rpc('create_team_invite_link',{p_team_id:ctx.team.id,p_access_level_id:level});if(r.error)throw r.error;
-  const url=location.origin+'/join.html?t='+encodeURIComponent(r.data.token);
+  const url=new URL('./join.html?t='+encodeURIComponent(r.data.token),location.href).href;
   const label=displayLevelName({name:r.data.level_name});
   const text='You\u2019ve been invited to join '+ctx.team.name+' on Football PA as '+label+'. Tap the link to set up your login:';
   const expires=new Date(r.data.expires_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
