@@ -11,13 +11,13 @@
 .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:14px;padding:4px;border-radius:12px;background:#e8eef4}.tab{border:0;border-radius:9px;padding:10px 7px;background:transparent;color:#657587;font-weight:900;cursor:pointer}.tab.active{background:#fff;color:var(--blue);box-shadow:0 2px 8px #10203314}
 .sectionHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.sectionHead h2{margin:0;font-size:18px}.btn{border:1px solid var(--line);border-radius:11px;padding:10px 13px;background:#fff;font-weight:850;cursor:pointer}.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn.danger{background:#fff1f0;border-color:#f0cfcc;color:#b42318}.btn:disabled{opacity:.5;cursor:not-allowed}
 .status{padding:10px 12px;border-radius:11px;font-size:12px}.status.ok{background:#ecfdf3;color:#176338}.status.bad{background:#fff1f0;color:#b42318}.status.info{background:#eef4fb;color:#31546f}
-.inviteGrid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(150px,.7fr) minmax(180px,.8fr) auto;gap:8px;margin-top:12px}.field label{display:block;font-size:10px;font-weight:900;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff}.field textarea{min-height:72px;resize:vertical}
+.inviteGrid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(150px,.7fr) minmax(180px,.8fr) auto;gap:8px;margin-top:12px}.inviteGrid.staffInvite{grid-template-columns:minmax(0,1.5fr) minmax(180px,1fr) auto auto}.field label{display:block;font-size:10px;font-weight:900;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff}.field textarea{min-height:72px;resize:vertical}
 .list{display:grid;margin-top:12px}.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:13px 0;border-top:1px solid #e9eef3;align-items:center}.row:first-child{border-top:0}.rowTitle{font-weight:900}.rowMeta{font-size:11px;color:var(--muted);margin-top:4px}.actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.actions select{border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff;max-width:170px}
 .pill{display:inline-flex;padding:4px 7px;border-radius:999px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;background:#eef3f7;color:#53677b}.pill.good{background:#e8f8ee;color:#176338}.pill.warn{background:#fff7e6;color:#8a5a00}.pill.bad{background:#fff1f0;color:#b42318}
 .levelLayout{display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr);gap:12px;margin-top:12px}.levelList{display:grid;gap:7px}.levelButton{width:100%;text-align:left;border:1px solid var(--line);border-radius:11px;background:#fff;padding:11px;cursor:pointer}.levelButton.active{border-color:var(--blue);background:#eef4fb}.levelButton b{display:block}.levelButton small{display:block;color:var(--muted);margin-top:3px}
 .permissions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.perm{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:11px;padding:10px;background:#f9fbfc}.perm input{margin-top:2px}.perm b{display:block;font-size:12px}.perm span{display:block;color:var(--muted);font-size:10px;margin-top:2px;line-height:1.35}
 .empty{padding:18px 0;color:var(--muted);font-size:12px}
-@media(max-width:760px){.inviteGrid{grid-template-columns:1fr}.inviteGrid .btn{width:100%}.row{grid-template-columns:1fr}.actions{justify-content:flex-start;display:grid;grid-template-columns:1fr 1fr}.actions select{max-width:none;width:100%}.actions .btn{width:100%}.levelLayout{grid-template-columns:1fr}.permissions{grid-template-columns:1fr}.tabs{grid-template-columns:1fr 1fr 1fr}.hero h1{font-size:22px}}
+@media(max-width:760px){.inviteGrid,.inviteGrid.staffInvite{grid-template-columns:1fr}.inviteGrid .btn{width:100%}.row{grid-template-columns:1fr}.actions{justify-content:flex-start;display:grid;grid-template-columns:1fr 1fr}.actions select{max-width:none;width:100%}.actions .btn{width:100%}.levelLayout{grid-template-columns:1fr}.permissions{grid-template-columns:1fr}.tabs{grid-template-columns:1fr 1fr 1fr}.hero h1{font-size:22px}}
 </style></head>
 <body><main class="fpa-page"><div id="loading" class="fpa-card" style="padding:28px;text-align:center">Loading access management…</div>
 <div id="app" class="page hidden">
@@ -27,11 +27,13 @@
 
 <section id="staffPane" class="fpa-card card">
 <div class="sectionHead"><div><h2>Staff access</h2><div class="muted">Invite managers, coaches and administrators, then control exactly what they can access.</div></div></div>
-<div class="inviteGrid" style="grid-template-columns:minmax(0,1.5fr) minmax(180px,1fr) auto">
+<div class="inviteGrid staffInvite">
 <div class="field"><label>Email address</label><input id="inviteEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
 <div class="field"><label>Access Level</label><select id="inviteLevel"></select></div>
 <button id="sendInvite" class="btn primary" style="align-self:end">Send invite</button>
+<button id="shareInvite" class="btn" style="align-self:end">Share invite link</button>
 </div>
+<div class="muted" style="margin-top:8px">Prefer text or WhatsApp? Choose the Access Level and tap <b>Share invite link</b> (no email needed). Each link works once and expires after 7 days.</div>
 <div id="pendingWrap" class="hidden" style="margin-top:16px"><div class="eyebrow">Pending invitations</div><div id="pendingList" class="list"></div></div>
 <div style="margin-top:16px"><div class="eyebrow">Team staff</div><div id="staffList" class="list"></div></div>
 </section>
@@ -114,6 +116,23 @@ async function sendInvite(){
  const b=$('sendInvite');b.disabled=true;b.textContent='Sending…';showStatus('');
  try{const r=await fetch('https://hennzggqaquevqgiucqn.supabase.co/functions/v1/team-access-invite',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ctx.session.access_token,'apikey':'sb_publishable_3ibkYwM0fFdHgKdGFIN5cQ_BT_WudUW'},body:JSON.stringify({team_id:ctx.team.id,email,role,access_level_id:level})});const j=await r.json();if(!r.ok)throw new Error(j.message||j.error||'Could not send invitation');$('inviteEmail').value='';showStatus(j.status==='existing_account'?'Access added to the existing Football PA account.':'Invitation email sent to '+email+'.','ok');await reload()}catch(e){showStatus(e.message,'bad');await reload()}finally{b.disabled=false;b.textContent='Send invite'}
 }
+async function shareInviteLink(){
+ const level=$('inviteLevel').value;if(!level)return showStatus('Choose an Access Level first.','bad');
+ const b=$('shareInvite');b.disabled=true;b.textContent='Creating…';showStatus('');
+ try{
+  const r=await sb.rpc('create_team_invite_link',{p_team_id:ctx.team.id,p_access_level_id:level});if(r.error)throw r.error;
+  const url=new URL('./join.html?t='+encodeURIComponent(r.data.token),location.href).href;
+  const label=displayLevelName({name:r.data.level_name});
+  const text='You\u2019ve been invited to join '+ctx.team.name+' on Football PA as '+label+'. Tap the link to set up your login:';
+  const expires=new Date(r.data.expires_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  if(navigator.share){
+   try{await navigator.share({title:'Join '+ctx.team.name+' on Football PA',text,url});showStatus('Invite link shared ('+label+'). It works once and expires on '+expires+'.','ok');return}
+   catch(e){if(e?.name==='AbortError'){showStatus('Invite link not sent. Tap Share invite link again when you\u2019re ready.','info');return}}
+  }
+  try{await navigator.clipboard.writeText(text+' '+url);showStatus('Invite link copied ('+label+'). Paste it into a text or WhatsApp. It works once and expires on '+expires+'.','ok')}
+  catch{prompt('Copy this invite link and send it by text or WhatsApp:',url);showStatus('Invite link created ('+label+'). It works once and expires on '+expires+'.','ok')}
+ }catch(e){showStatus(e.message,'bad')}finally{b.disabled=false;b.textContent='Share invite link'}
+}
 async function cancelInvite(id,b){if(!confirm('Cancel this invitation?'))return;b.disabled=true;const r=await sb.rpc('cancel_team_access_invite',{p_team_id:ctx.team.id,p_pending_id:id});if(r.error)showStatus(r.error.message,'bad');else{showStatus('Invitation cancelled.','ok');await reload()}}
 async function saveStaff(uid,b){const level=document.querySelector('[data-level="'+uid+'"]').value||null;if(!level)return showStatus('Choose an Access Level before saving.','bad');const role=internalRoleForLevel(level);b.disabled=true;const r=await sb.rpc('set_team_staff_access',{p_team_id:ctx.team.id,p_user_id:uid,p_role:role,p_access_level_id:level});if(r.error)showStatus(r.error.message,'bad');else{showStatus('Staff access updated.','ok');await reload()}}
 async function removeStaff(uid,b){if(!confirm('Remove this person’s access to '+ctx.team.name+'? Their Football PA account and access to any other teams will remain.'))return;b.disabled=true;const r=await sb.rpc('remove_team_staff_access',{p_team_id:ctx.team.id,p_user_id:uid});if(r.error)showStatus(r.error.message,'bad');else{showStatus('Team access removed immediately.','ok');await reload()}}
@@ -121,7 +140,7 @@ async function setPlayerAccess(pid,active,b){const verb=active?'restore':'remove
 async function saveLevel(){let name=$('levelName').value.trim(),description=$('levelDescription').value.trim(),permissions=[...document.querySelectorAll('[data-perm]:checked')].map(x=>x.dataset.perm);const current=data.levels.find(x=>x.id===selectedLevelId);if(current?.name==='Manager')return showStatus('Team Owner is protected and cannot be edited.','bad');const b=$('saveLevel');b.disabled=true;const r=await sb.rpc('save_team_access_level',{p_team_id:ctx.team.id,p_level_id:selectedLevelId==='new'?null:selectedLevelId,p_name:name,p_description:description,p_permissions:permissions});b.disabled=false;if(r.error)return showStatus(r.error.message,'bad');selectedLevelId=r.data.id;showStatus('Access Level saved. Everyone assigned to it now uses these permissions.','ok');await reload();editLevel(selectedLevelId)}
 async function deleteLevel(){if(selectedLevelId==='new'||!selectedLevelId)return;const current=data.levels.find(x=>x.id===selectedLevelId);if(current?.name==='Manager')return showStatus('Team Owner is protected and cannot be deleted.','bad');if(!confirm('Delete this Access Level? It can only be deleted when nobody is assigned to it.'))return;const r=await sb.rpc('delete_team_access_level',{p_team_id:ctx.team.id,p_level_id:selectedLevelId});if(r.error)return showStatus(r.error.message,'bad');selectedLevelId=null;$('levelForm').classList.add('hidden');$('levelEmpty').classList.remove('hidden');showStatus('Access Level deleted.','ok');await reload()}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));['staff','players','levels'].forEach(x=>$(x+'Pane').classList.toggle('hidden',x!==b.dataset.tab))});
-$('sendInvite').onclick=sendInvite;$('newLevel').onclick=()=>editLevel('new');$('saveLevel').onclick=saveLevel;$('deleteLevel').onclick=deleteLevel;
+$('sendInvite').onclick=sendInvite;$('shareInvite').onclick=shareInviteLink;$('newLevel').onclick=()=>editLevel('new');$('saveLevel').onclick=saveLevel;$('deleteLevel').onclick=deleteLevel;
 $('levelList').onclick=e=>{const b=e.target.closest('[data-open-level]');if(b)editLevel(b.dataset.openLevel)};
 $('backToSettings').onclick=()=>location.href=ctx.href('/team-settings.html');
 (async()=>{try{ctx=await FootballPAContext.resolve();if(!ctx.access?.can_manage_access)throw new Error('You do not have permission to manage access for this team.');$('teamLabel').textContent=ctx.club.name+' · '+ctx.team.name;await reload();$('loading').classList.add('hidden');$('app').classList.remove('hidden');FootballPANav.mount()}catch(e){$('loading').textContent=e.message;}})();
