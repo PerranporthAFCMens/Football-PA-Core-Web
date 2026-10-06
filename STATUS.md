@@ -2,12 +2,13 @@
 
 Read this file and AI_WORKING_RULES.md at the start of every session. Anything not written here counts as forgotten.
 
-## Where we are (4 Oct 2026)
+## Where we are (6 Oct 2026)
 
 - Work is now done with Claude only. ChatGPT has stopped working on Football PA.
 - Release gate live on `main` (PR #16, merged 2 Oct). `dev` brought level with `main` (PR #18).
 - Save fix (`match-save-guard.js`, PR #17) released to production 3 Oct (rollback tag `prod-2026-10-03`).
-- In progress: invite staff by text/WhatsApp (shareable single-use link). Database table/functions and edge function are live; `join.html` and the Access Management button are in PR `feat/invite-link-by-text`.
+- Invite staff by text/WhatsApp: shareable single-use link. Database table/functions and edge function are live; `join.html` and the Access Management button shipped in PR `feat/invite-link-by-text`.
+- **In progress**: lineup confirmation workflow (two-phase: "Confirm starting lineup" pre-match, "Edit starting lineup" during match with warning). Edge function `confirm-starting-lineup` created, Match Centre UI updated (PR `feat/lineup-confirmation`).
 - Live addresses (Vercel project `football-pa-core-web`): footballpa.com, app.footballpa.com, core.footballpa.com. Vercel deploys every change to `main`.
 - Database: Supabase project "Football PA Core" (`hennzggqaquevqgiucqn`). It also holds the old Perranporth app data (`perranporth` schema) and QuarryHQ tables.
 
