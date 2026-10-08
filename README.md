@@ -42,3 +42,5 @@ Before changing existing behaviour, read [CHANGE-CONTROL.md](CHANGE-CONTROL.md).
 ## Reference migrations
 
 Perranporth AFC is now provisioned as a real Core team and is used alongside St Agnes for product validation. Perranporth's historic Player Portal URL is a compatibility requirement and must remain usable during and after cut-over.
+
+<!-- GitHub Pages test deployment: 2026-10-08 23:05 -->
