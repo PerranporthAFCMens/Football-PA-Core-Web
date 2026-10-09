@@ -30,6 +30,7 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 | 4 Oct 2026 | Migration `team_invite_links` applied (new table + 4 functions, additive) | Claude, approved by Adam | Drop the table and the four `*team_invite_link*` functions |
 | 4 Oct 2026 | Edge function `team-invite-link-signup` deployed (verify_jwt off; the invite token is the check) | Claude, approved by Adam | Delete the function in Supabase |
 | 4 Oct 2026 | Dynamos: deleted 5 demo fixtures (Demo United, Test Town, Sample City, Trial Athletic, Practice Rovers) and their events/subs; Falmouth 20 Sep set to completed, 1-10 | Claude, approved by Adam | None for the deletes (demo data); Falmouth score editable on Fixtures page |
+| 9 Oct 2026 | Stage 2 database extraction: baseline_schema.sql created (37 tables, 240+ columns); RLS/functions/grants migration skeletons; SUPABASE_SCHEMA.md documentation | Claude | None yet (migrations are skeletons, pending function extraction) |
 
 ## Culdrose (26 Sep) findings
 
@@ -47,11 +48,12 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 
 ## Plan
 
-- Stage 1: release gate (PR #16, done), GitHub branch protection on `main` and `dev` (in progress: PR `feat/branch-protection`).
+- Stage 1: release gate (PR #16, done), GitHub branch protection on `main` and `dev` (PR #22, in review).
 - Fix: failed-save warning and retry in Match Centre (PR #17, released).
-- Dynamos handover: demo fixtures deleted and Falmouth result recorded (done 4 Oct); invite-by-text for coaches (this PR, database and server function already live).
+- Dynamos handover: demo fixtures deleted and Falmouth result recorded (done 4 Oct); invite-by-text for coaches (PR #19, live).
 - Multi-team users have no team switcher in the menu; they switch with `index.html?team=<id>`. Candidate improvement.
-- Stage 2 database in repo, Stage 3 Match Centre browser test, Stage 4 refactor (clock/events state machine).
+- **Stage 2 database in repo** (in progress): baseline schema extracted, RLS/functions/roles migration skeletons created, SUPABASE_SCHEMA.md documentation written. Next: populate function and policy definitions, rebuild test, PR #23.
+- Stage 3 Match Centre browser test, Stage 4 refactor (clock/events state machine).
 
 ## How to release
 
