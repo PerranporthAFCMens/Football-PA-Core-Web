@@ -47,7 +47,7 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 
 ## Plan
 
-- Stage 1: release gate (PR #16, done), GitHub rulesets on `main` and `dev` (to do).
+- Stage 1: release gate (PR #16, done), GitHub branch protection on `main` and `dev` (in progress: PR `feat/branch-protection`).
 - Fix: failed-save warning and retry in Match Centre (PR #17, released).
 - Dynamos handover: demo fixtures deleted and Falmouth result recorded (done 4 Oct); invite-by-text for coaches (this PR, database and server function already live).
 - Multi-team users have no team switcher in the menu; they switch with `index.html?team=<id>`. Candidate improvement.
