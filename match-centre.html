@@ -105,7 +105,7 @@
 </div>
 <script>
 const sb=FootballPAClient;
-const $=id=>document.getElementById(id);let club,team,season,teamSettings={},players=[],fixtures=[],fixture,state,timer,syncTimer,pickerSlot=null,saving=false,saveDirty=false,savePromise=null,actionBusy=false,lineupSaved=false,goalZone='',originZone='',goalPickerSide='us',lineupDrag=null,lineupSuppressClickUntil=0,startingXi={},matchSquadIds=[],editingEventIndex=null,lineupShareBlob=null,lineupShareUrl='',clockAnchorSeconds=0,clockAnchorMs=Date.now(),lastCompletionSyncAt=0,stateVersion='';
+const $=id=>document.getElementById(id);let club,team,season,teamSettings={},players=[],fixtures=[],fixture,state,timer,syncTimer,pickerSlot=null,saving=false,saveDirty=false,savePromise=null,actionBusy=false,lineupSaved=false,goalZone='',originZone='',goalPickerSide='us',lineupDrag=null,lineupSuppressClickUntil=0,startingXi={},matchSquadIds=[],unavailablePlayerIds=new Set(),editingEventIndex=null,lineupShareBlob=null,lineupShareUrl='',clockAnchorSeconds=0,clockAnchorMs=Date.now(),lastCompletionSyncAt=0,stateVersion='';
 const formations11={
 '4-2-3-1':[{k:'gk',x:50,y:91},{k:'lb',x:16,y:73},{k:'lcb',x:38,y:77},{k:'rcb',x:62,y:77},{k:'rb',x:84,y:73},{k:'lcm',x:36,y:56},{k:'rcm',x:64,y:56},{k:'lw',x:18,y:32},{k:'am',x:50,y:37},{k:'rw',x:82,y:32},{k:'st',x:50,y:14}],
 '4-3-3':[{k:'gk',x:50,y:91},{k:'lb',x:16,y:73},{k:'lcb',x:38,y:77},{k:'rcb',x:62,y:77},{k:'rb',x:84,y:73},{k:'lcm',x:28,y:53},{k:'cm',x:50,y:58},{k:'rcm',x:72,y:53},{k:'lw',x:20,y:27},{k:'st',x:50,y:14},{k:'rw',x:80,y:27}],
@@ -145,7 +145,10 @@ async function loadMatch(){
  const loadedXi=d.xi||startingXi||{},loadedSubs=d.substitutions||[],
    loadedEvents=(d.events||[]).map(x=>eventFromDb(x)).concat(loadedSubs.map(x=>substitutionFromDb(x))).sort(compareLoadedEvents);
  const squadResult=await sb.from('match_squads').select('player_id,selected').eq('fixture_id',fixture.id).eq('selected',true);
- matchSquadIds=squadResult.error?[]:(squadResult.data||[]).map(x=>x.player_id);
+ let squad=squadResult.error?[]:(squadResult.data||[]).map(x=>x.player_id);
+ const availabilityResult=await sb.from('fixture_availability').select('player_id').eq('fixture_id',fixture.id).eq('available',false);
+ unavailablePlayerIds=new Set(availabilityResult.error?[]:(availabilityResult.data||[]).map(x=>x.player_id));
+ matchSquadIds=squad.filter(id=>!unavailablePlayerIds.has(id));
  state={phase:db.phase||'PRE-MATCH',seconds:Number(db.seconds||0),running:!!db.running,home:Number(db.home??fixture.home_score??0),away:Number(db.away??fixture.away_score??0),formation:formations[db.formation]?db.formation:Object.keys(formations)[0],xi:loadedXi,positions:d.positions||{},events:loadedEvents,subs:loadedSubs,match_started_at:db.match_started_at||null,running_started_at:db.running_started_at||null};stateVersion=db.updated_at||'';
  lineupSaved=Object.values(startingXi).filter(Boolean).length>0;
  resetClockAnchor(state.seconds);
