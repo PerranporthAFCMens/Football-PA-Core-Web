@@ -50,6 +50,8 @@
         <option value="Throw-in">Throw-in</option>
         <option value="Other">Other</option>
       </select>
+      <label style="font-size:11px;font-weight:900;color:#6d7b8a;text-transform:uppercase;letter-spacing:.05em;display:block;margin:8px 0 4px">Touches</label>
+      <input id="goalTouches" type="number" min="0" max="99" placeholder="Number of touches" style="width:100%;border:1px solid #d9e3ec;border-radius:11px;padding:11px;background:#fff;font:inherit">
       <div id="goalZoneLabel" class="goalZoneLabel">Tap the zone</div>
       <div id="goalZonePitch" class="goalPitch"></div>
       <div id="originZoneLabel" class="goalZoneLabel">Assist / origin zone <span class="muted">(optional)</span></div>
@@ -438,7 +440,7 @@ function openGoalPicker(side='us'){
   $('goalScorer').value='';$('goalAssist').value='';$('goalScorer').classList.toggle('hidden',conceded);
   $('goalAssist').classList.toggle('hidden',!captureAssists);$('originZoneLabel').classList.toggle('hidden',!captureAssists);$('originZonePitch').classList.toggle('hidden',!captureAssists);
   $('goalZoneLabel').textContent=conceded?'Tap the zone the goal was conceded from':'Tap the zone';
-  $('goalType').value='Open Play';goalZone='';originZone='';buildGoalZonePitch('goalZonePitch',goalZone);if(captureAssists)buildGoalZonePitch('originZonePitch',originZone);
+  $('goalType').value='Open Play';$('goalTouches').value='';goalZone='';originZone='';buildGoalZonePitch('goalZonePitch',goalZone);if(captureAssists)buildGoalZonePitch('originZonePitch',originZone);
   $('saveGoal').textContent=conceded?'Save conceded goal':'Save goal';$('goalPicker').classList.remove('hidden');
 }
 function closeGoalPicker(){$('goalPicker').classList.add('hidden')}
@@ -454,7 +456,7 @@ async function saveGoal(){
   actionBusy=true;setBusyButton($('saveGoal'),true,'Saving…');
   try{
     let text=conceded?'Conceded goal · '+zoneMeta.label:'Goal · '+scorer.display_name;if(!conceded&&captureAssists&&a)text+=' · assist '+a.display_name;if(!conceded)text+=' · '+zoneMeta.label;
-    const ev={id:newMatchRecordId(),type:'goal',icon:'⚽',text,time:formatMinute(m,mi.stoppage),player_id:scorer?.id||'',related_player_id:assistId||'',minute:m,stoppage_minute:mi.stoppage,team_side:goalPickerSide,zone:'Zone '+goalZone,details:{goal_type:$('goalType').value,goal_zone:goalZone,goal_zone_label:zoneMeta.label,origin_zone:captureAssists?(originZone||null):null,origin_zone_label:captureAssists?(originMeta?.label||null):null}};
+    const touches=parseInt($('goalTouches').value)||0;const ev={id:newMatchRecordId(),type:'goal',icon:'⚽',text,time:formatMinute(m,mi.stoppage),player_id:scorer?.id||'',related_player_id:assistId||'',minute:m,stoppage_minute:mi.stoppage,team_side:goalPickerSide,zone:'Zone '+goalZone,details:{goal_type:$('goalType').value,goal_zone:goalZone,goal_zone_label:zoneMeta.label,origin_zone:captureAssists?(originZone||null):null,origin_zone_label:captureAssists?(originMeta?.label||null):null,touches:touches}};
     state.events.push(ev);if(conceded){if(home)state.away++;else state.home++}else{if(home)state.home++;else state.away++}
     closeGoalPicker();render();await persistMatchEvent(ev);render();
   }finally{actionBusy=false;setBusyButton($('saveGoal'),false)}
