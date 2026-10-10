@@ -16,9 +16,33 @@
 :root[style*="--view-mode:public"] .controls{display:none!important}
 :root[style*="--view-mode:public"] #shareResultBtn{display:none!important}
 :root[style*="--view-mode:public"] .formation{display:none!important}
+:root[style*="--voting-mode:motm"] #app{display:none!important}
+.votingPage{display:none;position:fixed;inset:0;background:linear-gradient(180deg,#e7eef6,#f8fafc 42%,#edf2f7);z-index:50;overflow:auto;padding:20px}.votingPage.active{display:flex;flex-direction:column;align-items:center}.votingContainer{width:100%;max-width:800px;padding:20px 0}.votingHeader{text-align:center;margin-bottom:30px}.votingTitle{font-size:32px;font-weight:900;color:#102033;margin:0 0 10px}.votingSubtitle{font-size:16px;color:#6d7b8a;margin:0}.votingGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:30px}.votingCard{border:2px solid #d9e3ec;border-radius:15px;padding:20px;background:#fff;cursor:pointer;transition:all .2s;text-align:center}.votingCard:hover{border-color:#1357A6;transform:translateY(-2px);box-shadow:0 5px 16px #1d39500a}.votingCard.voted{border-color:#1f8f54;background:#f0f9f5}.votingCard:active{transform:scale(.98)}.votingCardNumber{font-size:48px;font-weight:900;color:#1357A6;margin-bottom:10px;font-family:Arial,sans-serif}.votingCardName{font-size:16px;font-weight:800;color:#102033;margin:0;word-break:break-word}.votingCardPosition{font-size:12px;color:#6d7b8a;margin:8px 0 0;font-weight:700}.votingMessage{text-align:center;padding:20px;background:#f7f9fb;border-radius:12px;color:#6d7b8a;font-size:14px;margin-bottom:20px;display:none}.votingMessage.show{display:block}.votingActions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}.votingBtn{border:0;border-radius:11px;padding:12px 20px;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s}.votingBtn.primary{background:#1357A6;color:#fff}.votingBtn.primary:hover{opacity:.9}.votingBtn.primary:active{transform:scale(.98)}.votingBtn.secondary{background:#edf3f8;color:#102033}.votingBtn.secondary:hover{background:#dfe8f3}.votingBtn.secondary:active{transform:scale(.98)}.votingBtn:disabled{opacity:.5;cursor:wait}.votingNoPlayers{text-align:center;padding:40px 20px;color:#6d7b8a;font-size:16px}
 </style>
 </head>
 <body>
+<div class="votingPage" id="votingPage">
+  <div class="votingContainer">
+    <div class="votingHeader">
+      <h1 class="votingTitle">⭐ Man of the Match</h1>
+      <p class="votingSubtitle" id="votingFixtureInfo">Match complete</p>
+    </div>
+    <div id="votingContent">
+      <div class="votingMessage" id="votingLoading">Loading players…</div>
+      <div class="votingGrid" id="votingGrid"></div>
+      <div id="votingNoPlayers" class="votingNoPlayers hidden">No players available</div>
+    </div>
+    <div id="votingResultsArea" style="display:none">
+      <div class="votingMessage show" id="votingThank">Thanks for voting! ⭐</div>
+      <div style="text-align:center;margin-top:20px">
+        <button class="votingBtn secondary" onclick="location.reload()">Vote again</button>
+      </div>
+    </div>
+    <div class="votingActions" style="margin-top:30px;display:none" id="votingFooter">
+      <button class="votingBtn primary" id="votingShareBtn">📤 Share voting link</button>
+    </div>
+  </div>
+</div>
 <div class="wrap fpa-page">
 <div id="status" class="card status">Loading Match Centre…</div>
 <div id="app" class="hidden">
@@ -114,8 +138,8 @@
 </div>
 <script>
 const sb=FootballPAClient;
-const $=id=>document.getElementById(id);let club,team,season,teamSettings={},players=[],fixtures=[],fixture,state,timer,syncTimer,pickerSlot=null,saving=false,saveDirty=false,savePromise=null,actionBusy=false,lineupSaved=false,goalZone='',originZone='',goalPickerSide='us',lineupDrag=null,lineupSuppressClickUntil=0,startingXi={},matchSquadIds=[],unavailablePlayerIds=new Set(),editingEventIndex=null,lineupShareBlob=null,lineupShareUrl='',clockAnchorSeconds=0,clockAnchorMs=Date.now(),lastCompletionSyncAt=0,stateVersion='';
-const isPublicView=new URLSearchParams(location.search).get('view')==='public';if(isPublicView){document.documentElement.style.setProperty('--view-mode','public')}
+const $=id=>document.getElementById(id);let club,team,season,teamSettings={},players=[],fixtures=[],fixture,state,timer,syncTimer,pickerSlot=null,saving=false,saveDirty=false,savePromise=null,actionBusy=false,lineupSaved=false,goalZone='',originZone='',goalPickerSide='us',lineupDrag=null,lineupSuppressClickUntil=0,startingXi={},matchSquadIds=[],unavailablePlayerIds=new Set(),editingEventIndex=null,lineupShareBlob=null,lineupShareUrl='',clockAnchorSeconds=0,clockAnchorMs=Date.now(),lastCompletionSyncAt=0,stateVersion='',userVote=null;
+const isPublicView=new URLSearchParams(location.search).get('view')==='public';const isVotingMode=new URLSearchParams(location.search).get('voting')==='motm';if(isPublicView){document.documentElement.style.setProperty('--view-mode','public')}if(isVotingMode){document.documentElement.style.setProperty('--voting-mode','motm')}
 const formations11={
 '4-2-3-1':[{k:'gk',x:50,y:91},{k:'lb',x:16,y:73},{k:'lcb',x:38,y:77},{k:'rcb',x:62,y:77},{k:'rb',x:84,y:73},{k:'lcm',x:36,y:56},{k:'rcm',x:64,y:56},{k:'lw',x:18,y:32},{k:'am',x:50,y:37},{k:'rw',x:82,y:32},{k:'st',x:50,y:14}],
 '4-3-3':[{k:'gk',x:50,y:91},{k:'lb',x:16,y:73},{k:'lcb',x:38,y:77},{k:'rcb',x:62,y:77},{k:'rb',x:84,y:73},{k:'lcm',x:28,y:53},{k:'cm',x:50,y:58},{k:'rcm',x:72,y:53},{k:'lw',x:20,y:27},{k:'st',x:50,y:14},{k:'rw',x:80,y:27}],
@@ -147,7 +171,41 @@ function configureMatchFormat(){
  $('formationTitle').dataset.prefix='Starting '+size;
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function playerById(id){return players.find(p=>p.id===id)}function eligiblePlayers(){if(!matchSquadIds.length)return players;const keep=new Set(matchSquadIds.concat(Object.values(state?.xi||{}).filter(Boolean)));return players.filter(p=>keep.has(p.id))}function resetClockAnchor(seconds=state?.seconds||0){clockAnchorSeconds=Math.max(0,Math.floor(Number(seconds)||0));clockAnchorMs=Date.now();if(state)state.seconds=clockAnchorSeconds}function syncLocalClock(){if(!state)return 0;if(state.running){state.seconds=Math.max(0,clockAnchorSeconds+Math.floor((Date.now()-clockAnchorMs)/1000))}return state.seconds}function time(){syncLocalClock();const total=Math.max(0,Math.floor(state.seconds||0)),m=Math.floor(total/60),s=total%60;return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}function eventMinuteInfo(){syncLocalClock();const pm=Math.max(1,periodMinutes()),pc=Math.max(1,periodCount()),ap=activePeriod(),bp=breakAfter(),period=ap||Math.min(pc,Math.max(1,bp||1)),periodStart=(period-1)*pm*60,periodEnd=period*pm*60,elapsed=Math.max(periodStart,Math.floor(Number(state?.seconds)||0));if(elapsed>=periodEnd){return{minute:period*pm,stoppage:Math.floor((elapsed-periodEnd)/60)+1}}return{minute:Math.max(1,Math.min(period*pm,(period-1)*pm+Math.floor((elapsed-periodStart)/60)+1)),stoppage:0}}function minuteNow(){return eventMinuteInfo().minute}function periodCount(){return Number(teamSettings.period_count)||({halves:2,thirds:3,quarters:4}[teamSettings.period_type]||2)}function periodMinutes(){return Number(teamSettings.period_minutes)||45}function activePeriod(){const p=String(state?.phase||'');if(p==='1ST HALF')return 1;if(p==='2ND HALF')return 2;const m=p.match(/PERIOD\s+(\d+)/i);return m?Number(m[1]):0}function breakAfter(){const p=String(state?.phase||'');if(p==='HALF-TIME')return 1;const m=p.match(/BREAK\s+(\d+)/i);return m?Number(m[1]):0}function periodPhase(n){if(periodCount()===2)return n===1?'1ST HALF':'2ND HALF';return 'PERIOD '+n}function breakPhase(n){return periodCount()===2&&n===1?'HALF-TIME':'BREAK '+n}function isFinal(f){return['ft','full_time','completed','complete','finished'].includes(String(f.status||'').toLowerCase())}function longDate(v){return v?new Date(v).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}):''}
-async function boot(){try{const ctx=await FootballPAContext.resolve();if(!ctx.access?.can_manage_match)throw new Error('You do not have permission to manage matches for this team.');team=ctx.team;club=ctx.club;season=ctx.season;teamSettings=ctx.settings||{};configureMatchFormat();let squadQuery=sb.from('team_players').select('players(id,display_name,first_name,last_name,lineup_alias,shirt_number,preferred_position)').eq('team_id',team.id).eq('active',true),fixtureQuery=sb.from('fixtures').select('id,team_id,season_id,opponent,venue,competition,kick_off,status,home_score,away_score').eq('team_id',team.id).order('kick_off');if(ctx.season?.id){squadQuery=squadQuery.eq('season_id',ctx.season.id);fixtureQuery=fixtureQuery.eq('season_id',ctx.season.id)}let r=await squadQuery;if(r.error)throw r.error;players=(r.data||[]).map(x=>x.players).filter(Boolean).sort((a,b)=>(a.shirt_number??999)-(b.shirt_number??999));r=await fixtureQuery;if(r.error)throw r.error;fixtures=r.data||[];const q=new URLSearchParams(location.search),requestedFixture=q.get('fixture');fixture=fixtures.find(f=>f.id===requestedFixture)||fixtures.find(f=>!isFinal(f))||fixtures[fixtures.length-1];if(!fixture)throw new Error('No fixture is available.');$('fixtureSelect').innerHTML=fixtures.map(f=>'<option value="'+f.id+'">'+esc(longDate(f.kick_off))+' · '+esc(f.opponent)+' · '+(String(f.venue).toLowerCase()==='home'?'Home':String(f.venue).toLowerCase()==='away'?'Away':'Neutral')+'</option>').join('');$('fixtureSelect').value=fixture.id;FootballPANav.mount({teamId:team.id});await loadMatch();renderHeader();render();$('status').classList.add('hidden');$('app').classList.remove('hidden');startTimers()}catch(e){$('status').textContent='Could not load Match Centre: '+e.message;$('status').classList.add('bad')}}
+async function loadVotingUI(){
+ if(!isVotingMode||!fixture)return;
+ try{
+  const votingPage=$('votingPage'),votingGrid=$('votingGrid'),votingContent=$('votingContent'),votingNoPlayers=$('votingNoPlayers');
+  const fixtureInfo=$('votingFixtureInfo');
+  const fixture_info=`${longDate(fixture.kick_off)} · ${fixture.opponent||'Opponent'}`;
+  fixtureInfo.textContent=fixture_info;
+
+  const eligible=players.filter(p=>{const xi=Object.values(state?.xi||{}).filter(Boolean);return xi.includes(p.id)});
+
+  if(!eligible.length){
+   votingGrid.innerHTML='';votingNoPlayers.classList.remove('hidden');votingContent.style.opacity='.5';return;
+  }
+  votingNoPlayers.classList.add('hidden');votingGrid.innerHTML=eligible.map(p=>`<button class="votingCard" data-vote-player="${p.id}"><div class="votingCardNumber">#${esc(p.shirt_number??'–')}</div><div class="votingCardName">${esc(p.display_name)}</div><div class="votingCardPosition">${esc(p.preferred_position||'–')}</div></button>`).join('');
+  votingPage.classList.add('active');
+  votingGrid.addEventListener('click',e=>{const btn=e.target.closest('[data-vote-player]');if(btn)submitVote(btn.dataset.votePlayer)});
+  $('votingShareBtn').onclick=()=>{const url=location.origin+location.pathname+'?fixture='+fixture.id+'&voting=motm';if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>alert('Voting link copied!')).catch(()=>prompt('Copy link:',url))}else{prompt('Copy link:',url)}};
+ }catch(e){console.error('Voting UI error:',e)}
+}
+async function submitVote(playerId){
+ if(!fixture||!playerId||actionBusy)return;
+ actionBusy=true;
+ try{
+  const voteValue=userVote===playerId?0:1;
+  const {error}=await sb.from('match_voting').upsert([{fixture_id:fixture.id,player_id:playerId,guest_vote:voteValue,voted_at:new Date().toISOString()}],{onConflict:'fixture_id,player_id'});
+  if(error)throw error;
+  userVote=voteValue?playerId:null;
+  document.querySelectorAll('[data-vote-player]').forEach(btn=>{btn.classList.toggle('voted',btn.dataset.votePlayer===userVote)});
+  if(userVote){
+   $('votingContent').style.display='none';$('votingResultsArea').style.display='block';$('votingFooter').style.display='flex';
+  }
+ }catch(e){alert('Voting error: '+e.message)}
+ finally{actionBusy=false}
+}
+async function boot(){try{const ctx=await FootballPAContext.resolve();if(!ctx.access?.can_manage_match)throw new Error('You do not have permission to manage matches for this team.');team=ctx.team;club=ctx.club;season=ctx.season;teamSettings=ctx.settings||{};configureMatchFormat();let squadQuery=sb.from('team_players').select('players(id,display_name,first_name,last_name,lineup_alias,shirt_number,preferred_position)').eq('team_id',team.id).eq('active',true),fixtureQuery=sb.from('fixtures').select('id,team_id,season_id,opponent,venue,competition,kick_off,status,home_score,away_score').eq('team_id',team.id).order('kick_off');if(ctx.season?.id){squadQuery=squadQuery.eq('season_id',ctx.season.id);fixtureQuery=fixtureQuery.eq('season_id',ctx.season.id)}let r=await squadQuery;if(r.error)throw r.error;players=(r.data||[]).map(x=>x.players).filter(Boolean).sort((a,b)=>(a.shirt_number??999)-(b.shirt_number??999));r=await fixtureQuery;if(r.error)throw r.error;fixtures=r.data||[];const q=new URLSearchParams(location.search),requestedFixture=q.get('fixture');fixture=fixtures.find(f=>f.id===requestedFixture)||fixtures.find(f=>!isFinal(f))||fixtures[fixtures.length-1];if(!fixture)throw new Error('No fixture is available.');$('fixtureSelect').innerHTML=fixtures.map(f=>'<option value="'+f.id+'">'+esc(longDate(f.kick_off))+' · '+esc(f.opponent)+' · '+(String(f.venue).toLowerCase()==='home'?'Home':String(f.venue).toLowerCase()==='away'?'Away':'Neutral')+'</option>').join('');$('fixtureSelect').value=fixture.id;FootballPANav.mount({teamId:team.id});await loadMatch();renderHeader();render();if(isVotingMode){await loadVotingUI()}$('status').classList.add('hidden');$('app').classList.remove('hidden');startTimers()}catch(e){$('status').textContent='Could not load Match Centre: '+e.message;$('status').classList.add('bad')}}
 async function loadMatch(){
  const {data,error}=await sb.rpc('load_match_centre_state_v2',{p_fixture_id:fixture.id});if(error)throw error;
  const d=data||{},db=d.state||{};
