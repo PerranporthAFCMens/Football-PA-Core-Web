@@ -587,9 +587,10 @@ async function togglePlayerAvailability(playerId){
  actionBusy=true;
  try{
   const isCurrentlyUnavailable=unavailablePlayerIds.has(playerId);
-  const {error}=await sb.from('fixture_availability').upsert({fixture_id:fixture.id,player_id:playerId,available:isCurrentlyUnavailable});
+  const newAvailable=!isCurrentlyUnavailable;
+  const {error}=await sb.from('fixture_availability').upsert([{fixture_id:fixture.id,player_id:playerId,available:newAvailable}],{onConflict:'fixture_id,player_id'});
   if(error)throw error;
-  if(isCurrentlyUnavailable){unavailablePlayerIds.delete(playerId);matchSquadIds.push(playerId)}else{unavailablePlayerIds.add(playerId);matchSquadIds=matchSquadIds.filter(id=>id!==playerId)}
+  if(newAvailable){unavailablePlayerIds.delete(playerId);if(!matchSquadIds.includes(playerId))matchSquadIds.push(playerId)}else{unavailablePlayerIds.add(playerId);matchSquadIds=matchSquadIds.filter(id=>id!==playerId)}
   render()
  }finally{actionBusy=false}
 }
