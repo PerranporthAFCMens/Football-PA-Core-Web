@@ -1,8 +1,23 @@
 # Football PA Core Access Control
 
-Updated: 21 September 2026
+Updated: 11 October 2026
 
 This document defines the authoritative access model for Football PA Core.
+
+## Security Updates
+
+### 11 October 2026 - Access Control Hierarchy Fix
+
+**Critical Issue Fixed:** The `can_access_team()` RLS helper was permitting ANY active club member to read all fixtures, players, match events, and voting data for every team in their club, regardless of their club role.
+
+**What Changed:**
+- Modified `can_access_team()` to require `club_memberships.role = 'owner'` before granting club-wide team access
+- Club members (non-owners) now require explicit team_memberships to access any team data
+- Club owners retain their existing access to all teams in their club
+
+**Migration:** `20261011144000_fix_can_access_team_hierarchy.sql`
+
+**Impact:** This enforces proper team isolation and the intended access hierarchy. See below for complete role definitions.
 
 ## Principle
 
