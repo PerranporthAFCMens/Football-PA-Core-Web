@@ -18,46 +18,56 @@ DECLARE
   v_can_manage boolean;
   v_fixtures jsonb;
 BEGIN
-  -- Check if user can manage this team
   v_can_manage := public.can_manage_team(p_team_id);
 
-  -- Build fixtures array with availability data
+  WITH fixture_data AS (
+    SELECT
+      f.id,
+      f.opponent,
+      f.competition,
+      f.venue,
+      f.ground_name,
+      f.ground_address,
+      f.ground_postcode,
+      f.kick_off,
+      jsonb_agg(jsonb_build_object('player_id', p.id, 'name', p.display_name, 'shirt_number', p.shirt_number) ORDER BY p.display_name)
+        FILTER (WHERE r.available = true) as available,
+      jsonb_agg(jsonb_build_object('player_id', p.id, 'name', p.display_name, 'shirt_number', p.shirt_number) ORDER BY p.display_name)
+        FILTER (WHERE r.available = false) as unavailable,
+      jsonb_agg(jsonb_build_object('player_id', p.id, 'name', p.display_name, 'shirt_number', p.shirt_number) ORDER BY p.display_name)
+        FILTER (WHERE r.available IS NULL) as no_response,
+      COUNT(*) FILTER (WHERE r.available = true) as available_count,
+      COUNT(*) FILTER (WHERE r.available = false) as unavailable_count,
+      COUNT(*) FILTER (WHERE r.available IS NULL) as no_response_count
+    FROM public.fixtures f
+    LEFT JOIN public.fixture_availability_responses r ON r.fixture_id = f.id
+    LEFT JOIN public.players p ON p.id = r.player_id
+    WHERE f.team_id = p_team_id
+      AND (p_season_id IS NULL OR f.season_id = p_season_id)
+      AND public.can_access_team(f.team_id)
+    GROUP BY f.id, f.opponent, f.competition, f.venue, f.ground_name, f.ground_address, f.ground_postcode, f.kick_off
+  )
   SELECT jsonb_build_object(
     'fixtures', COALESCE(jsonb_agg(jsonb_build_object(
-      'fixture_id', f.id,
-      'opponent', f.opponent,
-      'competition', f.competition,
-      'venue', f.venue,
-      'ground_name', f.ground_name,
-      'ground_address', f.ground_address,
-      'ground_postcode', f.ground_postcode,
-      'kick_off', f.kick_off,
-      'available_count', COALESCE(COUNT(*) FILTER (WHERE a.response = true), 0),
-      'unavailable_count', COALESCE(COUNT(*) FILTER (WHERE a.response = false), 0),
-      'no_response_count', COALESCE(COUNT(*) FILTER (WHERE a.response IS NULL), 0),
-      'available', COALESCE(jsonb_agg(
-        jsonb_build_object('player_id', p.id, 'name', p.name, 'shirt_number', p.shirt_number)
-        ORDER BY p.name
-      ) FILTER (WHERE a.response = true), '[]'::jsonb),
-      'unavailable', COALESCE(jsonb_agg(
-        jsonb_build_object('player_id', p.id, 'name', p.name, 'shirt_number', p.shirt_number)
-        ORDER BY p.name
-      ) FILTER (WHERE a.response = false), '[]'::jsonb),
-      'no_response', COALESCE(jsonb_agg(
-        jsonb_build_object('player_id', p.id, 'name', p.name, 'shirt_number', p.shirt_number)
-        ORDER BY p.name
-      ) FILTER (WHERE a.response IS NULL), '[]'::jsonb)
-    ) ORDER BY f.kick_off DESC), '[]'::jsonb),
+      'fixture_id', fd.id,
+      'opponent', fd.opponent,
+      'competition', fd.competition,
+      'venue', fd.venue,
+      'ground_name', fd.ground_name,
+      'ground_address', fd.ground_address,
+      'ground_postcode', fd.ground_postcode,
+      'kick_off', fd.kick_off,
+      'available_count', fd.available_count,
+      'unavailable_count', fd.unavailable_count,
+      'no_response_count', fd.no_response_count,
+      'available', COALESCE(fd.available, '[]'::jsonb),
+      'unavailable', COALESCE(fd.unavailable, '[]'::jsonb),
+      'no_response', COALESCE(fd.no_response, '[]'::jsonb)
+    ) ORDER BY fd.kick_off DESC), '[]'::jsonb),
     'can_manage', v_can_manage,
     'player_stats', '[]'::jsonb
   ) INTO v_fixtures
-  FROM public.fixtures f
-  LEFT JOIN public.fixture_availability a ON a.fixture_id = f.id
-  LEFT JOIN public.players p ON p.id = a.player_id AND p.roster_active = true
-  WHERE f.team_id = p_team_id
-    AND (p_season_id IS NULL OR f.season_id = p_season_id)
-    AND public.can_access_team(f.team_id)
-  GROUP BY f.id, f.opponent, f.competition, f.venue, f.ground_name, f.ground_address, f.ground_postcode, f.kick_off;
+  FROM fixture_data;
 
   RETURN v_fixtures;
 END;
