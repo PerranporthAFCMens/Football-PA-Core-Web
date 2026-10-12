@@ -1,75 +1,73 @@
--- Fix availability feature: include venue details in get_team_availability RPC
---
--- ISSUE: The get_team_availability RPC was not returning ground_name, ground_address,
---        and ground_postcode from the fixtures table, causing the availability.html UI
---        to show "Venue TBC" even when Full-Time data was synced with complete venue info.
---
--- FIX: Updated RPC SELECT to include all three ground fields in returned fixture objects.
---      The RPC builds a JSON response where each fixture includes ground_name, ground_address,
---      and ground_postcode fields alongside existing availability data.
---
--- IMPACT: Availability poll will now display venue name and address when synced from
---         Full-Time, and fall back to "Venue TBC" only when these fields are actually
---         empty in the database.
+-- Availability poll: return ground_name / ground_address / ground_postcode from fixtures
+-- (previously only `venue` home/away was returned, so the UI showed "Venue TBC").
+-- No-response is derived from the active team roster, because
+-- fixture_availability_responses only holds rows for players who have replied.
 
 CREATE OR REPLACE FUNCTION public.get_team_availability(p_team_id uuid, p_season_id uuid DEFAULT NULL)
 RETURNS jsonb AS $$
 DECLARE
   v_can_manage boolean;
-  v_fixtures jsonb;
+  v_result jsonb;
 BEGIN
   v_can_manage := public.can_manage_team(p_team_id);
 
-  WITH fixture_data AS (
-    SELECT
-      f.id,
-      f.opponent,
-      f.competition,
-      f.venue,
-      f.ground_name,
-      f.ground_address,
-      f.ground_postcode,
-      f.kick_off,
-      jsonb_agg(jsonb_build_object('player_id', p.id, 'name', p.display_name, 'shirt_number', p.shirt_number) ORDER BY p.display_name)
-        FILTER (WHERE r.available = true) as available,
-      jsonb_agg(jsonb_build_object('player_id', p.id, 'name', p.display_name, 'shirt_number', p.shirt_number) ORDER BY p.display_name)
-        FILTER (WHERE r.available = false) as unavailable,
-      jsonb_agg(jsonb_build_object('player_id', p.id, 'name', p.display_name, 'shirt_number', p.shirt_number) ORDER BY p.display_name)
-        FILTER (WHERE r.available IS NULL) as no_response,
-      COUNT(*) FILTER (WHERE r.available = true) as available_count,
-      COUNT(*) FILTER (WHERE r.available = false) as unavailable_count,
-      COUNT(*) FILTER (WHERE r.available IS NULL) as no_response_count
+  WITH roster AS (
+    SELECT DISTINCT p.id AS player_id, p.display_name, p.shirt_number
+    FROM public.team_players tp
+    JOIN public.players p ON p.id = tp.player_id
+    WHERE tp.team_id = p_team_id AND tp.active
+      AND (p_season_id IS NULL OR tp.season_id = p_season_id)
+  ),
+  fx AS (
+    SELECT f.*
     FROM public.fixtures f
-    LEFT JOIN public.fixture_availability_responses r ON r.fixture_id = f.id
-    LEFT JOIN public.players p ON p.id = r.player_id
     WHERE f.team_id = p_team_id
       AND (p_season_id IS NULL OR f.season_id = p_season_id)
       AND public.can_access_team(f.team_id)
-    GROUP BY f.id, f.opponent, f.competition, f.venue, f.ground_name, f.ground_address, f.ground_postcode, f.kick_off
+  ),
+  grid AS (
+    SELECT fx.id AS fixture_id, ro.player_id, ro.display_name, ro.shirt_number, r.available
+    FROM fx
+    CROSS JOIN roster ro
+    LEFT JOIN public.fixture_availability_responses r
+      ON r.fixture_id = fx.id AND r.player_id = ro.player_id
+  ),
+  agg AS (
+    SELECT g.fixture_id,
+      count(*) FILTER (WHERE g.available IS TRUE) AS available_count,
+      count(*) FILTER (WHERE g.available IS FALSE) AS unavailable_count,
+      count(*) FILTER (WHERE g.available IS NULL) AS no_response_count,
+      COALESCE(jsonb_agg(jsonb_build_object('player_id', g.player_id, 'name', g.display_name, 'shirt_number', g.shirt_number) ORDER BY g.display_name) FILTER (WHERE g.available IS TRUE), '[]'::jsonb) AS available,
+      COALESCE(jsonb_agg(jsonb_build_object('player_id', g.player_id, 'name', g.display_name, 'shirt_number', g.shirt_number) ORDER BY g.display_name) FILTER (WHERE g.available IS FALSE), '[]'::jsonb) AS unavailable,
+      COALESCE(jsonb_agg(jsonb_build_object('player_id', g.player_id, 'name', g.display_name, 'shirt_number', g.shirt_number) ORDER BY g.display_name) FILTER (WHERE g.available IS NULL), '[]'::jsonb) AS no_response
+    FROM grid g
+    GROUP BY g.fixture_id
   )
   SELECT jsonb_build_object(
-    'fixtures', COALESCE(jsonb_agg(jsonb_build_object(
-      'fixture_id', fd.id,
-      'opponent', fd.opponent,
-      'competition', fd.competition,
-      'venue', fd.venue,
-      'ground_name', fd.ground_name,
-      'ground_address', fd.ground_address,
-      'ground_postcode', fd.ground_postcode,
-      'kick_off', fd.kick_off,
-      'available_count', fd.available_count,
-      'unavailable_count', fd.unavailable_count,
-      'no_response_count', fd.no_response_count,
-      'available', COALESCE(fd.available, '[]'::jsonb),
-      'unavailable', COALESCE(fd.unavailable, '[]'::jsonb),
-      'no_response', COALESCE(fd.no_response, '[]'::jsonb)
-    ) ORDER BY fd.kick_off DESC), '[]'::jsonb),
+    'fixtures', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'fixture_id', fx.id,
+        'opponent', fx.opponent,
+        'competition', fx.competition,
+        'venue', fx.venue,
+        'ground_name', fx.ground_name,
+        'ground_address', fx.ground_address,
+        'ground_postcode', fx.ground_postcode,
+        'kick_off', fx.kick_off,
+        'available_count', COALESCE(a.available_count, 0),
+        'unavailable_count', COALESCE(a.unavailable_count, 0),
+        'no_response_count', COALESCE(a.no_response_count, 0),
+        'available', COALESCE(a.available, '[]'::jsonb),
+        'unavailable', COALESCE(a.unavailable, '[]'::jsonb),
+        'no_response', COALESCE(a.no_response, '[]'::jsonb)
+      ) ORDER BY fx.kick_off DESC)
+      FROM fx LEFT JOIN agg a ON a.fixture_id = fx.id
+    ), '[]'::jsonb),
     'can_manage', v_can_manage,
     'player_stats', '[]'::jsonb
-  ) INTO v_fixtures
-  FROM fixture_data;
+  ) INTO v_result;
 
-  RETURN v_fixtures;
+  RETURN v_result;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
