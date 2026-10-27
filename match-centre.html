@@ -349,13 +349,15 @@ function openEventEdit(index){
  $('eventEditTitle').textContent='Edit '+(ev.type==='goal'&&ev.details?.own_goal?'own goal':ev.type==='goal'&&String(ev.team_side||'us')==='opponent'?'opposition goal':ev.type==='goal'?'goal':ev.type==='yellow'?'yellow card':ev.type==='red'?'red card':ev.type==='substitution'?'substitution':'event');
  $('editMinute').value=Number(ev.minute||0);$('editStoppage').value=Number(ev.stoppage_minute||0);$('editNotes').value=ev.details?.notes||ev.details?.legacy_notes||'';
  const primary=$('editPrimary'),secondary=$('editSecondary'),goal=ev.type==='goal',oppGoal=goal&&(String(ev.team_side||'us')==='opponent'||!!ev.details?.own_goal),sub=ev.type==='substitution',card=ev.type==='yellow'||ev.type==='red';
- $('editPrimaryWrap').classList.toggle('hidden',oppGoal||(!goal&&!sub&&!card));
+ const oppSideOnly=goal&&String(ev.team_side||'us')==='opponent',ownNow=goal&&!!ev.details?.own_goal;
+ $('editPrimaryWrap').classList.toggle('hidden',oppSideOnly||(!goal&&!sub&&!card));
  $('editSecondaryWrap').classList.toggle('hidden',oppGoal||(!goal&&!sub));
  $('editGoalFields').classList.toggle('hidden',!goal);
   $('editOriginWrap').classList.toggle('hidden',!goal||oppGoal||teamSettings.capture_assists===false);
   $('editReasonWrap').classList.toggle('hidden',!card);
  if(sub){$('editPrimaryLabel').textContent='Player off';$('editSecondaryLabel').textContent='Player on';primary.innerHTML=eventPlayerOptions(ev.related_player_id);secondary.innerHTML=eventPlayerOptions(ev.player_id)}
- else if(goal&&!oppGoal){$('editPrimaryLabel').textContent='Scorer';$('editSecondaryLabel').textContent='Assist';primary.innerHTML=eventPlayerOptions(ev.player_id);secondary.innerHTML=eventPlayerOptions(ev.related_player_id,true)}
+ else if(goal&&!oppSideOnly){$('editPrimaryLabel').textContent='Scorer';$('editSecondaryLabel').textContent='Assist';primary.innerHTML=eventPlayerOptions(ev.player_id)+'<option value="__own__"'+(ownNow?' selected':'')+'>Own goal (scored by opposition)</option>';if(ownNow)primary.value='__own__';secondary.innerHTML=eventPlayerOptions(ev.related_player_id,true);
+   const syncEditOwn=()=>{const o=primary.value==='__own__';$('editSecondaryWrap').classList.toggle('hidden',o);$('editTouchesWrap').classList.toggle('hidden',o);$('editOriginWrap').classList.toggle('hidden',o||teamSettings.capture_assists===false);$('editGoalType').classList.toggle('hidden',o)};primary.onchange=syncEditOwn;syncEditOwn()}
  else if(card){$('editPrimaryLabel').textContent='Player';primary.innerHTML=eventPlayerOptions(ev.player_id)}
  if(goal){
    $('editGoalType').value=ev.details?.goal_type||'Open Play';$('editGoalType').classList.toggle('hidden',!!ev.details?.own_goal);$('editTouches').value=ev.details?.touches??'';$('editTouchesWrap').classList.toggle('hidden',oppGoal);
@@ -379,7 +381,7 @@ async function saveEventEdit(){
      const next={id:(si>=0?state.subs[si].id:ev.id)||newMatchRecordId(),player_off_id:off,player_on_id:on,minute:ev.minute,stoppage_minute:ev.stoppage_minute};if(si>=0)state.subs[si]=next;else state.subs.push(next);persistedSub=next;ev.id=next.id;
      ev.related_player_id=off;ev.player_id=on;
    }else if(ev.type==='goal'){
-     if(String(ev.team_side||'us')!=='opponent'&&!ev.details?.own_goal){ev.player_id=$('editPrimary').value;ev.related_player_id=$('editSecondary').value||'';if(!ev.player_id)throw new Error('Choose the scorer.');}
+     if(String(ev.team_side||'us')!=='opponent'){const pv=$('editPrimary').value;if(pv==='__own__'){ev.player_id='';ev.related_player_id='';ev.details={...ev.details,own_goal:true}}else{ev.player_id=pv;ev.related_player_id=$('editSecondary').value||'';if(!ev.player_id)throw new Error('Choose the scorer.');if(ev.details?.own_goal){const d={...ev.details};delete d.own_goal;ev.details=d}}}
      const zone=$('editGoalZone').value,origin=$('editOriginZone').value,zm=goalZones().find(z=>z.id===zone),om=goalZones().find(z=>z.id===origin);
      ev.zone=zone?'Zone '+zone:'';const tRaw=String($('editTouches').value||'').trim(),tNum=tRaw===''?NaN:Math.round(Number(tRaw)),tVal=String(ev.team_side||'us')==='opponent'?null:(Number.isFinite(tNum)&&tNum>=0?Math.min(99,tNum):null);ev.details={...ev.details,touches:tVal,goal_type:ev.details?.own_goal?'Own Goal':$('editGoalType').value,goal_zone:zone||null,goal_zone_label:zm?.label||null,origin_zone:origin||null,origin_zone_label:om?.label||null};
    }else if(ev.type==='yellow'||ev.type==='red'){
