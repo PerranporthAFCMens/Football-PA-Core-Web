@@ -9,22 +9,36 @@
 <script src="./core-nav.js"></script>
 <link rel="stylesheet" href="./core-ui.css">
 <style>
-.hubhead{padding:14px 16px;display:grid;gap:4px}
-.hubhead .back{font-weight:800;font-size:13px;text-decoration:none;color:var(--fpa-blue,#1357A6);border:0!important;background:none!important;box-shadow:none!important;min-height:0!important;padding:0!important;width:auto!important;display:inline-block}
-.hubtop{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.hubhead h1{margin:0!important;font-size:22px!important;line-height:1.15!important}
-.big{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.big .sc{font-size:26px;font-weight:900;letter-spacing:-.02em}
-.pill{display:inline-block;border-radius:99px;padding:3px 9px;font-size:11px;font-weight:800;background:#e6edf3;color:#35506a}
-.pill.w{background:#e1f5e8;color:#176338}.pill.l{background:#fde7e5;color:#a02a1f}.pill.d{background:#fff1d6;color:#8a5a00}
-.tabs{display:flex;gap:4px;margin:12px 0;padding:4px!important}.tabs button{flex:1 1 0;min-width:0;min-height:40px;border:0;border-radius:10px;font-weight:800;font-size:13px;background:transparent;cursor:pointer;padding:0 2px;white-space:nowrap}.tabs button.active{background:var(--fpa-blue,#1357A6);color:#fff}
-.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
-.fact{background:#f4f7fa;border-radius:12px;padding:10px 12px}.fact b{display:block;font-size:22px}.fact span{font-size:12px;color:#6d7d8d;font-weight:700}
-.ev{display:flex;gap:10px;padding:9px 0;border-top:1px solid #e8eef3;align-items:baseline}.ev:first-child{border-top:0}.ev .min{min-width:38px;font-weight:900;color:#35506a}
-.ev.opp .txt{color:#a02a1f}
-.go{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-iframe.pane{width:100%;border:0;display:block;min-height:480px;background:transparent}
+.hubhead{padding:14px 16px 12px;display:grid;gap:8px;background:linear-gradient(135deg,var(--fpa-primary,#0d3f7a),color-mix(in srgb,var(--fpa-primary,#0d3f7a) 80%,#07111f))!important;color:#fff!important;border:0!important}
+.hubhead *{color:#fff!important}
+.hubhead .back{font-weight:800;font-size:13px;text-decoration:none;border:0!important;background:none!important;box-shadow:none!important;min-height:0!important;padding:0!important;width:auto!important;display:inline-block;opacity:.9}
+.hubhead h1{margin:0!important;font-size:18px!important;line-height:1.2!important;font-weight:800}
+.scoreRow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;text-align:center}
+.scoreRow .tm{font-weight:800;font-size:15px;overflow-wrap:anywhere}
+.scoreRow .sc{font-size:34px;font-weight:900;letter-spacing:-.02em;white-space:nowrap}
+.hubhead .meta{text-align:center;font-size:12px;opacity:.85}
+.tabs{display:flex;gap:2px;margin:10px 0;padding:3px!important}
+.tabs button{flex:1 1 auto;min-width:0;min-height:40px;border:0;border-radius:10px;font-weight:800;font-size:13px;background:transparent;cursor:pointer;padding:0 2px;white-space:nowrap}
+.tabs button .n{display:inline-block;background:#dbe5ef;color:#35506a;border-radius:99px;font-size:11px;padding:1px 6px;margin-left:3px}
+.tabs button.active .n{background:#ffffff40;color:#fff}
+.card2{padding:14px 16px;margin-bottom:10px}
+.card2 h2{margin:0 0 8px!important;font-size:18px!important}
+.card2 .head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.card2 .head h2{margin:0!important}
+.lnk{font-weight:800;font-size:14px;color:var(--fpa-blue,#1357A6);background:none;border:0;cursor:pointer;padding:6px 0}
+.pill{display:inline-block;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:800;background:#fff1d6;color:#8a5a00}
+.row2{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #edf1f5}.row2:first-of-type{border-top:0}
+.row2 small{display:block;color:#6d7d8d;font-size:13px}
+.ev{display:flex;gap:10px;align-items:center;padding:7px 0}.ev .min{min-width:36px;font-weight:900;color:#35506a}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}.dot.g{background:#218b22}.dot.r{background:#b42318}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.chips span{background:#eef3f8;border-radius:10px;padding:7px 11px;font-weight:700;font-size:14px}
+.subline{font-size:14px;color:#35506a;padding:2px 0}
+.bar{height:10px;border-radius:99px;background:#e3eaf1;overflow:hidden;display:flex;margin:6px 0}.bar i{display:block;height:100%}
+.vrow{display:grid;grid-template-columns:96px 1fr 28px;gap:8px;align-items:center;padding:4px 0;font-weight:700}
+.vrow .b{height:10px;border-radius:99px;background:var(--fpa-blue,#1357A6)}
 .muted2{color:#6d7d8d;font-size:13px}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:6px 10px;font-size:15px}.kv span:nth-child(odd){color:#6d7d8d}
+iframe.pane{width:100%;border:0;display:block;min-height:480px;background:transparent}
 </style>
 </head>
 <body>
@@ -33,13 +47,14 @@ iframe.pane{width:100%;border:0;display:block;min-height:480px;background:transp
 <div id="app" class="hidden">
   <section class="fpa-card hubhead">
     <a class="back" id="back" href="./matches.html">‹ All matches</a>
-    <div class="hubtop"><h1 id="title"></h1><div class="big"><span class="sc" id="score"></span><span id="result"></span></div></div>
-    <div class="muted2" id="meta"></div>
+    <h1 id="title" style="display:none"></h1>
+    <div class="scoreRow"><div class="tm" id="homeName"></div><div class="sc" id="score"></div><div class="tm" id="awayName"></div></div>
+    <div class="meta" id="meta"></div>
   </section>
   <div class="tabs" id="tabs">
-    <button data-t="overview" class="active">Overview</button><button data-t="squad">Squad</button><button data-t="match">Match</button><button data-t="votes">Votes</button><button data-t="subs">Subs</button>
+    <button data-t="overview" class="active">Overview</button><button data-t="squad">Squad<span class="n" id="nSquad" style="display:none"></span></button><button data-t="match">Match</button><button data-t="votes">Votes<span class="n" id="nVotes" style="display:none"></span></button><button data-t="subs">Subs</button>
   </div>
-  <section id="overview" class="fpa-card" style="padding:16px"></section>
+  <div id="overview"></div>
   <section id="frameWrap" class="hidden"><iframe id="pane" class="pane" title="Match tab"></iframe></section>
 </div>
 </main>
@@ -50,14 +65,13 @@ const FID=new URLSearchParams(location.search).get('fixture')||'';
 const PAGES={squad:'availability.html',match:'match-centre.html',votes:'voting.html',subs:'subs.html'};
 let ctx,fx,tab='overview',timer=null;
 const DONE=['ft','full_time','completed','complete','finished'];
+const isDone=()=>DONE.includes(String(fx.status||'').toLowerCase());
 const away=()=>String(fx.venue||'').toLowerCase()==='away';
 const our=()=>away()?fx.away_score:fx.home_score, their=()=>away()?fx.home_score:fx.away_score;
 async function safe(p){try{const r=await p;return r.error?{data:null}:r}catch(e){return {data:null}}}
+const gbp=p=>'£'+(p/100).toFixed(p%100?2:0);
 function paneUrl(t){return './'+PAGES[t]+'?fixture='+encodeURIComponent(FID)+'&team='+encodeURIComponent(ctx.team.id)+'&embed=1'}
-function autosize(){
-  const f=$('pane');clearInterval(timer);
-  timer=setInterval(()=>{try{const d=f.contentDocument;if(!d||!d.body)return;const h=Math.max(d.documentElement.scrollHeight,d.body.scrollHeight);if(Math.abs(h-f.offsetHeight)>4)f.style.height=h+'px'}catch(e){}},400);
-}
+function autosize(){const f=$('pane');clearInterval(timer);timer=setInterval(()=>{try{const d=f.contentDocument;if(!d||!d.body)return;const h=Math.max(d.documentElement.scrollHeight,d.body.scrollHeight);if(Math.abs(h-f.offsetHeight)>4)f.style.height=h+'px'}catch(e){}},400)}
 function setTab(t){
   tab=t;document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.t===t));
   $('overview').classList.toggle('hidden',t!=='overview');$('frameWrap').classList.toggle('hidden',t==='overview');
@@ -65,42 +79,90 @@ function setTab(t){
   if(t==='overview'){clearInterval(timer);renderOverview();return}
   const f=$('pane');f.style.height='480px';f.src=paneUrl(t);autosize();window.scrollTo({top:0});
 }
+function surnames(list){
+  const sur=p=>(p.last_name||String(p.display_name||'').trim().split(/\s+/).slice(-1)[0]||'Player');
+  const count={};list.forEach(p=>{const s=sur(p);count[s]=(count[s]||0)+1});
+  const out={};list.forEach(p=>{const s=sur(p);const first=(p.first_name||String(p.display_name||'').trim().split(/\s+/)[0]||'');out[p.id]=count[s]>1&&first?first[0]+'. '+s:s});
+  return out;
+}
 async function renderOverview(){
-  const [ev,av,sq,lu,sub,vt]=await Promise.all([
-    safe(sb.from('match_events').select('id,event_type,minute,team_side,player_id,details').eq('fixture_id',FID).order('minute')),
-    safe(sb.from('fixture_availability_responses').select('player_id,available').eq('fixture_id',FID)),
+  const T=ctx.team.id;
+  const [ev,lu,sub,sq,av,ve,st,ss]=await Promise.all([
+    safe(sb.from('match_events').select('id,event_type,minute,team_side,player_id,related_player_id,details').eq('fixture_id',FID).order('minute')),
+    safe(sb.from('match_lineups').select('player_id,position_code,sort_order').eq('fixture_id',FID).eq('starter',true).order('sort_order')),
+    safe(sb.from('substitutions').select('player_off_id,player_on_id,minute,stoppage_minute').eq('fixture_id',FID).order('minute')),
     safe(sb.from('match_squads').select('player_id').eq('fixture_id',FID).eq('selected',true)),
-    safe(sb.from('match_lineups').select('player_id').eq('fixture_id',FID).eq('starter',true)),
-    safe(sb.from('substitutions').select('id').eq('fixture_id',FID)),
-    safe(sb.from('voting_events').select('id,status').eq('fixture_id',FID).limit(1))]);
-  const events=(ev.data||[]).filter(e=>['goal','yellow','yellow_card','red','red_card'].includes(String(e.event_type||'').toLowerCase()));
-  const ids=[...new Set(events.map(e=>e.player_id).filter(Boolean))];
-  const names={};if(ids.length){const p=await safe(sb.from('players').select('id,display_name').in('id',ids));(p.data||[]).forEach(x=>names[x.id]=x.display_name)}
+    safe(sb.from('fixture_availability_responses').select('player_id,available').eq('fixture_id',FID)),
+    safe(sb.from('voting_events').select('id,status,template_id').eq('fixture_id',FID).order('created_at',{ascending:false}).limit(1)),
+    safe(sb.from('subs_fixture_statuses').select('player_id,status').eq('fixture_id',FID)),
+    safe(sb.from('subs_settings').select('charge_model,amount_pence').eq('team_id',T).eq('active',true).order('updated_at',{ascending:false}).limit(1))]);
+  const goals=(ev.data||[]).filter(e=>String(e.event_type||'').toLowerCase()==='goal');
+  const starters=lu.data||[],subs=sub.data||[],squad=(sq.data||[]).map(x=>x.player_id);
   const yes=(av.data||[]).filter(a=>a.available).length,no=(av.data||[]).filter(a=>!a.available).length;
-  const vote=(vt.data||[])[0];
-  const evHtml=events.length?events.map(e=>{
-    const t=String(e.event_type).toLowerCase(),opp=e.team_side==='opponent',own=e.details?.own_goal;
-    const icon=t==='goal'?'⚽':t.startsWith('yellow')?'🟨':'🟥';
-    const who=own?'Own goal (opposition)':opp?'Opposition '+(t==='goal'?'goal':'card'):(names[e.player_id]||'Player');
-    return '<div class="ev'+(opp&&t==='goal'?' opp':'')+'"><span class="min">'+esc(e.minute??'')+'′</span><span class="txt">'+icon+' '+esc(who)+'</span></div>'}).join(''):'<div class="muted2">No goals or cards recorded yet.</div>';
-  $('overview').innerHTML='<div class="facts"><div class="fact"><b>'+yes+'</b><span>Available</span></div><div class="fact"><b>'+no+'</b><span>Unavailable</span></div><div class="fact"><b>'+(sq.data||[]).length+'</b><span>In squad</span></div><div class="fact"><b>'+(lu.data||[]).length+'</b><span>Starting XI</span></div><div class="fact"><b>'+(sub.data||[]).length+'</b><span>Subs made</span></div><div class="fact"><b>'+(vote?(vote.status==='open'?'Open':String(vote.status)):'None')+'</b><span>Voting</span></div></div>'
-   +'<h2 style="margin:18px 0 6px">Goals and cards</h2>'+evHtml
-   ;
+  const vote=(ve.data||[])[0];
+  let ballots=0,tally=[];
+  if(vote){
+    const bq=await safe(sb.from('voting_ballots').select('id').eq('event_id',vote.id));
+    const bids=(bq.data||[]).map(b=>b.id);ballots=bids.length;
+    if(bids.length){
+      const qq=await safe(sb.from('voting_questions').select('id,question_type').eq('template_id',vote.template_id));
+      const ranked=new Set((qq.data||[]).filter(q=>q.question_type==='ranked').map(q=>q.id));
+      const sel=await safe(sb.from('voting_selections').select('player_id,points,question_id').in('ballot_id',bids));
+      const pts={};(sel.data||[]).forEach(s=>{if(ranked.has(s.question_id)&&s.player_id)pts[s.player_id]=(pts[s.player_id]||0)+Number(s.points||0)});
+      tally=Object.entries(pts).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    }
+  }
+  const ids=new Set([...goals.flatMap(g=>[g.player_id,g.related_player_id]),...starters.map(s=>s.player_id),...subs.flatMap(s=>[s.player_on_id,s.player_off_id]),...tally.map(t=>t[0])].filter(Boolean));
+  const names={};let nm={};
+  if(ids.size){const p=await safe(sb.from('players').select('id,display_name,first_name,last_name').in('id',[...ids]));const list=p.data||[];nm=surnames(list);list.forEach(x=>names[x.id]=x.display_name)}
+  const sn=id=>nm[id]||'Player';
+  const squadSize=squad.length||(new Set([...starters.map(s=>s.player_id),...subs.map(s=>s.player_on_id)])).size;
+  const paid=(st.data||[]).filter(s=>s.status==='confirmed_paid').length;
+  const cfg=(ss.data||[])[0];
+  $('nSquad').textContent=squadSize||yes;$('nSquad').style.display=(squadSize||yes)?'':'none';
+  $('nVotes').textContent=ballots;$('nVotes').style.display=ballots?'':'none';
+  const voteOpen=vote&&vote.status==='open',subsOwed=Math.max(0,squadSize-paid);
+  const todo=[];
+  if(voteOpen)todo.push('<div class="row2"><div><b>Voting is open</b><small>'+Math.max(0,squadSize-ballots)+' players still to vote</small></div><button class="lnk" data-go="votes">Open</button></div>');
+  if(isDone()&&squadSize&&subsOwed>0)todo.push('<div class="row2"><div><b>Subs unpaid</b><small>'+subsOwed+' of '+squadSize+' outstanding</small></div><button class="lnk" data-go="subs">Open</button></div>');
+  if(!isDone()&&!squad.length)todo.push('<div class="row2"><div><b>Squad not picked</b><small>'+yes+' available so far</small></div><button class="lnk" data-go="squad">Pick</button></div>');
+  let h='';
+  if(todo.length)h+='<section class="fpa-card card2"><div class="head"><h2>To do</h2><span class="pill">'+todo.length+' open</span></div>'+todo.join('')+'</section>';
+  const goalRows=goals.map(g=>{const opp=g.team_side==='opponent',own=g.details?.own_goal;
+    const txt=opp?'Conceded':own?'Own goal (opposition)':'Goal · '+esc(sn(g.player_id))+(g.related_player_id?' <span class="muted2">assist '+esc(sn(g.related_player_id))+'</span>':'');
+    return '<div class="ev"><span class="min">'+esc(g.minute??'')+'′</span><span class="dot '+(opp?'r':'g')+'"></span><span>'+txt+'</span></div>'}).join('');
+  h+='<section class="fpa-card card2"><div class="head"><h2>Goals</h2><button class="lnk" data-go="match">Edit in Match</button></div>'+(goalRows||'<div class="muted2">No goals recorded yet.</div>')+'</section>';
+  const subLines=subs.map(s=>'<div class="subline">'+esc(s.minute)+'′ '+esc(sn(s.player_on_id))+' on, '+esc(sn(s.player_off_id))+' off</div>').join('');
+  h+='<section class="fpa-card card2"><div class="head"><h2>Lineup and subs</h2><button class="lnk" data-go="match">Open</button></div>'+(starters.length?'<div class="chips">'+starters.map(s=>'<span>'+esc(sn(s.player_id))+'</span>').join('')+'</div>':'<div class="muted2">No lineup saved yet.</div>')+subLines+'</section>';
+  if(vote||ballots){
+    const max=Math.max(1,...tally.map(t=>t[1]));
+    h+='<section class="fpa-card card2"><div class="head"><h2>Man of the Match</h2><button class="lnk" data-go="votes">Open votes</button></div>'+(tally.length?tally.map(t=>'<div class="vrow"><span>'+esc(sn(t[0]))+'</span><div><div class="b" style="width:'+Math.round(t[1]/max*100)+'%"></div></div><span style="text-align:right">'+t[1]+'</span></div>').join(''):'<div class="muted2">No votes yet.</div>')+'<div class="muted2" style="margin-top:8px">'+ballots+(squadSize?' of '+squadSize:'')+' have voted'+(voteOpen?' · closes when you close it':'')+'</div></section>';
+  }
+  if(squadSize&&(isDone()||st.data?.length)){
+    const pc=squadSize?Math.round(paid/squadSize*100):0;
+    h+='<section class="fpa-card card2"><div class="head"><h2>Subs</h2><button class="lnk" data-go="subs">Open</button></div><div class="bar"><i style="width:'+pc+'%;background:#218b22"></i></div><div class="muted2">'+paid+' of '+squadSize+' paid'+(cfg&&cfg.charge_model==='per_game'?' · '+gbp(paid*cfg.amount_pence)+' of '+gbp(squadSize*cfg.amount_pence):'')+'</div></section>';
+  }
+  const tot=Math.max(1,yes+no);
+  h+='<section class="fpa-card card2"><div class="head"><h2>Availability</h2><button class="lnk" data-go="squad">Open</button></div><div class="bar"><i style="width:'+Math.round(yes/tot*100)+'%;background:#218b22"></i><i style="width:'+Math.round(no/tot*100)+'%;background:#b42318"></i></div><div class="muted2">'+yes+' said yes · '+no+' said no'+(squad.length?' · '+squad.length+' picked for the squad':'')+'</div></section>';
+  const d=new Date(fx.kick_off);
+  h+='<section class="fpa-card card2"><div class="head"><h2>Match details</h2><a class="lnk" href="./fixtures.html?team='+encodeURIComponent(ctx.team.id)+'" style="text-decoration:none">Edit</a></div><div class="kv"><span>Kick-off</span><span>'+esc(d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+', '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}))+'</span><span>Ground</span><span>'+esc([fx.ground_name,fx.ground_address,fx.ground_postcode].filter(Boolean).join(', ')||'Not set')+'</span><span>Competition</span><span>'+esc(fx.competition||'—')+'</span></div></section>';
+  $('overview').innerHTML=h;
+  $('overview').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.go));
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 (async()=>{try{
   ctx=await FootballPAContext.resolve();FootballPANav.mount({teamId:ctx.team.id});
   $('back').href='./matches.html?team='+encodeURIComponent(ctx.team.id);
   if(!FID)throw new Error('No match selected. Go back to Matches and pick one.');
-  const r=await sb.from('fixtures').select('id,opponent,venue,competition,kick_off,status,home_score,away_score,ground_name').eq('id',FID).eq('team_id',ctx.team.id).maybeSingle();
+  const r=await sb.from('fixtures').select('id,opponent,venue,competition,kick_off,status,home_score,away_score,ground_name,ground_address,ground_postcode').eq('id',FID).eq('team_id',ctx.team.id).maybeSingle();
   if(r.error||!r.data)throw new Error('Match not found for this team.');
   fx=r.data;
-  $('title').textContent=fx.opponent||'Opponent';
+  const club=ctx.team.name||'Us',opp=fx.opponent||'Opponent';
+  $('title').textContent=opp+(away()?' (A)':' (H)');
+  $('homeName').textContent=away()?opp:club;$('awayName').textContent=away()?club:opp;
+  $('score').textContent=(fx.home_score!=null&&fx.away_score!=null&&(isDone()||fx.home_score+fx.away_score>0))?fx.home_score+' – '+fx.away_score:'v';
   const d=new Date(fx.kick_off);
-  $('meta').textContent=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+(away()?' · Away':' · Home')+(fx.competition?' · '+fx.competition:'')+(fx.ground_name?' · '+fx.ground_name:'');
-  const done=DONE.includes(String(fx.status||'').toLowerCase()),o=our(),t=their();
-  if(o!=null&&t!=null&&(done||o+t>0)){$('score').textContent=o+'–'+t;$('result').innerHTML=done?'<span class="pill '+(o>t?'w':o<t?'l':'d')+'">'+(o>t?'Won':o<t?'Lost':'Draw')+'</span>':'<span class="pill">'+esc(String(fx.status||'').replace(/_/g,' '))+'</span>'}
-  else{$('score').textContent='';$('result').innerHTML='<span class="pill">'+esc(String(fx.status||'Upcoming').replace(/_/g,' '))+'</span>'}
+  $('meta').textContent=(isDone()?'Full time':String(fx.status||'Upcoming').replace(/_/g,' '))+' · '+d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+(away()?' · Away':' · Home');
   $('loading').classList.add('hidden');$('app').classList.remove('hidden');
   const want=new URLSearchParams(location.search).get('tab');
   setTab(PAGES[want]?want:'overview');
