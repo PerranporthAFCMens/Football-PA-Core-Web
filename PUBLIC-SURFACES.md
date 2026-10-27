@@ -32,6 +32,17 @@ Only the Perranporth 1st Team is currently enabled for legacy mode. The flag def
 
 The protected tokenised Core link also works for Perranporth and should be preferred for new sharing.
 
+
+## Guest voting link
+
+`guest-vote.html?t=<voting_events.public_token>` lets someone without a Football PA login or Player Portal PIN vote for one match.
+
+- The token is a random UUID created by a signed-in manager (`voting_guest_link`) for one voting event. A manager can replace it, which stops the old link working.
+- Guests use two pre-authentication RPCs only: `guest_vote_data` and `guest_vote_submit`. Both are keyed by the token; neither exposes team or player directories beyond the names the guest may vote for.
+- The guest gives a name. One ballot is kept per name, so voting again with the same name changes that vote. Guest ballots are stored in `voting_ballots` with `voter_key = 'guest:<name>'` and are counted by the existing results.
+- Voting rules match the Player Portal: three different players for 3, 2 and 1 points, one optional Dick of the Day with a reason. The names offered follow the game's saved squad, or the active team players when no squad is saved.
+- The link only works while the voting event is open.
+
 ## Public link rotation
 
 Team managers can rotate public capability links through the protected `rotate_team_public_token(team_id, kind)` RPC.

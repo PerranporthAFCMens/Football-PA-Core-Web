@@ -64,6 +64,15 @@
         <span id="squadStatus" class="squad-status"></span>
       </div>
       <div id="squadList" class="squad-list"></div>
+      <div id="quickAdd" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+        <b>Add a player on the fly</b>
+        <div class="muted" style="margin-top:3px">For someone who is not on the team yet, such as a one-game player. They are added to the team, marked available and put in this squad.</div>
+        <div class="actions" style="margin-top:8px">
+          <input id="qpFirst" type="text" placeholder="First name" autocomplete="off" style="flex:1 1 130px;min-height:44px;border:1px solid var(--line);border-radius:11px;padding:0 12px;font:inherit">
+          <input id="qpLast" type="text" placeholder="Surname" autocomplete="off" style="flex:1 1 130px;min-height:44px;border:1px solid var(--line);border-radius:11px;padding:0 12px;font:inherit">
+          <button id="qpAdd" class="btn">Add player</button>
+        </div>
+      </div>
       <div class="actions" style="margin-top:12px">
         <button id="saveSquadBtn" class="btn primary">Save squad</button>
         <button id="shareSquadBtn" class="btn whatsapp">Share squad</button>
@@ -195,6 +204,21 @@ async function saveSquad(silent=false){
   if(!silent){b.textContent='Saved ✓';setTimeout(()=>b.textContent=old,1300)}
   return true;
 }
+async function quickAddPlayer(){
+  if(!selected||!data?.can_manage)return;
+  const first=$('qpFirst').value.trim(),last=$('qpLast').value.trim();
+  if(!first){alert('Enter a first name.');return}
+  const b=$('qpAdd'),old=b.textContent,fid=selected.fixture_id;
+  b.disabled=true;b.textContent='Adding…';
+  const r=await sb.rpc('add_player_quick',{p_team_id:ctx.team.id,p_first_name:first,p_last_name:last,p_season_id:ctx.season?.id||null,p_fixture_id:fid});
+  if(r.error){b.disabled=false;b.textContent=old;alert(r.error.message);return}
+  const a=await sb.rpc('set_player_fixture_availability',{p_fixture_id:fid,p_player_id:r.data.player_id,p_available:true});
+  b.disabled=false;b.textContent=old;
+  if(a.error){alert(r.data.name+' was added, but could not be marked available: '+a.error.message)}
+  $('qpFirst').value='';$('qpLast').value='';
+  await refreshAvailability(fid);
+  $('squadStatus').textContent=r.data.name+' added';
+}
 async function shareSquad(){
   if(!selected||!selectedSquad.size){alert('Select at least one player for the squad first.');return}
   const b=$('shareSquadBtn'),old=b.textContent;
@@ -233,6 +257,7 @@ $('squadList').onchange=e=>{const c=e.target.closest('[data-squad-player]');if(!
 $('selectAllBtn').onclick=()=>{selectedSquad=new Set((selected?.available||[]).map(p=>p.player_id));renderSquad()};
 $('clearBtn').onclick=()=>{selectedSquad=new Set();$('squadList').querySelectorAll('input').forEach(x=>x.checked=false);updateSquadStatus()};
 $('saveSquadBtn').onclick=()=>saveSquad(false);
+$('qpAdd').onclick=quickAddPlayer;
 $('shareSquadBtn').onclick=shareSquad;
 $('openSubsBtn').onclick=()=>{location.href=ctx.href('/subs.html',selected?'fixture='+encodeURIComponent(selected.fixture_id):'')};
 $('openMatchBtn').onclick=()=>{if(selected)location.href=ctx.href('/match-centre.html','fixture='+encodeURIComponent(selected.fixture_id))};

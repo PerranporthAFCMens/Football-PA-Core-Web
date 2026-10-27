@@ -68,6 +68,18 @@
     </section>
 
     <section class="fpa-card voting-card">
+      <h2 class="section-title">Guest voting link</h2>
+      <div id="guestNote" class="fpa-muted" style="margin-bottom:8px">Anyone with this link can vote for the selected match. They enter their name, then vote the same way players do.</div>
+      <input id="guestLink" class="vote-link" readonly placeholder="Open voting for this match to create its guest link">
+      <div class="grid2" style="margin-top:8px">
+        <button id="guestCopy" class="btn secondary" disabled>Copy guest link</button>
+        <button id="guestNew" class="btn" disabled>New link</button>
+      </div>
+      <h3 style="font-size:16px;margin:16px 0 8px">Guest voters</h3>
+      <div id="guestVoters" class="voter-list"><span class="fpa-muted">None yet</span></div>
+    </section>
+
+    <section class="fpa-card voting-card">
       <h2 class="section-title" style="margin-bottom:3px">Voting information</h2>
       <div id="ballots" class="fpa-muted">Loading…</div>
       <div id="results" class="result-block"></div>
@@ -106,7 +118,21 @@ async function loadCentre(){
   if(C.can_view_private_report){$('seasonLink').href=ctx.href('/voting-season.html');$('seasonLink').classList.remove('hidden')}else $('seasonLink').classList.add('hidden');
   renderStatus();
 }
+function selectedEventId(){return (C.events||[]).find(e=>e.fixture_id===selected)?.event_id||''}
+function guestUrl(token){return new URL('./guest-vote.html?t='+encodeURIComponent(token),location.href).href}
+async function loadGuest(regenerate=false){
+  const ev=selectedEventId(),link=$('guestLink');
+  $('guestCopy').disabled=true;$('guestNew').disabled=true;
+  if(!ev){link.value='';link.placeholder='Open voting for this match to create its guest link';$('guestVoters').innerHTML='<span class="fpa-muted">None yet</span>';return}
+  const t=await sb.rpc('voting_guest_link',{p_event_id:ev,p_regenerate:regenerate});
+  if(t.error){link.value='';link.placeholder='Guest link is not available yet';$('guestNote').textContent=t.error.message;return}
+  link.value=guestUrl(t.data.token);$('guestCopy').disabled=false;$('guestNew').disabled=false;
+  const v=await sb.rpc('voting_guest_voters',{p_event_id:ev});
+  const names=v.error?[]:(v.data||[]);
+  $('guestVoters').innerHTML=names.length?names.map(n=>'<span class="pill">'+esc(n)+'</span>').join(''):'<span class="fpa-muted">None yet</span>';
+}
 async function results(){
+  loadGuest();
   if(!selected){$('ballots').textContent='No match selected';$('results').innerHTML='';return}
   $('ballots').textContent='Loading…';
   const r=await sb.rpc('get_voting_match_snapshot',{p_team_id:ctx.team.id,p_season_id:ctx.season.id,p_fixture_id:selected});
@@ -142,6 +168,8 @@ async function boot(){
 $('match').onchange=async()=>{selected=$('match').value;renderStatus();await results()};
 $('openBtn').onclick=()=>setOpen(true);$('closeBtn').onclick=()=>setOpen(false);
 $('copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText($('link').value);alert('Voting link copied')}catch(e){$('link').select();document.execCommand('copy');alert('Voting link copied')}};
+$('guestCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('guestLink').value);alert('Guest voting link copied')}catch(e){$('guestLink').select();document.execCommand('copy');alert('Guest voting link copied')}};
+$('guestNew').onclick=async()=>{if(!confirm('Make a new guest link? The old link will stop working.'))return;await loadGuest(true)};
 sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('./login.html')});
 boot();
 </script>
