@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eef3f8">
+<title>Matches · Football PA</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./core-client.js"></script>
+<script src="./core-context.js"></script>
+<script src="./core-nav.js"></script>
+<link rel="stylesheet" href="./core-ui.css">
+<style>
+.mlist{display:grid;gap:10px}
+.mrow{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;text-decoration:none;color:inherit;border-radius:16px;background:#fff;border:1px solid #dce5ed}
+.mdate{text-align:center;border-right:1px solid #e3eaf1;padding-right:10px}
+.mdate b{display:block;font-size:24px;line-height:1}.mdate span{font-size:11px;font-weight:800;color:#6d7d8d;text-transform:uppercase}
+.mmain strong{display:block;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mmeta{font-size:12px;color:#6d7d8d;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap}
+.mright{text-align:right;min-width:62px}
+.score{font-size:20px;font-weight:900}
+.pill{display:inline-block;border-radius:99px;padding:3px 9px;font-size:11px;font-weight:800;background:#e6edf3;color:#35506a}
+.pill.w{background:#e1f5e8;color:#176338}.pill.l{background:#fde7e5;color:#a02a1f}.pill.d{background:#fff1d6;color:#8a5a00}
+.tabs{display:flex;gap:6px;margin:4px 0 12px}.tabs button{flex:1;min-height:40px;border:0;border-radius:10px;font-weight:800;background:#e8eef5;cursor:pointer}.tabs button.active{background:var(--fpa-blue,#1357A6);color:#fff}
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.mhead h1{margin:0!important;font-size:26px!important}
+</style>
+</head>
+<body>
+<main class="fpa-page">
+<div id="loading" class="fpa-card" style="padding:26px;text-align:center">Loading matches…</div>
+<div id="app" class="hidden">
+  <div class="mhead"><h1>Matches</h1><div class="muted" id="teamLabel"></div></div>
+  <div class="tabs" id="filters"><button data-f="all" class="active">All</button><button data-f="up">Upcoming</button><button data-f="res">Results</button></div>
+  <div id="list" class="mlist"></div>
+</div>
+</main>
+<script>
+const sb=FootballPAClient;const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ctx,fixtures=[],resp={},filter='all';
+const DONE=['ft','full_time','completed','complete','finished'];
+const isDone=f=>DONE.includes(String(f.status||'').toLowerCase());
+const our=f=>String(f.venue||'').toLowerCase()==='away'?f.away_score:f.home_score;
+const their=f=>String(f.venue||'').toLowerCase()==='away'?f.home_score:f.away_score;
+function hubUrl(id){return './match-hub.html?fixture='+encodeURIComponent(id)+'&team='+encodeURIComponent(ctx.team.id)}
+function render(){
+  const now=Date.now();
+  let rows=fixtures.filter(f=>filter==='all'?true:filter==='res'?isDone(f):!isDone(f));
+  const up=rows.filter(f=>!isDone(f)).sort((a,b)=>new Date(a.kick_off)-new Date(b.kick_off));
+  const res=rows.filter(isDone).sort((a,b)=>new Date(b.kick_off)-new Date(a.kick_off));
+  rows=[...up,...res];
+  $('list').innerHTML=rows.length?rows.map(f=>{
+    const d=new Date(f.kick_off),o=our(f),t=their(f),done=isDone(f);
+    const r=resp[f.id]||{y:0,n:0};
+    let right;
+    if(done&&o!=null&&t!=null){right='<div class="score">'+o+'–'+t+'</div><span class="pill '+(o>t?'w':o<t?'l':'d')+'">'+(o>t?'Won':o<t?'Lost':'Draw')+'</span>'}
+    else right='<span class="pill">'+(String(f.status||'Upcoming')).replace(/_/g,' ')+'</span><div class="mmeta" style="justify-content:flex-end">'+r.y+' available</div>';
+    return '<a class="mrow" href="'+hubUrl(f.id)+'"><div class="mdate"><b>'+d.getDate()+'</b><span>'+d.toLocaleDateString('en-GB',{month:'short'})+'</span></div><div class="mmain"><strong>'+(String(f.venue||'').toLowerCase()==='away'?'at ':'')+esc(f.opponent||'Opponent')+'</strong><div class="mmeta"><span>'+esc(String(f.venue||'').toUpperCase())+'</span><span>'+esc(f.competition||'')+'</span><span>'+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+'</span></div></div><div class="mright">'+right+'</div></a>'
+  }).join(''):'<div class="fpa-card" style="padding:18px">No matches here yet.</div>';
+}
+document.querySelectorAll('#filters button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('#filters button').forEach(x=>x.classList.toggle('active',x===b));render()});
+(async()=>{try{
+  ctx=await FootballPAContext.resolve();FootballPANav.mount({teamId:ctx.team.id});
+  $('teamLabel').textContent=ctx.club.name+' · '+ctx.team.name;
+  let q=sb.from('fixtures').select('id,opponent,venue,competition,kick_off,status,home_score,away_score').eq('team_id',ctx.team.id).order('kick_off');
+  if(ctx.season?.id)q=q.eq('season_id',ctx.season.id);
+  const r=await q;if(r.error)throw r.error;fixtures=r.data||[];
+  if(fixtures.length){const a=await sb.from('fixture_availability_responses').select('fixture_id,available').in('fixture_id',fixtures.map(f=>f.id));
+    (a.data||[]).forEach(x=>{const o=resp[x.fixture_id]||(resp[x.fixture_id]={y:0,n:0});x.available?o.y++:o.n++})}
+  render();$('loading').classList.add('hidden');$('app').classList.remove('hidden');
+}catch(e){$('loading').textContent=e.message}})();
+</script>
+</body>
+</html>
