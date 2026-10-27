@@ -65,14 +65,14 @@
       </div>
       <div id="squadList" class="squad-list"></div>
       <div id="quickAdd" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
-        <b>Guest players for this game</b>
-        <div class="muted" style="margin-top:3px">Reserve or one-off players. They never appear in availability and have no Player Portal access. Tick the ones playing, then Save squad.</div>
+        <b>Reserve players</b>
+        <div class="muted" style="margin-top:3px">Reserve players only see games you invite them to. Tap Invite so they can see this game and give their availability, or tick them as playing and Save squad.</div>
         <div id="guestList" class="squad-list" style="margin-top:8px"></div>
-        <div class="muted" style="margin-top:10px">New guest</div>
+        <div class="muted" style="margin-top:10px">New reserve player</div>
         <div class="actions" style="margin-top:6px">
           <input id="qpFirst" type="text" placeholder="First name" autocomplete="off" style="flex:1 1 130px;min-height:44px;border:1px solid var(--line);border-radius:11px;padding:0 12px;font:inherit">
           <input id="qpLast" type="text" placeholder="Surname" autocomplete="off" style="flex:1 1 130px;min-height:44px;border:1px solid var(--line);border-radius:11px;padding:0 12px;font:inherit">
-          <button id="qpAdd" class="btn">Add guest</button>
+          <button id="qpAdd" class="btn">Add reserve</button>
         </div>
       </div>
       <div class="actions" style="margin-top:12px">
@@ -166,9 +166,19 @@ function renderSquad(){
   $('squadList').innerHTML=available.map(p=>'<label class="squad-player"><input type="checkbox" data-squad-player="'+p.player_id+'" '+(selectedSquad.has(p.player_id)?'checked':'')+'><span>'+esc(p.name)+'</span></label>').join('')||'<div class="empty">No available players yet.</div>';
   renderGuests();updateSquadStatus();
 }
-let guests=[];
-async function loadGuests(){const r=await sb.rpc('list_team_guests',{p_team_id:ctx.team.id});guests=r.error?[]:(r.data||[])}
-function renderGuests(){const el=$('guestList');if(!el)return;el.innerHTML=guests.length?guests.map(p=>'<label class="squad-player"><input type="checkbox" data-squad-player="'+p.player_id+'" '+(selectedSquad.has(p.player_id)?'checked':'')+'><span>'+esc(p.name)+' <small class="muted">guest</small></span></label>').join(''):'<div class="muted">No guests yet.</div>'}
+let guests=[],invites=[];
+async function loadGuests(){
+  const r=await sb.rpc('list_team_guests',{p_team_id:ctx.team.id});guests=r.error?[]:(r.data||[]);
+  const l=await sb.rpc('get_portal_limits',{p_team_id:ctx.team.id});invites=l.error?[]:(l.data?.invites||[]);
+}
+function renderGuests(){
+  const el=$('guestList');if(!el)return;
+  const fid=selected?.fixture_id;
+  el.innerHTML=guests.length?guests.map(p=>{
+    const inv=invites.some(i=>i.player_id===p.player_id&&i.fixture_id===fid);
+    return '<div class="squad-player" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><label style="display:flex;align-items:center;gap:8px;flex:1"><input type="checkbox" data-squad-player="'+p.player_id+'" '+(selectedSquad.has(p.player_id)?'checked':'')+'><span>'+esc(p.name)+' <small class="muted">reserve</small></span></label><button class="btn" data-invite="'+p.player_id+'" data-on="'+(inv?'false':'true')+'" style="min-height:36px;padding:0 12px">'+(inv?'Invited ✓':'Invite')+'</button></div>'
+  }).join(''):'<div class="muted">No reserve players yet. Mark one on the Players page, or add one below.</div>';
+}
 function updateSquadStatus(){$('squadStatus').textContent=selectedSquad.size+' selected'}
 function renderStats(){
   $('statsBody').innerHTML=(data?.player_stats||[]).map(p=>'<tr><td><b>'+esc(p.name)+'</b></td><td class="num">'+p.games_asked+'</td><td class="num">'+p.available+'</td><td class="num">'+p.unavailable+'</td><td class="num">'+p.no_response+'</td><td class="num"><span class="pill">'+(p.availability_pct==null?'–':p.availability_pct+'%')+'</span></td><td class="num"><span class="pill">'+(p.response_rate_pct==null?'–':p.response_rate_pct+'%')+'</span></td></tr>').join('')||'<tr><td colspan="7">No availability data yet.</td></tr>'
@@ -222,7 +232,7 @@ async function quickAddPlayer(){
   $('qpFirst').value='';$('qpLast').value='';
   selectedSquad.add(r.data.player_id);
   await loadGuests();renderGuests();updateSquadStatus();
-  $('squadStatus').textContent=r.data.name+' added as a guest. Tap Save squad to keep them in this game.';
+  $('squadStatus').textContent=r.data.name+' added as a reserve player. Tap Invite to let them see this game, and Save squad to put them in it.';
 }
 async function shareSquad(){
   if(!selected||!selectedSquad.size){alert('Select at least one player for the squad first.');return}
@@ -258,6 +268,7 @@ $('fixtureSelect').onchange=()=>{selected=(data.fixtures||[]).find(f=>f.fixture_
 $('refreshBtn').onclick=()=>refreshAvailability(selected?.fixture_id||'').catch(e=>{alert(e.message)});
 $('shareBtn').onclick=shareMessage;$('copyBtn').onclick=copyMessage;
 document.querySelector('.response-grid').addEventListener('click',e=>{const b=e.target.closest('[data-set-player-avail]');if(!b)return;setPlayerAvailability(b.dataset.playerId,b.dataset.setPlayerAvail==='true',b)});
+$('guestList').onclick=async e=>{const b=e.target.closest('[data-invite]');if(!b||!selected)return;const pid=b.dataset.invite,on=b.dataset.on==='true',fid=selected.fixture_id;b.disabled=true;const r=await sb.rpc('set_portal_fixture_invite',{p_team_id:ctx.team.id,p_fixture_id:fid,p_player_id:pid,p_invited:on});if(r.error){alert(r.error.message);b.disabled=false;return}if(on)invites.push({player_id:pid,fixture_id:fid});else invites=invites.filter(i=>!(i.player_id===pid&&i.fixture_id===fid));renderGuests();$('squadStatus').textContent=on?'Invited. They can now see this game.':'Invite removed.'};
 $('guestList').onchange=e=>{const c=e.target.closest('[data-squad-player]');if(!c)return;c.checked?selectedSquad.add(c.dataset.squadPlayer):selectedSquad.delete(c.dataset.squadPlayer);updateSquadStatus()};
 $('squadList').onchange=e=>{const c=e.target.closest('[data-squad-player]');if(!c)return;c.checked?selectedSquad.add(c.dataset.squadPlayer):selectedSquad.delete(c.dataset.squadPlayer);updateSquadStatus()};
 $('selectAllBtn').onclick=()=>{selectedSquad=new Set((selected?.available||[]).map(p=>p.player_id));renderSquad()};

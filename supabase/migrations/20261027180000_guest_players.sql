@@ -1,11 +1,27 @@
--- Guest players: reserve/one-off players. They are not on the availability roster, have no Player Portal access,
--- and are only added to the squad of the games they play.
+-- Reserve (guest) players: keep their Player Portal login but are limited to invited games, and only appear in
+-- availability lists for games they are invited to or picked for.
 create table if not exists public.team_guest_players (
   team_id uuid not null references public.teams(id) on delete cascade,
   player_id uuid not null references public.players(id) on delete cascade,
   created_at timestamptz not null default now(),
   primary key (team_id, player_id)
 );
+create table if not exists public.portal_player_limits (
+  team_id uuid not null references public.teams(id) on delete cascade,
+  player_id uuid not null references public.players(id) on delete cascade,
+  limited boolean not null default true,
+  updated_at timestamptz not null default now(),
+  primary key (team_id, player_id)
+);
+create table if not exists public.portal_fixture_invites (
+  team_id uuid not null references public.teams(id) on delete cascade,
+  fixture_id uuid not null references public.fixtures(id) on delete cascade,
+  player_id uuid not null references public.players(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (fixture_id, player_id)
+);
+alter table public.portal_player_limits enable row level security;
+alter table public.portal_fixture_invites enable row level security;
 alter table public.team_guest_players enable row level security;
 revoke all on public.team_guest_players from public, anon, authenticated;
 
@@ -29,12 +45,12 @@ begin
   if not public.can_manage_players(p_team_id) then raise exception 'You do not have permission to manage players'; end if;
   if coalesce(p_guest, false) then
     insert into public.team_guest_players(team_id, player_id) values (p_team_id, p_player_id) on conflict do nothing;
-    begin
-      perform public.set_player_portal_access(p_team_id, p_player_id, false);
-    exception when others then null;
-    end;
+    insert into public.portal_player_limits(team_id, player_id, limited, updated_at) values (p_team_id, p_player_id, true, now())
+    on conflict (team_id, player_id) do update set limited = true, updated_at = now();
   else
     delete from public.team_guest_players where team_id = p_team_id and player_id = p_player_id;
+    insert into public.portal_player_limits(team_id, player_id, limited, updated_at) values (p_team_id, p_player_id, false, now())
+    on conflict (team_id, player_id) do update set limited = false, updated_at = now();
   end if;
   return jsonb_build_object('ok', true, 'guest', coalesce(p_guest, false));
 end;
@@ -71,6 +87,8 @@ begin
     update public.team_players set active = true, updated_at = now() where id = v_tp;
   end if;
   insert into public.team_guest_players(team_id, player_id) values (p_team_id, v_player) on conflict do nothing;
+  insert into public.portal_player_limits(team_id, player_id, limited, updated_at) values (p_team_id, v_player, true, now())
+  on conflict (team_id, player_id) do update set limited = true, updated_at = now();
   return jsonb_build_object('ok', true, 'player_id', v_player, 'name', v_name);
 end;
 $function$;
@@ -94,14 +112,14 @@ begin
       tp.player_id,
       tp.created_at as joined_at,
       p.display_name,
-      p.shirt_number
+      p.shirt_number,
+      exists (select 1 from public.team_guest_players g where g.team_id=tp.team_id and g.player_id=tp.player_id) as is_guest
     from public.team_players tp
     join public.players p on p.id=tp.player_id
     where tp.team_id=p_team_id
       and tp.active
       and p.active
       and (p_season_id is null or tp.season_id=p_season_id or tp.season_id is null)
-      and not exists (select 1 from public.team_guest_players g where g.team_id=tp.team_id and g.player_id=tp.player_id)
   ),
   polls as (
     select
@@ -147,6 +165,9 @@ begin
           on ar.fixture_id=po.fixture_id
          and ar.player_id=r.player_id
          and ar.available
+        where (not r.is_guest
+               or exists (select 1 from public.portal_fixture_invites i where i.fixture_id=po.fixture_id and i.player_id=r.player_id)
+               or exists (select 1 from public.match_squads gs where gs.fixture_id=po.fixture_id and gs.player_id=r.player_id and gs.selected))
       ),'[]'::jsonb) as available_players,
       coalesce((
         select jsonb_agg(jsonb_build_object(
@@ -159,6 +180,9 @@ begin
           on ar.fixture_id=po.fixture_id
          and ar.player_id=r.player_id
          and not ar.available
+        where (not r.is_guest
+               or exists (select 1 from public.portal_fixture_invites i where i.fixture_id=po.fixture_id and i.player_id=r.player_id)
+               or exists (select 1 from public.match_squads gs where gs.fixture_id=po.fixture_id and gs.player_id=r.player_id and gs.selected))
       ),'[]'::jsonb) as unavailable_players,
       coalesce((
         select jsonb_agg(jsonb_build_object(
@@ -171,6 +195,9 @@ begin
           select 1 from public.fixture_availability_responses ar
           where ar.fixture_id=po.fixture_id and ar.player_id=r.player_id
         )
+          and (not r.is_guest
+               or exists (select 1 from public.portal_fixture_invites i where i.fixture_id=po.fixture_id and i.player_id=r.player_id)
+               or exists (select 1 from public.match_squads gs where gs.fixture_id=po.fixture_id and gs.player_id=r.player_id and gs.selected))
       ),'[]'::jsonb) as no_response_players,
       coalesce((
         select jsonb_agg(ms.player_id order by ms.player_id)
@@ -229,6 +256,7 @@ begin
     left join polls po on true
     left join public.fixture_availability_responses ar
       on ar.fixture_id=po.fixture_id and ar.player_id=r.player_id
+    where not r.is_guest
     group by r.player_id,r.display_name,r.shirt_number
   )
   select jsonb_build_object(
