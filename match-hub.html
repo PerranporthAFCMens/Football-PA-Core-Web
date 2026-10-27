@@ -9,14 +9,15 @@
 <script src="./core-nav.js"></script>
 <link rel="stylesheet" href="./core-ui.css">
 <style>
-.hubhead{padding:16px;display:grid;gap:6px}
-.hubhead .back{font-weight:800;font-size:13px;text-decoration:none;color:var(--fpa-blue,#1357A6)}
-.hubhead h1{margin:0!important;font-size:24px!important}
-.big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.big .sc{font-size:34px;font-weight:900;letter-spacing:-.02em}
+.hubhead{padding:14px 16px;display:grid;gap:4px}
+.hubhead .back{font-weight:800;font-size:13px;text-decoration:none;color:var(--fpa-blue,#1357A6);border:0!important;background:none!important;box-shadow:none!important;min-height:0!important;padding:0!important;width:auto!important;display:inline-block}
+.hubtop{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hubhead h1{margin:0!important;font-size:22px!important;line-height:1.15!important}
+.big{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.big .sc{font-size:26px;font-weight:900;letter-spacing:-.02em}
 .pill{display:inline-block;border-radius:99px;padding:3px 9px;font-size:11px;font-weight:800;background:#e6edf3;color:#35506a}
 .pill.w{background:#e1f5e8;color:#176338}.pill.l{background:#fde7e5;color:#a02a1f}.pill.d{background:#fff1d6;color:#8a5a00}
-.tabs{display:flex;gap:6px;margin:12px 0;overflow-x:auto}.tabs button{flex:1 1 0;min-width:0;min-height:42px;border:0;border-radius:10px;font-weight:800;font-size:14px;background:#e8eef5;cursor:pointer;padding:0 4px}.tabs button.active{background:var(--fpa-blue,#1357A6);color:#fff}
+.tabs{display:flex;gap:4px;margin:12px 0;padding:4px!important}.tabs button{flex:1 1 0;min-width:0;min-height:40px;border:0;border-radius:10px;font-weight:800;font-size:13px;background:transparent;cursor:pointer;padding:0 2px;white-space:nowrap}.tabs button.active{background:var(--fpa-blue,#1357A6);color:#fff}
 .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .fact{background:#f4f7fa;border-radius:12px;padding:10px 12px}.fact b{display:block;font-size:22px}.fact span{font-size:12px;color:#6d7d8d;font-weight:700}
 .ev{display:flex;gap:10px;padding:9px 0;border-top:1px solid #e8eef3;align-items:baseline}.ev:first-child{border-top:0}.ev .min{min-width:38px;font-weight:900;color:#35506a}
@@ -32,8 +33,7 @@ iframe.pane{width:100%;border:0;display:block;min-height:480px;background:transp
 <div id="app" class="hidden">
   <section class="fpa-card hubhead">
     <a class="back" id="back" href="./matches.html">‹ All matches</a>
-    <h1 id="title"></h1>
-    <div class="big"><span class="sc" id="score"></span><span id="result"></span></div>
+    <div class="hubtop"><h1 id="title"></h1><div class="big"><span class="sc" id="score"></span><span id="result"></span></div></div>
     <div class="muted2" id="meta"></div>
   </section>
   <div class="tabs" id="tabs">
@@ -85,8 +85,7 @@ async function renderOverview(){
     return '<div class="ev'+(opp&&t==='goal'?' opp':'')+'"><span class="min">'+esc(e.minute??'')+'′</span><span class="txt">'+icon+' '+esc(who)+'</span></div>'}).join(''):'<div class="muted2">No goals or cards recorded yet.</div>';
   $('overview').innerHTML='<div class="facts"><div class="fact"><b>'+yes+'</b><span>Available</span></div><div class="fact"><b>'+no+'</b><span>Unavailable</span></div><div class="fact"><b>'+(sq.data||[]).length+'</b><span>In squad</span></div><div class="fact"><b>'+(lu.data||[]).length+'</b><span>Starting XI</span></div><div class="fact"><b>'+(sub.data||[]).length+'</b><span>Subs made</span></div><div class="fact"><b>'+(vote?(vote.status==='open'?'Open':String(vote.status)):'None')+'</b><span>Voting</span></div></div>'
    +'<h2 style="margin:18px 0 6px">Goals and cards</h2>'+evHtml
-   +'<div class="go"><button class="btn primary" data-go="squad">Pick squad</button><button class="btn" data-go="match">Open Match Centre</button><button class="btn" data-go="votes">Voting and guest link</button><button class="btn" data-go="subs">Subs</button></div>';
-  $('overview').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>setTab(b.dataset.go));
+   ;
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 (async()=>{try{
@@ -101,7 +100,7 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>setTab(b.data
   $('meta').textContent=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+(away()?' · Away':' · Home')+(fx.competition?' · '+fx.competition:'')+(fx.ground_name?' · '+fx.ground_name:'');
   const done=DONE.includes(String(fx.status||'').toLowerCase()),o=our(),t=their();
   if(o!=null&&t!=null&&(done||o+t>0)){$('score').textContent=o+'–'+t;$('result').innerHTML=done?'<span class="pill '+(o>t?'w':o<t?'l':'d')+'">'+(o>t?'Won':o<t?'Lost':'Draw')+'</span>':'<span class="pill">'+esc(String(fx.status||'').replace(/_/g,' '))+'</span>'}
-  else{$('score').textContent='v';$('result').innerHTML='<span class="pill">'+esc(String(fx.status||'Upcoming').replace(/_/g,' '))+'</span>'}
+  else{$('score').textContent='';$('result').innerHTML='<span class="pill">'+esc(String(fx.status||'Upcoming').replace(/_/g,' '))+'</span>'}
   $('loading').classList.add('hidden');$('app').classList.remove('hidden');
   const want=new URLSearchParams(location.search).get('tab');
   setTab(PAGES[want]?want:'overview');

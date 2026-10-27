@@ -11,7 +11,7 @@ const STYLE=`
 `;
 async function mount(opts={}){
  if(document.getElementById('fpaSharedNav'))return;
- if(new URLSearchParams(location.search).get('embed')==='1'){const es=document.createElement('style');es.textContent='.top,.topbar,.fpa-pagebar,.fpa-app-head{display:none!important}body{background:transparent!important}.fpa-page{width:100%!important;padding:0 0 12px!important}';document.head.appendChild(es);return}
+ if(new URLSearchParams(location.search).get('embed')==='1'){const es=document.createElement('style');es.textContent='.top,.topbar,.fpa-pagebar,.fpa-app-head{display:none!important}body{background:transparent!important}.fpa-page{width:100%!important;padding:0 0 12px!important}h1,.voting-card:has(h1){display:none!important}select#fixtureSelect,select#match{display:none!important}.fpa-page .card:before,.fpa-page .panel:before,.fpa-card:before{display:none!important}';document.head.appendChild(es);return}
  const q=new URLSearchParams(location.search);let tid=opts.teamId||q.get('team')||q.get('id'),domainMode=false;
  const host=String(location.hostname||'').toLowerCase(),path=String(location.pathname||'');
  const pathMode=(host==='footballpa.com'||host==='www.footballpa.com')&&/^\/Perranporth(?:\/|$)/i.test(path);
