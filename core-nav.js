@@ -32,13 +32,13 @@ async function mount(opts={}){
  const teamItems=[
   ['home','Home',teamHref('/index.html'),null,true],
   ['matches','Matches',teamHref('/matches.html'),null,true],
-  ['match','Match Centre',teamHref('/match-centre.html'),'match_centre',!!access.can_manage_match],
+  
   ['players','Players',teamHref('/players.html'),'players',true],
   ['fixtures','Fixtures (edit)',teamHref('/fixtures.html'),null,true],
-  ['availability','Availability',teamHref('/availability.html'),'availability',true],
+  
   ['dashboard','Dashboard',teamHref('/dashboard.html'),null,true],
-  ['voting','Voting',teamHref('/voting.html'),'voting',!!access.can_manage_voting],
-  ['subs','Subs Tracker',teamHref('/subs.html'),'subs_finance',!!access.can_manage_subs],
+  ['voting','Voting setup',teamHref('/voting.html'),'voting',!!access.can_manage_voting],
+  ['subs','Subs setup',teamHref('/subs.html'),'subs_finance',!!access.can_manage_subs],
   ['live','Live Score',teamHref('/live-score.html','token='+encodeURIComponent(scoreboardToken)),null,!!scoreboardToken],
   ['settings','Settings',teamHref('/team-settings.html'),null,!!access.can_manage_team]
  ].filter(x=>(!x[3]||features[x[3]]!==false)&&x[4]);
