@@ -34,7 +34,7 @@ async function mount(opts={}){
   ['matches','Matches',teamHref('/matches.html'),null,true],
   ['match','Match Centre',teamHref('/match-centre.html'),'match_centre',!!access.can_manage_match],
   ['players','Players',teamHref('/players.html'),'players',true],
-  ['fixtures','Fixtures',teamHref('/fixtures.html'),null,true],
+  ['fixtures','Fixtures (edit)',teamHref('/fixtures.html'),null,true],
   ['availability','Availability',teamHref('/availability.html'),'availability',true],
   ['dashboard','Dashboard',teamHref('/dashboard.html'),null,true],
   ['voting','Voting',teamHref('/voting.html'),'voting',!!access.can_manage_voting],

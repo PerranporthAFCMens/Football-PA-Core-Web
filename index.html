@@ -47,7 +47,7 @@ const HOME_SHORTCUTS={
  training:{label:'Training Log',desc:'Sessions and attendance',path:'/players.html',icon:'<path d="M7 4h10v16H7z"/><path d="M9 4V2h6v2"/><path d="m10 12 2 2 4-5"/>'},
  dashboard:{label:'Dashboard',desc:'Performance and player stats',path:'/dashboard.html',icon:'<path d="M4 19V10"/><path d="M10 19V6"/><path d="M16 19v-5"/><path d="M21 19H3"/>'},
  subs:{label:'Subs Tracker',desc:'Payments and match subs',path:'/subs.html',icon:'<circle cx="8" cy="12" r="3"/><circle cx="16" cy="12" r="3"/><path d="M11 8h5a3 3 0 0 1 0 6h-5"/>'},
- fixtures:{label:'Fixtures',desc:'Matches and results',path:'/fixtures.html',icon:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/>'},
+ fixtures:{label:'Matches',desc:'Fixtures, results and match hub',path:'/matches.html',icon:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/>'},
  availability:{label:'Availability',desc:'Who is in for the next match',path:'/availability.html',icon:'<path d="m5 12 4 4L19 6"/><path d="M4 20h16"/>'},
  players:{label:'Players',desc:'Squad and player details',path:'/players.html',extra:'view=players',icon:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 2-7 6-7s6 3 6 7"/><path d="M16 7a3 3 0 0 1 0 6M17 14c2 .8 3.5 2.7 4 5"/>'},
  match:{label:'Match Centre',desc:'Lineup, events and matchday',path:'/match-centre.html',icon:'<circle cx="12" cy="12" r="8"/><path d="m12 8 3 2-1 4h-4l-1-4z"/><path d="M7 8 4 10M17 8l3 2M8 16l-1 3M16 16l1 3"/>'},
@@ -101,13 +101,13 @@ async function boot(){try{
  const next=upcoming[0];
  if(next){
    $('nextMatch').innerHTML='<div class="hero-kicker">Next match</div><div class="hero-date">'+esc(new Date(next.kick_off).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))+'</div><div class="hero-opponent">'+esc(next.opponent)+'</div><div class="hero-meta"><span class="hero-pill">'+venueLabel(next.venue)+'</span><span class="hero-pill">'+esc(next.competition||'Fixture')+'</span></div><div class="hero-actions"><button class="btn primary" id="openNextMatch">Open Match Centre</button></div>';
-   $('openNextMatch').onclick=()=>location.href=ctx.href('/match-centre.html','fixture='+encodeURIComponent(next.id));
+   $('openNextMatch').onclick=()=>location.href=ctx.href('/match-hub.html','fixture='+encodeURIComponent(next.id));
  }else{
    $('nextMatch').innerHTML='<div class="hero-kicker">Next match</div><div class="hero-opponent" style="font-size:23px">No upcoming fixture</div><div class="hero-date">Add or sync fixtures to show the next game here.</div>';
  }
  const recent=[...done].sort((a,b)=>new Date(b.kick_off)-new Date(a.kick_off)).slice(0,3);
  $('recent').innerHTML=recent.length?recent.map(f=>'<div class="match-row" data-fixture="'+f.id+'"><div class="match-result result-score">'+ourScore(f)+'–'+theirScore(f)+'<small>FT</small></div><div><strong>'+esc(f.opponent)+'</strong><small>'+esc(f.competition||'Fixture')+' · '+venueLabel(f.venue)+'</small></div><div class="mini-date">'+fmtDate(f.kick_off)+'</div></div>').join(''):'<div class="empty">No completed matches yet.</div>';
- document.querySelectorAll('[data-fixture]').forEach(r=>r.onclick=()=>location.href=ctx.href('/match-centre.html','fixture='+encodeURIComponent(r.dataset.fixture)));
+ document.querySelectorAll('[data-fixture]').forEach(r=>r.onclick=()=>location.href=ctx.href('/match-hub.html','fixture='+encodeURIComponent(r.dataset.fixture)));
  const comingUp=upcoming.slice(next?1:0,4);$('teamSummary').innerHTML=comingUp.length?comingUp.map(f=>'<div class="match-row" data-upcoming="'+f.id+'"><div class="match-result venue-result"><small>'+venueLabel(f.venue)+'</small></div><div><strong>'+esc(f.opponent)+'</strong><small>'+esc(f.competition||'Fixture')+'</small></div><div class="mini-date">'+fmtDate(f.kick_off)+'</div></div>').join(''):'<div class="empty">No further fixtures scheduled.</div>';document.querySelectorAll('[data-upcoming]').forEach(r=>r.onclick=()=>location.href=ctx.href('/match-centre.html','fixture='+encodeURIComponent(r.dataset.upcoming)));
  $('loading').classList.add('hidden');$('app').classList.remove('hidden');checkFixtureUpdates(ctx);
 }catch(e){$('loading').innerHTML='<b>Could not load Football PA.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}}
