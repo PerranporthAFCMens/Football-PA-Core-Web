@@ -130,7 +130,7 @@ async function loadGuest(regenerate=false){
   link.value=guestUrl(t.data.token);$('guestCopy').disabled=false;$('guestNew').disabled=false;
   const v=await sb.rpc('voting_guest_voters',{p_event_id:ev});
   const names=v.error?[]:(v.data||[]);
-  $('guestVoters').innerHTML=names.length?names.map(n=>'<span class="pill">'+esc(n)+'</span>').join(''):'<span class="fpa-muted">None yet</span>';
+  $('guestVoters').innerHTML=names.length?'<div style="width:100%;font-weight:800;margin-bottom:6px">'+names.length+' guest vote'+(names.length===1?'':'s')+'</div>'+names.map(n=>'<span class="pill">'+esc(n)+'</span>').join(''):'<span class="fpa-muted">No guest votes yet</span>';
 }
 async function results(){
   loadGuest();
