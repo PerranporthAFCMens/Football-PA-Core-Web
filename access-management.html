@@ -39,7 +39,7 @@
 </section>
 
 <section id="playersPane" class="fpa-card card hidden">
-<div class="sectionHead"><div><h2>Player access</h2><div class="muted">Revoke Player Portal access without deleting the player or their historical stats.</div></div></div>
+<div class="sectionHead"><div><h2>Player access</h2><div class="muted">Remove a player’s Player Portal access, or limit them to the games you invite them to. Nothing is deleted.</div></div></div>
 <div id="playerList" class="list"></div>
 </section>
 
@@ -78,7 +78,7 @@ function render(){
  const staff=data.staff||[];
  $('staffList').innerHTML=staff.length?staff.map(s=>'<div class="row"><div><div class="rowTitle">'+esc(s.name||s.email||'User')+' <span class="pill '+(s.active?'good':'bad')+'">'+(s.active?(s.email_confirmed?'Active':'Invited'):'Removed')+'</span></div><div class="rowMeta">'+esc(s.email||'')+' · '+esc(s.access_level_name?displayLevelName({name:s.access_level_name}):'Legacy access')+(s.last_sign_in_at?' · Last sign-in '+new Date(s.last_sign_in_at).toLocaleDateString('en-GB'):'')+'</div></div><div class="actions"><select data-level="'+s.user_id+'">'+levelOptions(s.access_level_id||'')+'</select><button class="btn primary" data-save-staff="'+s.user_id+'">'+(s.active?'Save':'Restore')+'</button>'+(s.active?'<button class="btn danger" data-remove-staff="'+s.user_id+'">Remove</button>':'')+'</div></div>').join(''):'<div class="empty">No staff accounts yet.</div>';
  const players=(data.players||[]).filter(p=>p.roster_active);
- $('playerList').innerHTML=players.length?players.map(p=>{const status=p.portal_status==='active'?'<span class="pill good">Portal active</span>':p.portal_status==='removed'?'<span class="pill bad">Access removed</span>':'<span class="pill">Not set up</span>';const action=p.portal_status==='active'?'<button class="btn danger" data-player-access="'+p.player_id+'" data-active="false">Remove access</button>':p.portal_status==='removed'?'<button class="btn primary" data-player-access="'+p.player_id+'" data-active="true">Restore access</button>':'';return '<div class="row"><div><div class="rowTitle">'+esc(p.name)+' '+status+'</div><div class="rowMeta">'+(p.shirt_number!=null?'#'+esc(p.shirt_number)+' · ':'')+(p.active_sessions?esc(p.active_sessions)+' active session'+(p.active_sessions===1?'':'s'):'No active sessions')+'</div></div><div class="actions">'+action+'</div></div>'}).join(''):'<div class="empty">No players found.</div>';
+ $('playerList').innerHTML=players.length?players.map(p=>{const status=p.portal_status==='active'?'<span class="pill good">Portal active</span>':p.portal_status==='removed'?'<span class="pill bad">Access removed</span>':'<span class="pill">Not set up</span>';const isLim=limitsOk&&limits.limited.includes(p.player_id);const limBtn=(limitsOk&&p.portal_status==='active')?'<button class="btn" data-player-limited="'+p.player_id+'" data-on="'+(isLim?'false':'true')+'">'+(isLim?'Give full access':'Limit to invited games')+'</button>':'';const action=limBtn+(p.portal_status==='active'?'<button class="btn danger" data-player-access="'+p.player_id+'" data-active="false">Remove access</button>':p.portal_status==='removed'?'<button class="btn primary" data-player-access="'+p.player_id+'" data-active="true">Restore access</button>':'');const lp=isLim&&p.portal_status==='active'?'<span class="pill warn">Limited</span>':'';const inv=isLim&&p.portal_status==='active'?inviteBox(p.player_id):'';return '<div class="row"><div><div class="rowTitle">'+esc(p.name)+' '+status+' '+lp+'</div><div class="rowMeta">'+(p.shirt_number!=null?'#'+esc(p.shirt_number)+' · ':'')+(p.active_sessions?esc(p.active_sessions)+' active session'+(p.active_sessions===1?'':'s'):'No active sessions')+'</div>'+inv+'</div><div class="actions">'+action+'</div></div>'}).join(''):'<div class="empty">No players found.</div>';
  renderLevelList();
  bind();
 }
@@ -108,9 +108,26 @@ function bind(){
  document.querySelectorAll('[data-cancel-invite]').forEach(b=>b.onclick=()=>cancelInvite(b.dataset.cancelInvite,b));
  document.querySelectorAll('[data-save-staff]').forEach(b=>b.onclick=()=>saveStaff(b.dataset.saveStaff,b));
  document.querySelectorAll('[data-remove-staff]').forEach(b=>b.onclick=()=>removeStaff(b.dataset.removeStaff,b));
+ document.querySelectorAll('[data-player-limited]').forEach(b=>b.onclick=()=>setPlayerLimited(b.dataset.playerLimited,b.dataset.on==='true',b));
+ document.querySelectorAll('[data-invite-fixture]').forEach(c=>c.onchange=()=>setInvite(c.dataset.invitePlayer,c.dataset.inviteFixture,c.checked,c));
  document.querySelectorAll('[data-player-access]').forEach(b=>b.onclick=()=>setPlayerAccess(b.dataset.playerAccess,b.dataset.active==='true',b));
 }
-async function reload(){const r=await sb.rpc('list_team_access_management',{p_team_id:ctx.team.id});if(r.error)throw r.error;data=r.data||{};render()}
+let limits={limited:[],invites:[]},limitsOk=false,upcoming=[];
+function inviteBox(pid){
+  if(!upcoming.length)return '<div class="rowMeta">No upcoming games to invite them to.</div>';
+  return '<div class="rowMeta" style="margin-top:8px"><b>Games they can see</b> (games they are picked for show automatically)</div>'+upcoming.map(f=>{const on=limits.invites.some(i=>i.player_id===pid&&i.fixture_id===f.id);return '<label style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="checkbox" data-invite-player="'+pid+'" data-invite-fixture="'+f.id+'" '+(on?'checked':'')+'><span>'+esc(new Date(f.kick_off).toLocaleDateString('en-GB',{day:'numeric',month:'short'}))+' · '+esc(f.opponent||'Fixture')+'</span></label>'}).join('');
+}
+async function loadLimits(){
+  const r=await sb.rpc('get_portal_limits',{p_team_id:ctx.team.id});
+  if(r.error){limitsOk=false;limits={limited:[],invites:[]};return}
+  limitsOk=true;limits={limited:r.data?.limited||[],invites:r.data?.invites||[]};
+  const since=new Date(Date.now()-3*864e5).toISOString();
+  const f=await sb.from('fixtures').select('id,opponent,kick_off').eq('team_id',ctx.team.id).gte('kick_off',since).order('kick_off').limit(10);
+  upcoming=f.data||[];
+}
+async function setPlayerLimited(pid,on,b){b.disabled=true;const r=await sb.rpc('set_player_portal_limited',{p_team_id:ctx.team.id,p_player_id:pid,p_limited:on});if(r.error){showStatus(r.error.message,'bad');b.disabled=false;return}showStatus(on?'Limited. They now only see games they are picked for or invited to.':'Full access restored.','ok');await reload()}
+async function setInvite(pid,fid,on,c){c.disabled=true;const r=await sb.rpc('set_portal_fixture_invite',{p_team_id:ctx.team.id,p_fixture_id:fid,p_player_id:pid,p_invited:on});c.disabled=false;if(r.error){c.checked=!on;showStatus(r.error.message,'bad');return}if(on)limits.invites.push({player_id:pid,fixture_id:fid});else limits.invites=limits.invites.filter(i=>!(i.player_id===pid&&i.fixture_id===fid))}
+async function reload(){const r=await sb.rpc('list_team_access_management',{p_team_id:ctx.team.id});if(r.error)throw r.error;data=r.data||{};await loadLimits();render()}
 async function sendInvite(){
  const email=$('inviteEmail').value.trim(),level=$('inviteLevel').value,role=internalRoleForLevel(level);if(!email||!level)return showStatus('Enter an email address and choose an Access Level.','bad');
  const b=$('sendInvite');b.disabled=true;b.textContent='Sending…';showStatus('');
