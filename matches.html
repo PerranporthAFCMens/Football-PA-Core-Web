@@ -54,7 +54,7 @@ function render(){
     let right;
     if(done&&o!=null&&t!=null){right='<div class="score">'+o+'–'+t+'</div><span class="pill '+(o>t?'w':o<t?'l':'d')+'">'+(o>t?'Won':o<t?'Lost':'Draw')+'</span>'}
     else right='<span class="pill">'+(String(f.status||'Upcoming')).replace(/_/g,' ')+'</span><div class="mmeta" style="justify-content:flex-end">'+r.y+' available</div>';
-    return '<a class="mrow" href="'+hubUrl(f.id)+'"><div class="mdate"><b>'+d.getDate()+'</b><span>'+d.toLocaleDateString('en-GB',{month:'short'})+'</span></div><div class="mmain"><strong>'+(String(f.venue||'').toLowerCase()==='away'?'at ':'')+esc(f.opponent||'Opponent')+'</strong><div class="mmeta"><span>'+esc(String(f.venue||'').toUpperCase())+'</span><span>'+esc(f.competition||'')+'</span><span>'+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+'</span></div></div><div class="mright">'+right+'</div></a>'
+    return '<a class="mrow" href="'+hubUrl(f.id)+'"><div class="mdate"><b>'+d.getDate()+'</b><span>'+d.toLocaleDateString('en-GB',{month:'short'})+'</span></div><div class="mmain"><strong>'+esc(f.opponent||'Opponent')+'</strong><div class="mmeta"><span>'+esc(String(f.venue||'').toUpperCase())+'</span><span>'+esc(f.competition||'')+'</span><span>'+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+'</span></div></div><div class="mright">'+right+'</div></a>'
   }).join(''):'<div class="fpa-card" style="padding:18px">No matches here yet.</div>';
 }
 document.querySelectorAll('#filters button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('#filters button').forEach(x=>x.classList.toggle('active',x===b));render()});

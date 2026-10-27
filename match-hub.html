@@ -96,9 +96,9 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>setTab(b.data
   const r=await sb.from('fixtures').select('id,opponent,venue,competition,kick_off,status,home_score,away_score,ground_name').eq('id',FID).eq('team_id',ctx.team.id).maybeSingle();
   if(r.error||!r.data)throw new Error('Match not found for this team.');
   fx=r.data;
-  $('title').textContent=(away()?'at ':'')+(fx.opponent||'Opponent')+(away()?'':' (H)');
+  $('title').textContent=fx.opponent||'Opponent';
   const d=new Date(fx.kick_off);
-  $('meta').textContent=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+(fx.competition?' · '+fx.competition:'')+(fx.ground_name?' · '+fx.ground_name:'');
+  $('meta').textContent=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+(away()?' · Away':' · Home')+(fx.competition?' · '+fx.competition:'')+(fx.ground_name?' · '+fx.ground_name:'');
   const done=DONE.includes(String(fx.status||'').toLowerCase()),o=our(),t=their();
   if(o!=null&&t!=null&&(done||o+t>0)){$('score').textContent=o+'–'+t;$('result').innerHTML=done?'<span class="pill '+(o>t?'w':o<t?'l':'d')+'">'+(o>t?'Won':o<t?'Lost':'Draw')+'</span>':'<span class="pill">'+esc(String(fx.status||'').replace(/_/g,' '))+'</span>'}
   else{$('score').textContent='v';$('result').innerHTML='<span class="pill">'+esc(String(fx.status||'Upcoming').replace(/_/g,' '))+'</span>'}
