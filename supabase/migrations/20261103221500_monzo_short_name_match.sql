@@ -1,5 +1,6 @@
--- Monzo matching: also match short/long first names with the same surname
--- ("DANIEL GILBERT" pays, player is Dan Gilbert). Replaces record_monzo_payment only.
+-- Monzo matching, two new rules. Replaces record_monzo_payment only.
+-- 1. The payment reference contains a player's full name ("Dan Gilbert subs").
+-- 2. Short/long first names with the same surname ("DANIEL GILBERT" pays, player is Dan Gilbert).
 -- Rollback: re-run the record_monzo_payment definition from 20261103210000_monzo_subs_payments.sql.
 
 -- Called only by the monzo-webhook edge function (service role).
@@ -61,6 +62,19 @@ begin
        and (public.monzo_normalise_name(p.display_name) = v_norm
             or public.monzo_normalise_name(concat_ws(' ', p.first_name, p.last_name)) = v_norm);
     if v_count = 1 then v_method := 'name'; else v_player := null; end if;
+  end if;
+
+  -- 2b. The payment reference contains exactly one current player's full name
+  --     (payment links from the app put the player's name in the reference, and a parent
+  --     paying for a player usually writes the player's name).
+  if v_player is null and v_ref is not null then
+    select count(distinct p.id), min(p.id::text)::uuid into v_count, v_player
+      from public.team_players tp join public.players p on p.id = tp.player_id
+     where tp.team_id = conn.team_id and tp.active
+       and exists (select 1 from unnest(array[public.monzo_normalise_name(p.display_name),
+                                              public.monzo_normalise_name(concat_ws(' ', p.first_name, p.last_name))]) n(v)
+                    where n.v ~ ' ' and ' ' || public.monzo_normalise_name(v_ref) || ' ' like '% ' || n.v || ' %');
+    if v_count = 1 then v_method := 'reference'; else v_player := null; end if;
   end if;
 
   -- 3. "J SMITH" style: first initial + surname, only if exactly one player fits.
