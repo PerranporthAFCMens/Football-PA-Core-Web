@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1357A6">
 <title>Football PA Match Centre</title>
+<script>
+/* The match hub is the only Match Centre. Opened on its own, this page sends you to the hub's Match tab (or the Matches list). */
+(function(){var q=new URLSearchParams(location.search);if(q.get('embed')==='1'||window.self!==window.top)return;var f=q.get('fixture');q.delete('embed');q.delete('tab');if(f){q.set('tab','match');location.replace('./match-hub.html?'+q.toString())}else{q.delete('fixture');var r=q.toString();location.replace('./matches.html'+(r?'?'+r:''))}})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./core-client.js"></script>
 <style>

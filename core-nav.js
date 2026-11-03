@@ -32,7 +32,6 @@ async function mount(opts={}){
  const teamItems=[
   ['home','Home',teamHref('/index.html'),null,true],
   ['matches','Matches',teamHref('/matches.html'),null,true],
-  ['match','Match Centre',teamHref('/match-centre.html'),'match_centre',!!access.can_manage_match],
   ['players','Players',teamHref('/players.html'),'players',true],
   ['fixtures','Fixtures (edit)',teamHref('/fixtures.html'),null,true],
   ['availability','Availability',teamHref('/availability.html'),'availability',true],
@@ -42,7 +41,7 @@ async function mount(opts={}){
   ['live','Live Score',teamHref('/live-score.html','token='+encodeURIComponent(scoreboardToken)),null,!!scoreboardToken],
   ['settings','Settings',teamHref('/team-settings.html'),null,!!access.can_manage_team]
  ].filter(x=>(!x[3]||features[x[3]]!==false)&&x[4]);
- const fallbackOrder=['home','matches','match','players','fixtures','availability','dashboard','voting','subs','live','settings'],rank=new Map([...navOrder,...fallbackOrder.filter(k=>!navOrder.includes(k))].map((k,i)=>[k,i]));teamItems.sort((a,b)=>(rank.get(a[0])??999)-(rank.get(b[0])??999));
+ const savedOrder=navOrder.map(k=>k==='match'?'matches':k);const fallbackOrder=['home','matches','players','fixtures','availability','dashboard','voting','subs','live','settings'],rank=new Map([...savedOrder,...fallbackOrder.filter(k=>!savedOrder.includes(k))].map((k,i)=>[k,i]));teamItems.sort((a,b)=>(rank.get(a[0])??999)-(rank.get(b[0])??999));
  const shade=document.createElement('div');shade.className='fpa-nav-shade';shade.id='fpaSharedNavShade';
  const nav=document.createElement('aside');nav.className='fpa-nav';nav.id='fpaSharedNav';
  const badge=team.badge_url?'<img src="'+team.badge_url+'" alt="">':'FP';

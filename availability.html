@@ -79,7 +79,7 @@
         <button id="saveSquadBtn" class="btn primary">Save squad</button>
         <button id="shareSquadBtn" class="btn whatsapp">Share squad</button>
         <button id="openSubsBtn" class="btn">Subs Tracker</button>
-        <button id="openMatchBtn" class="btn">Open Match Centre</button>
+        <button id="openMatchBtn" class="btn">Open match</button>
       </div>
     </section>
 
@@ -277,7 +277,7 @@ $('saveSquadBtn').onclick=()=>saveSquad(false);
 $('qpAdd').onclick=quickAddPlayer;
 $('shareSquadBtn').onclick=shareSquad;
 $('openSubsBtn').onclick=()=>{location.href=ctx.href('/subs.html',selected?'fixture='+encodeURIComponent(selected.fixture_id):'')};
-$('openMatchBtn').onclick=()=>{if(selected)location.href=ctx.href('/match-centre.html','fixture='+encodeURIComponent(selected.fixture_id))};
+$('openMatchBtn').onclick=()=>{if(selected)(window.top||window).location.href=ctx.href('/match-hub.html','fixture='+encodeURIComponent(selected.fixture_id)+'&tab=match')};
 load().catch(e=>{$('status').textContent='Could not load Availability: '+e.message;$('status').classList.add('bad')});
 </script>
 </body>
