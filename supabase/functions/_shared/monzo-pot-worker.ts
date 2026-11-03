@@ -103,6 +103,29 @@ export async function refreshIfNeeded(deps: Deps, lease: any): Promise<string> {
   return body.access_token;
 }
 
+// Best effort: put the player's name on the pot transfer in the Monzo app. Monzo's deposit call takes
+// no reference, so find the transfer it just made and add a note. Never affects the transfer itself.
+export async function labelDeposit(deps: Deps, token: string, accountId: string, potId: string, t: Transfer, since: string): Promise<string | null> {
+  try {
+    const lab = await deps.rpc("monzo_worker_transfer_label", { p_transfer_id: t.id });
+    const label = typeof lab.data === "string" ? lab.data : null;
+    if (lab.error || !label) return null;
+    const list = await call(deps, `/transactions?account_id=${encodeURIComponent(accountId)}&since=${encodeURIComponent(since)}&limit=50`, { method: "GET", token });
+    if (list.status !== 200) return null;
+    const tx = (list.body?.transactions ?? [])
+      .filter((x: any) => x.amount === -t.amount_pence && x.scheme === "uk_retail_pot" && !x.notes &&
+                          (!x.metadata?.pot_id || x.metadata.pot_id === potId))
+      .pop(); // newest last
+    if (!tx?.id) return null;
+    const res = await call(deps, `/transactions/${encodeURIComponent(tx.id)}`, {
+      method: "PATCH", token, body: new URLSearchParams({ "metadata[notes]": label }).toString(),
+    });
+    return res.status === 200 ? tx.id : null;
+  } catch {
+    return null;
+  }
+}
+
 async function processOne(deps: Deps, token: string, accountId: string, potId: string, t: Transfer): Promise<{ status: Outcome; ref?: string; error?: string }> {
   if (t.pot_id && t.pot_id !== potId) return { status: "rejected", error: "Pot changed since the transfer was queued" };
 
@@ -114,12 +137,16 @@ async function processOne(deps: Deps, token: string, accountId: string, potId: s
   const problem = verifyTransaction(got.body?.transaction, accountId, t.amount_pence);
   if (problem) return { status: "rejected", error: problem };
 
+  const since = new Date((deps.now ?? (() => new Date()))().getTime() - 60_000).toISOString();
   const dep = await call(deps, `/pots/${encodeURIComponent(potId)}/deposit`, {
     method: "PUT",
     token,
     body: new URLSearchParams({ source_account_id: accountId, amount: String(t.amount_pence), dedupe_id: t.dedupe_id }).toString(),
   });
-  if (dep.status === 200) return { status: "completed", ref: `pot ${dep.body?.id ?? potId}` };
+  if (dep.status === 200) {
+    const noted = await labelDeposit(deps, token, accountId, potId, t, since);
+    return { status: "completed", ref: noted ? `pot ${potId}, noted ${noted}` : `pot ${potId}` };
+  }
   if (dep.status === 401 || dep.status === 403) throw new AuthError(`Monzo refused the deposit (${dep.status})`);
   // A timeout or server error may still have moved the money; retrying with the same dedupe_id is safe.
   if (dep.status === 0 || dep.status === 429 || dep.status >= 500) return { status: "pending", error: dep.error || `Monzo deposit error (${dep.status})` };

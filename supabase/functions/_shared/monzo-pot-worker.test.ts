@@ -30,9 +30,11 @@ function setup(opts: any = {}) {
     if (fn === "monzo_worker_claim") return { data: transfers, error: null };
     if (fn === "monzo_worker_finish") { finished[args.p_transfer_id] = args; return { data: null, error: null }; }
     if (fn === "monzo_worker_release") { released = args; return { data: null, error: null }; }
+    if (fn === "monzo_worker_transfer_label") return { data: "Subs: Dan Gilbert (Porthleven 2nd)", error: null };
     throw new Error("unexpected rpc " + fn);
   };
   const deposits: any[] = [];
+  const notes: any[] = [];
   const fetchFn = async (url: string, init: any) => {
     const u = new URL(url);
     const auth = init.headers?.Authorization;
@@ -42,6 +44,16 @@ function setup(opts: any = {}) {
       return r(200, { access_token: "AT2", refresh_token: "RT2", expires_in: 21600 });
     }
     if (opts.forbidden && auth) return r(403, {});
+    if (u.pathname === "/transactions" && init.method === "GET") {
+      return r(200, { transactions: [
+        { id: "tx_old_pot", amount: -600, scheme: "uk_retail_pot", notes: "already", metadata: { pot_id: "pot_1" } },
+        { id: "tx_pot_new", amount: -600, scheme: "uk_retail_pot", notes: "", metadata: { pot_id: "pot_1" } },
+      ] });
+    }
+    if (u.pathname.startsWith("/transactions/") && init.method === "PATCH") {
+      notes.push({ id: decodeURIComponent(u.pathname.split("/")[2]), ...Object.fromEntries(new URLSearchParams(init.body)) });
+      return r(opts.patchFails ? 500 : 200, {});
+    }
     if (u.pathname === "/pots") return r(200, { pots: [{ id: "pot_1", name: "Perranporth Subs", deleted: false }] });
     if (u.pathname.startsWith("/transactions/")) {
       const id = decodeURIComponent(u.pathname.split("/")[2]);
@@ -57,7 +69,7 @@ function setup(opts: any = {}) {
     return r(500, {});
   };
   const deps = { rpc, fetch: fetchFn as any, clientId: "cid", clientSecret: "cs", holder: "h1" };
-  return { deps, calls, finished, saved, deposits, get released() { return released; } };
+  return { deps, calls, finished, saved, deposits, notes, get released() { return released; } };
 }
 
 // 1. Normal run: only the genuine payment is deposited; others rejected.
@@ -75,7 +87,9 @@ function setup(opts: any = {}) {
   assert.equal(s.released.p_holder, "h1");
   assert.equal(s.released.p_error, null);
   assert.equal(res.completed, 1); assert.equal(res.rejected, 4);
-  console.log("ok 1 normal run");
+  assert.deepEqual(s.notes, [{ id: "tx_pot_new", "metadata[notes]": "Subs: Dan Gilbert (Porthleven 2nd)" }]);
+  assert.match(s.finished.t1.p_ref, /noted tx_pot_new/);
+  console.log("ok 1 normal run (and labelled)");
 }
 // 2. Expiring token: refresh then save before any Monzo call.
 {
@@ -135,6 +149,14 @@ function setup(opts: any = {}) {
   assert.equal(s.finished.t1.p_status, "rejected");
   assert.equal(s.deposits.length, 0);
   console.log("ok 8 pot changed");
+}
+// 8b. Labelling fails: transfer still completed.
+{
+  const s = setup({ patchFails: true, transfers: [{ id: "t1", monzo_transaction_id: "tx_ok", amount_pence: 600, dedupe_id: "d", pot_id: "pot_1" }] });
+  await runAll(s.deps);
+  assert.equal(s.finished.t1.p_status, "completed");
+  assert.doesNotMatch(s.finished.t1.p_ref, /noted/);
+  console.log("ok 8b label failure harmless");
 }
 // 9. verifyTransaction edge cases
 assert.match(verifyTransaction({ account_id: "a", amount: 300, currency: "EUR" }, "a", 300)!, /pounds/);
