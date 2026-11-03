@@ -71,3 +71,53 @@ one game's subs from a player's account and check it appears on the Subs Tracker
 ## Turning it off
 
 Playground: `GET /webhooks`, then `DELETE /webhooks/<id>`. Or set `monzo_connections.active = false`.
+
+## Pot transfers (built, switched off)
+
+Subs that Football PA has marked paid can be moved automatically into the "Perranporth Subs" pot.
+This is a separate process from recording payments: if Monzo's API is down, players are still
+marked paid, and the transfer waits and retries.
+
+How it works:
+
+1. When a Monzo payment becomes "applied" (games marked paid), a row is added to
+   `monzo_pot_transfers` for the amount that paid for games (any leftover stays in the account).
+2. The row waits `hold_minutes` (30 by default). If a manager presses "Undo paid" on any of its
+   games during the hold, the transfer is cancelled.
+3. Every 10 minutes the `monzo-pot-transfer` function (pg_cron) takes the login lease, fetches the
+   original payment from Monzo again and checks it is an incoming GBP payment into the subs account
+   for at least the amount. Only then does it deposit, with a fixed `dedupe_id` so a retry can
+   never move the money twice. Anything that fails a check is marked `rejected` and never moved.
+
+Off switches (all three must be on for money to move):
+
+- Secret `MONZO_TRANSFERS_ENABLED` = `true` on the edge functions.
+- `monzo_connections.pot_id` set.
+- `monzo_connections.transfers_from` set. Payments received before this time are never moved.
+  Until it is set, every applied payment gets a `dry_run` row, which can never be moved later.
+
+### Stage 1: install, nothing moves (needs Adam's approval of the exact SQL)
+
+1. Apply migration `20261104090000_monzo_pot_transfers.sql`.
+2. Deploy `monzo-pot-transfer` and `monzo-oauth` with verify_jwt off (both use
+   `_shared/monzo-pot-worker.ts`).
+3. In developers.monzo.com create a new OAuth client: Confidentiality **Confidential**, Redirect URL
+   `https://hennzggqaquevqgiucqn.supabase.co/functions/v1/monzo-oauth`.
+4. Supabase, Edge Functions, Secrets: `MONZO_CLIENT_ID`, `MONZO_CLIENT_SECRET`, `MONZO_WORKER_SECRET`
+   (a long random string). Do not set `MONZO_TRANSFERS_ENABLED` yet.
+5. Log in once: open
+   `https://hennzggqaquevqgiucqn.supabase.co/functions/v1/monzo-oauth?start=1&account=acc_00009V8QqxxJjp7DnnLGmP&key=<MONZO_WORKER_SECRET>`,
+   log in by email, then approve access in the Monzo app.
+6. Open `...functions/v1/monzo-oauth?status=1&key=<MONZO_WORKER_SECRET>`. It should say "logged in and
+   approved" and list your pots with their ids.
+
+### Stage 2: switch on (only after review and Adam's explicit approval)
+
+1. `update monzo_connections set pot_id = '<pot id>', transfers_from = now() where monzo_account_id = 'acc_00009V8QqxxJjp7DnnLGmP';`
+2. Store the worker secret in Vault as `monzo_worker_secret` and schedule the worker every 10 minutes
+   with pg_cron + pg_net (header `x-worker-secret`).
+3. Set `MONZO_TRANSFERS_ENABLED` = `true`.
+4. Watch the first transfer: `select status, amount_pence, last_error from monzo_pot_transfers order by created_at desc limit 5;`
+
+To stop at any time: remove `MONZO_TRANSFERS_ENABLED`, or `update monzo_connections set transfers_from = null`.
+Transfers already completed stay in the pot; move them back in the Monzo app if needed.
