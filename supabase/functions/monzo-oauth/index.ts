@@ -87,7 +87,8 @@ Deno.serve(async (req: Request) => {
       const { data, error } = await admin.rpc(fn, args);
       return { data, error: error ? { message: error.message } : null };
     };
-    const { data: conns } = await admin.from("monzo_connections").select("id, monzo_account_id, pot_id, transfers_from").eq("active", true);
+    const { data: conns, error: connErr } = await admin.rpc("monzo_oauth_connections");
+    if (connErr) return text(`Could not read Monzo connections: ${connErr.message}`, 500);
     const lines: string[] = [];
     for (const c of conns ?? []) {
       const holder = crypto.randomUUID();

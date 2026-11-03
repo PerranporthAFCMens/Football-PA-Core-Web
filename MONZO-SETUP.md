@@ -98,7 +98,7 @@ Off switches (all three must be on for money to move):
 
 ### Stage 1: install, nothing moves (needs Adam's approval of the exact SQL)
 
-1. Apply migration `20261104090000_monzo_pot_transfers.sql`.
+1. Apply migrations `20261104090000_monzo_pot_transfers.sql` and `20261104093000_monzo_oauth_status.sql`.
 2. Deploy `monzo-pot-transfer` and `monzo-oauth` with verify_jwt off (both use
    `_shared/monzo-pot-worker.ts`).
 3. In developers.monzo.com create a new OAuth client: Confidentiality **Confidential**, Redirect URL
