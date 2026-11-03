@@ -12,6 +12,8 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 - Live addresses (Vercel project `football-pa-core-web`): footballpa.com, app.footballpa.com, core.footballpa.com. Vercel deploys every change to `main`.
 - Database: Supabase project "Football PA Core" (`hennzggqaquevqgiucqn`). It also holds the old Perranporth app data (`perranporth` schema) and QuarryHQ tables.
 
+- **In review (3 Nov)**: Monzo payments into the Subs Tracker (branch `claude/project-thread-cggm03`). New tables/functions in migration `20261103210000_monzo_subs_payments.sql`, edge function `monzo-webhook`, Monzo panel on `subs.html`. Not live: needs the migration applied, the function deployed and the webhook registered (see `MONZO-SETUP.md`). Affects any team with a Monzo connection; Perranporth 1st Team first.
+
 ## Teams using the app
 
 - Perranporth 1st Team: Saturdays (next: Falmouth United away, Sat 10 Oct, 2:30pm).

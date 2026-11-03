@@ -26,6 +26,7 @@ h2,h3{margin:0}h2{font-size:20px}.muted{color:var(--muted);font-size:12px;line-h
 .debtor{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid #edf1f4;cursor:pointer}.debtor:last-child{border-bottom:0}.debtorAmount{font-size:18px;font-weight:900}
 .empty{padding:13px;border:1px solid #e3e9ee;border-radius:12px;background:#f7f9fb;color:var(--muted);font-size:12px}.success{padding:13px;border:1px solid #bfe2c8;border-radius:12px;background:#eaf8ee;color:#1f6b33}
 .sectionTitle{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-bottom:9px}.sectionTitle h3{font-size:15px}.sectionTitle span{font-size:11px;color:var(--muted)}
+.monzo{margin-bottom:14px}.monzoRow{padding:12px 0;border-bottom:1px solid #edf1f4}.monzoRow:last-child{border-bottom:0}.monzoRow select{min-height:42px;margin-top:8px}.remember{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12px;color:#40515f}.monzo details{margin-top:10px;font-size:12px}.monzo summary{cursor:pointer;color:#315d84;font-weight:800}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#152433;color:#fff;padding:10px 14px;border-radius:999px;font-weight:800;font-size:12px;z-index:100;display:none;box-shadow:0 8px 25px #0003}
 @media(max-width:560px){.app{padding:8px 7px 30px}.card{padding:13px;border-radius:15px}.summaryGrid{gap:5px}.summaryBox{padding:11px 5px}.summaryBox b{font-size:21px}.summaryBox span{font-size:8px}.tabs{gap:5px}.tab{font-size:12px}.actions .btn{flex:1;min-width:86px;font-size:12px}.fileHead{padding:12px}}
 </style>
@@ -46,6 +47,7 @@ h2,h3{margin:0}h2{font-size:20px}.muted{color:var(--muted);font-size:12px;line-h
         <button class="tab" data-tab="match">By Match</button>
       </div>
       <section id="summaryView">
+        <div id="monzoBlock" class="monzo"></div>
         <div class="sectionTitle"><h3>Outstanding</h3><span>Tap a player to open their file</span></div>
         <div id="nextSubsMatch" style="margin-bottom:14px"></div>
         <div id="outstandingList"></div>
@@ -70,7 +72,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const money=p=>'£'+((Number(p)||0)/100).toFixed(2);
 const fmt=v=>v?new Date(v).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):'Date TBC';
 const pageQuery=new URLSearchParams(location.search),requestedFixture=pageQuery.get('fixture')||'';
-let club,team,season,D={players:[],matches:[],roster:[],summary:{}},tab=requestedFixture?'match':'summary',selectedPlayer='',selectedMatch=requestedFixture,busy=false;
+let club,team,season,M={pending:[],recent:[],aliases:[]},D={players:[],matches:[],roster:[],summary:{}},tab=requestedFixture?'match':'summary',selectedPlayer='',selectedMatch=requestedFixture,busy=false;
 
 function toast(msg){const t=$('toast');t.textContent=msg;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>t.style.display='none',2200)}
 function pillClass(s){if(s==='Confirmed Paid')return'paid';if(s==='Claims Paid')return'claim';if(s==='Not Paid'||s==='Unconfirmed')return'owed';if(s==='N/A')return'na';return'unknown'}
@@ -94,10 +96,69 @@ async function boot(){
 async function reload(){
   const r=await sb.rpc('get_subs_tracker_v2',{p_team_id:team.id,p_season_id:season.id});
   if(r.error)throw r.error;D=r.data||{players:[],matches:[],roster:[],summary:{}};
+  // Monzo payments are optional: if the feature is not set up, the block stays empty.
+  const mr=await sb.rpc('list_monzo_payments',{p_team_id:team.id});M=mr.error?{pending:[],recent:[],aliases:[]}:(mr.data||{pending:[],recent:[],aliases:[]});
   $('configText').textContent=money(D.charge_amount_pence)+' per game · payments tracked against each fixture';
   renderAll();
 }
-function renderAll(){renderSummary();renderPickers();renderPlayer();renderMatch();setTab(tab)}
+function renderAll(){renderMonzo();renderSummary();renderPickers();renderPlayer();renderMatch();setTab(tab)}
+const OWED=['Not Paid','Unconfirmed','Claims Paid'];
+function teamPlayers(){
+  const map=new Map();(D.roster||[]).forEach(r=>map.set(r.player_id,r.name));(D.players||[]).forEach(p=>{if(!map.has(p.player_id))map.set(p.player_id,p.name)});
+  return [...map].map(([player_id,name])=>({player_id,name})).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+}
+// Which games a Monzo payment pays for: the player's oldest unpaid games first, then upcoming games.
+function monzoPlan(pay){
+  const charge=Number(D.charge_amount_pence)||0;
+  if(!charge||!pay.player_id)return{fixtures:[],leftover:Number(pay.amount_pence)||0};
+  let games=Math.floor(Number(pay.amount_pence)/charge);
+  const p=(D.players||[]).find(x=>x.player_id===pay.player_id);
+  const owed=(p?.matches||[]).filter(m=>OWED.includes(m.status)).sort((a,b)=>new Date(a.kick_off)-new Date(b.kick_off));
+  const picked=owed.slice(0,games).map(m=>({id:m.fixture_id,label:fmt(m.kick_off)+' '+m.opponent}));
+  if(picked.length<games){
+    const have=new Set(picked.map(x=>x.id));
+    const upcoming=(D.matches||[]).filter(m=>new Date(m.kick_off).getTime()>=Date.now()&&!have.has(m.fixture_id)).sort((a,b)=>new Date(a.kick_off)-new Date(b.kick_off));
+    for(const m of upcoming){if(picked.length>=games)break;const st=(m.players||[]).find(x=>x.player_id===pay.player_id)?.status;if(st==='Confirmed Paid'||st==='N/A')continue;picked.push({id:m.fixture_id,label:fmt(m.kick_off)+' '+m.opponent+' (upcoming)'})}
+  }
+  return{fixtures:picked,leftover:Number(pay.amount_pence)-picked.length*charge};
+}
+function monzoWho(pay){return money(pay.amount_pence)+' from '+(pay.payer_name||'unknown payer')+' · '+fmt(pay.received_at)+(pay.reference?' · “'+pay.reference+'”':'')}
+function renderMonzo(){
+  const host=$('monzoBlock');
+  if(!M.connected&&!(M.pending||[]).length){host.innerHTML='';return}
+  const pending=M.pending||[],matched=pending.filter(p=>p.status==='matched');
+  const options=teamPlayers().map(p=>'<option value="'+esc(p.player_id)+'">'+esc(p.name)+'</option>').join('');
+  const rows=pending.map(pay=>{
+    const id=esc(pay.id);
+    if(pay.status==='matched'){
+      const plan=monzoPlan(pay);
+      const covers=plan.fixtures.length?'Pays for '+plan.fixtures.map(f=>f.label).join(', '):'No unpaid games to put this against';
+      return '<div class="monzoRow"><div class="rowTop"><div><div class="matchName">'+esc(pay.player_name||'Player')+'</div><div class="mini">'+esc(monzoWho(pay))+'</div><div class="mini">'+esc(covers)+(plan.leftover>0?' · '+money(plan.leftover)+' left over':'')+'</div></div><span class="pill paid">'+(pay.match_method==='manual'||pay.match_method==='alias'?'Known payer':'Name match')+'</span></div><div class="actions"><button class="btn green" data-monzo-apply="'+id+'">Apply</button><button class="btn secondary" data-monzo-change="'+id+'">Wrong player</button><button class="btn secondary" data-monzo-ignore="'+id+'">Not subs</button></div></div>';
+    }
+    return '<div class="monzoRow"><div class="rowTop"><div><div class="matchName">Who is this from?</div><div class="mini">'+esc(monzoWho(pay))+'</div></div><span class="pill claim">Needs a player</span></div><select class="picker" id="monzoPick_'+id+'"><option value="">Choose player…</option>'+options+'</select><label class="remember"><input type="checkbox" id="monzoRemember_'+id+'" checked> Remember this payer for next time</label><div class="actions"><button class="btn" data-monzo-assign="'+id+'">Save</button><button class="btn secondary" data-monzo-ignore="'+id+'">Not subs</button></div></div>';
+  }).join('');
+  const recent=(M.recent||[]).slice(0,8).map(r=>'<div class="mini">'+esc(fmt(r.handled_at)+' · '+money(r.amount_pence)+' · '+(r.status==='ignored'?(r.payer_name||'Unknown')+' · not subs':(r.player_name||'')+' · '+r.games+' game'+(r.games===1?'':'s')+(r.leftover_pence>0?' · '+money(r.leftover_pence)+' left over':'')))+'</div>').join('');
+  const aliases=(M.aliases||[]).map(a=>'<div class="mini" style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:4px 0">'+esc(a.label+' → '+a.player_name)+'<button class="btn secondary" style="min-height:30px;padding:4px 9px" data-monzo-forget="'+esc(a.id)+'">Forget</button></div>').join('');
+  host.innerHTML='<div class="sectionTitle"><h3>Monzo payments</h3><span>'+(pending.length?pending.length+' to check':'All caught up')+'</span></div><div class="file"><div class="fileBody">'+(rows||'<div class="mini" style="padding:12px 0">New payments into Monzo will appear here.</div>')+(matched.length>1?'<button class="btn green full" style="margin-top:6px" data-monzo-apply-all="1">Apply all '+matched.length+' matched payments</button>':'')+(recent?'<details><summary>Recently handled</summary>'+recent+'</details>':'')+(aliases?'<details><summary>Remembered payers ('+(M.aliases||[]).length+')</summary>'+aliases+'</details>':'')+'</div></div>';
+}
+async function applyMonzo(pay){
+  const plan=monzoPlan(pay),done=[];
+  for(const f of plan.fixtures){
+    const r=await sb.rpc('set_subs_match_status',{p_team_id:team.id,p_season_id:season.id,p_fixture_id:f.id,p_player_id:pay.player_id,p_status:'confirmed_paid'});
+    if(r.error){
+      // Record what did get marked so the payment is not applied twice.
+      await sb.rpc('finish_monzo_payment',{p_payment_id:pay.id,p_status:'applied',p_fixture_ids:done,p_leftover_pence:Number(pay.amount_pence)-done.length*(Number(D.charge_amount_pence)||0)});
+      throw new Error(done.length+' of '+plan.fixtures.length+' games marked for '+(pay.player_name||'player')+'. Mark the rest by hand: '+r.error.message);
+    }
+    done.push(f.id);
+  }
+  const r=await sb.rpc('finish_monzo_payment',{p_payment_id:pay.id,p_status:'applied',p_fixture_ids:done,p_leftover_pence:plan.leftover});
+  if(r.error)throw r.error;
+}
+async function monzoAction(btn,fn){
+  if(busy)return;busy=true;const old=btn.textContent;btn.disabled=true;btn.textContent='Saving…';
+  try{const msg=await fn();await reload();toast(msg||'Saved')}catch(e){btn.disabled=false;btn.textContent=old;toast(e.message||String(e));await reload().catch(()=>{})}finally{busy=false}
+}
 function renderSummary(){
   const s=D.summary||{};
   $('summary').innerHTML='<div class="summaryBox"><b>'+money(s.outstanding_pence)+'</b><span>Outstanding</span></div><div class="summaryBox"><b>'+money(s.received_pence)+'</b><span>Received</span></div><div class="summaryBox"><b>'+(s.players_owing||0)+'</b><span>Players owing</span></div>';
@@ -191,6 +252,13 @@ document.addEventListener('click',e=>{
   const op=e.target.closest('[data-open-player]');if(op){selectedPlayer=op.dataset.openPlayer;setTab('player');renderPickers();renderPlayer();return}
   const om=e.target.closest('[data-open-match]');if(om){selectedMatch=om.dataset.openMatch;setTab('match');renderPickers();renderMatch();return}
   const st=e.target.closest('[data-status]');if(st){setStatus(st);return}
+  const findPay=id=>(M.pending||[]).find(x=>x.id===id);
+  const ma=e.target.closest('[data-monzo-apply]');if(ma){const pay=findPay(ma.dataset.monzoApply);if(pay)monzoAction(ma,async()=>{await applyMonzo(pay);return 'Payment applied'});return}
+  const mall=e.target.closest('[data-monzo-apply-all]');if(mall){monzoAction(mall,async()=>{const list=(M.pending||[]).filter(p=>p.status==='matched');for(const pay of list){await applyMonzo(pay);await reload()}return list.length+' payments applied'});return}
+  const mg=e.target.closest('[data-monzo-assign]');if(mg){const id=mg.dataset.monzoAssign,player=$('monzoPick_'+id)?.value;if(!player)return toast('Choose a player first');monzoAction(mg,async()=>{const r=await sb.rpc('assign_monzo_payment',{p_payment_id:id,p_player_id:player,p_remember:!!$('monzoRemember_'+id)?.checked});if(r.error)throw r.error;return 'Player saved. Check the games and tap Apply'});return}
+  const mc=e.target.closest('[data-monzo-change]');if(mc){const pay=findPay(mc.dataset.monzoChange);if(pay){pay.status='unmatched';renderMonzo()}return}
+  const mi=e.target.closest('[data-monzo-ignore]');if(mi){monzoAction(mi,async()=>{const r=await sb.rpc('finish_monzo_payment',{p_payment_id:mi.dataset.monzoIgnore,p_status:'ignored'});if(r.error)throw r.error;return 'Marked as not subs'});return}
+  const mf=e.target.closest('[data-monzo-forget]');if(mf){monzoAction(mf,async()=>{const r=await sb.rpc('remove_monzo_payer_alias',{p_alias_id:mf.dataset.monzoForget});if(r.error)throw r.error;return 'Payer forgotten'});return}
   const cp=e.target.closest('[data-copy-player]');if(cp){const p=(D.players||[]).find(x=>x.player_id===cp.dataset.copyPlayer);if(p)copyText(playerMessage(p),'Player payment details copied');return}
   const cm=e.target.closest('[data-copy-match]');if(cm){copyMatch(cm.dataset.copyMatch);return}
   const cl=e.target.closest('[data-copy-link]');if(cl){copyPaymentLink(cl.dataset.copyLink);return}
