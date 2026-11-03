@@ -30,6 +30,8 @@ Deno.serve(async (req: Request) => {
     console.error("record_monzo_payment failed", error.message);
     return json({ error: "Could not record payment" }, 500);
   }
+  // Outcome only (no names or amounts), so the Supabase logs show why a payment was or wasn't kept.
+  console.log("monzo-webhook", JSON.stringify({ ok: data?.ok, skipped: data?.skipped, matched: data?.matched, method: data?.method, reason: data?.reason }));
   if (data?.ok === false) return json({ error: "Not found" }, 404);
   return json(data);
 });
