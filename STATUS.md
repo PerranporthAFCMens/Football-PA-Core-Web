@@ -14,6 +14,8 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 
 - **In review (3 Nov)**: Monzo payments into the Subs Tracker (branch `claude/project-thread-cggm03`). New tables/functions in migration `20261103210000_monzo_subs_payments.sql`, edge function `monzo-webhook`, Monzo panel on `subs.html`. Live 3 Nov: Monzo payments mark games paid automatically (see log). The Monzo panel on the Subs Tracker appears after the next production release. Affects any team with a Monzo connection; Perranporth 1st Team first.
 
+- **In review (3 Nov)**: the match hub (Matches list, then one hub per match) is now the only Match Centre. The separate "Match Centre" menu item is gone; opening `match-centre.html` on its own sends you to the hub's Match tab (or the Matches list). `match-centre.html` stays because it powers the hub's Match tab. Saved menu orders that had "Match Centre" now place Matches there.
+
 ## Teams using the app
 
 - Perranporth 1st Team: Saturdays (next: Falmouth United away, Sat 10 Oct, 2:30pm).
