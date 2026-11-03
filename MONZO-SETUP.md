@@ -113,6 +113,8 @@ Off switches (all three must be on for money to move):
 
 ### Stage 2: switch on (only after review and Adam's explicit approval)
 
+Prompt: `/mnt/project-files/monzo-subs/CHATGPT-PROMPT-6-POT-SWITCH-ON.md`. Perranporth Subs pot: `pot_0000AYaKwSVTQWIEKs8vrd`.
+
 1. `update monzo_connections set pot_id = '<pot id>', transfers_from = now() where monzo_account_id = 'acc_00009V8QqxxJjp7DnnLGmP';`
 2. Store the worker secret in Vault as `monzo_worker_secret` and schedule the worker every 10 minutes
    with pg_cron + pg_net (header `x-worker-secret`).
