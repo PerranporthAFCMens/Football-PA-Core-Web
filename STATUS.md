@@ -12,7 +12,7 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 - Live addresses (Vercel project `football-pa-core-web`): footballpa.com, app.footballpa.com, core.footballpa.com. Vercel deploys every change to `main`.
 - Database: Supabase project "Football PA Core" (`hennzggqaquevqgiucqn`). It also holds the old Perranporth app data (`perranporth` schema) and QuarryHQ tables.
 
-- **In review (3 Nov)**: Monzo payments into the Subs Tracker (branch `claude/project-thread-cggm03`). New tables/functions in migration `20261103210000_monzo_subs_payments.sql`, edge function `monzo-webhook`, Monzo panel on `subs.html`. Database side live 3 Nov (see log). The Subs Tracker panel goes live when this PR is released; until then payments queue in `monzo_payments`. Affects any team with a Monzo connection; Perranporth 1st Team first.
+- **In review (3 Nov)**: Monzo payments into the Subs Tracker (branch `claude/project-thread-cggm03`). New tables/functions in migration `20261103210000_monzo_subs_payments.sql`, edge function `monzo-webhook`, Monzo panel on `subs.html`. Live 3 Nov: Monzo payments mark games paid automatically (see log). The Monzo panel on the Subs Tracker appears after the next production release. Affects any team with a Monzo connection; Perranporth 1st Team first.
 
 ## Teams using the app
 
@@ -34,6 +34,7 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 | 4 Oct 2026 | Dynamos: deleted 5 demo fixtures (Demo United, Test Town, Sample City, Trial Athletic, Practice Rovers) and their events/subs; Falmouth 20 Sep set to completed, 1-10 | Claude, approved by Adam | None for the deletes (demo data); Falmouth score editable on Fixtures page |
 | 9 Oct 2026 | Stage 2 database extraction: baseline_schema.sql created (37 tables, 240+ columns); RLS/functions/grants migration skeletons; SUPABASE_SCHEMA.md documentation | Claude | None yet (migrations are skeletons, pending function extraction) |
 | 3 Nov 2026 | Monzo: migration `monzo_short_name_match` applied, `monzo-webhook` v2 deployed; connection moved to current account `acc_00009V8Q…` (first id was a closed prepaid account) | ChatGPT, approved by Adam | Re-run previous `record_monzo_payment`; point connection back |
+| 3 Nov 2026 | Monzo: migrations `monzo_auto_apply` (trigger marks games paid, method 'Monzo') and `monzo_player_link_reference` applied; Dan Gilbert £3 auto-paid Porthleven 2nd | ChatGPT, approved by Adam | Rollbacks in each migration header; "Undo paid" on the Subs Tracker |
 | 3 Nov 2026 | Migration `monzo_subs_payments` applied (3 new tables + functions, additive); edge function `monzo-webhook` deployed (verify_jwt off, secret in URL); Monzo account linked to Perranporth 1st Team (`monzo_connections`) | ChatGPT, approved by Adam | Monzo Playground `DELETE /webhooks/<id>`; delete the function; run the rollback in the migration header |
 
 ## Culdrose (26 Sep) findings
