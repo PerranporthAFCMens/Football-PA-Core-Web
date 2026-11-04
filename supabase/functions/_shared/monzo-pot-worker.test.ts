@@ -91,20 +91,31 @@ function setup(opts: any = {}) {
   assert.match(s.finished.t1.p_ref, /noted tx_pot_new/);
   console.log("ok 1 normal run (and labelled)");
 }
-// 2. Expiring token: refresh then save before any Monzo call.
+// 2. Expiring token: refresh and save before any other Monzo call.
 {
-  const s = setup({ expires_at: new Date(Date.now() + 60e3).toISOString(), transfers: [] });
+  const s = setup({ expires_at: new Date(Date.now() + 60e3).toISOString() });
   await runAll(s.deps);
   assert.equal(s.saved.length, 1);
   assert.equal(s.saved[0].p_refresh, "RT2");
-  assert.ok(s.calls.indexOf("monzo_worker_save_tokens") < s.calls.indexOf("monzo_worker_claim"));
+  assert.ok(s.calls.indexOf("monzo_worker_save_tokens") < s.calls.indexOf("monzo_worker_finish"));
   console.log("ok 2 refresh saved first");
+}
+// 2b. Nothing due: no Monzo calls, no refresh.
+{
+  const s = setup({ expires_at: "2020-01-01T00:00:00Z", transfers: [] });
+  const realFetch = s.deps.fetch;
+  let fetches = 0;
+  s.deps.fetch = (async (...a: any[]) => { fetches++; return (realFetch as any)(...a); }) as any;
+  await runAll(s.deps);
+  assert.equal(fetches, 0);
+  assert.equal(s.released.p_error, null);
+  console.log("ok 2b idle run makes no Monzo calls");
 }
 // 3. Refresh fails: nothing claimed, error recorded on release.
 {
   const s = setup({ expires_at: "2020-01-01T00:00:00Z", refreshFails: true });
   const [res] = await runAll(s.deps);
-  assert.ok(!s.calls.includes("monzo_worker_claim"));
+  assert.equal(s.finished.t1.p_status, "pending", "claimed rows put back");
   assert.match(s.released.p_error, /refresh failed/);
   assert.equal(s.deposits.length, 0);
   console.log("ok 3 refresh failure stops run", res.error);
@@ -113,7 +124,8 @@ function setup(opts: any = {}) {
 {
   const s = setup({ expires_at: "2020-01-01T00:00:00Z", saveFails: true });
   await runAll(s.deps);
-  assert.ok(!s.calls.includes("monzo_worker_claim"));
+  assert.equal(s.deposits.length, 0);
+  assert.equal(s.finished.t1.p_status, "pending");
   console.log("ok 4 save refused stops run");
 }
 // 5. Lease held by another run: nothing happens, no release.
@@ -128,7 +140,8 @@ function setup(opts: any = {}) {
 {
   const s = setup({ forbidden: true });
   await runAll(s.deps);
-  assert.ok(!s.calls.includes("monzo_worker_claim"));
+  assert.equal(s.deposits.length, 0);
+  assert.equal(Object.values(s.finished).filter((f: any) => f.p_status === "pending").length, 5);
   assert.match(s.released.p_error, /Approve access/);
   console.log("ok 6 403 stops run");
 }
