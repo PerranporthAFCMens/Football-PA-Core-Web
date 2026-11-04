@@ -4,8 +4,8 @@
 // For each switched-on connection:
 //  1. Take the token lease (only one run at a time can refresh tokens), refresh the token if it is
 //     close to expiring and save the new pair straight away.
-//  2. Check the pot belongs to the account.
-//  3. Claim due transfers. For each one, fetch the original payment from Monzo again and check it is
+//  2. Claim due transfers (if none, stop: no Monzo calls), then check the pot belongs to the account.
+//  3. For each one, fetch the original payment from Monzo again and check it is
 //     an incoming GBP payment into this account for at least the amount, then deposit with the
 //     transfer's fixed dedupe_id (a retry can never move the money twice).
 //  4. Release the lease.
@@ -164,7 +164,16 @@ export async function runConnection(deps: Deps, connectionId: string) {
   const lease = leased.data;
   let lastError: string | null = null;
 
+  let rows: Transfer[] = [];
+  let done = 0;
   try {
+    // Claim first, so an idle run (most minutes) makes no calls to Monzo at all.
+    const claimed = await deps.rpc("monzo_worker_claim", { p_connection_id: connectionId, p_holder: deps.holder, p_limit: CLAIM_LIMIT });
+    if (claimed.error) throw new Error(claimed.error.message);
+    rows = claimed.data ?? [];
+    summary.claimed = rows.length;
+    if (rows.length === 0) return summary;
+
     const token = await refreshIfNeeded(deps, lease);
     if (!lease.pot_id) throw new Error("No pot set");
 
@@ -174,25 +183,9 @@ export async function runConnection(deps: Deps, connectionId: string) {
     const pot = (pots.body?.pots ?? []).find((p: any) => p.id === lease.pot_id);
     if (!pot || pot.deleted) throw new Error("The subs pot was not found on this account");
 
-    const claimed = await deps.rpc("monzo_worker_claim", { p_connection_id: connectionId, p_holder: deps.holder, p_limit: CLAIM_LIMIT });
-    if (claimed.error) throw new Error(claimed.error.message);
-    const rows: Transfer[] = claimed.data ?? [];
-    summary.claimed = rows.length;
-
-    for (let i = 0; i < rows.length; i++) {
-      const t = rows[i];
-      let r: { status: Outcome; ref?: string; error?: string };
-      try {
-        r = await processOne(deps, token, lease.monzo_account_id, lease.pot_id, t);
-      } catch (e) {
-        if (!(e instanceof AuthError)) throw e;
-        // Login problem: put this one and the rest back for the next run.
-        for (const rest of rows.slice(i)) {
-          await deps.rpc("monzo_worker_finish", { p_transfer_id: rest.id, p_status: "pending", p_ref: null, p_error: e.message });
-        }
-        summary.pending += rows.length - i;
-        throw e;
-      }
+    for (; done < rows.length; done++) {
+      const t = rows[done];
+      const r = await processOne(deps, token, lease.monzo_account_id, lease.pot_id, t);
       await deps.rpc("monzo_worker_finish", { p_transfer_id: t.id, p_status: r.status, p_ref: r.ref ?? null, p_error: r.error ?? null });
       summary[r.status]++;
       log("transfer", { id: t.id, status: r.status, error: r.error });
@@ -200,6 +193,11 @@ export async function runConnection(deps: Deps, connectionId: string) {
   } catch (e) {
     lastError = String((e as Error)?.message || e);
     summary.error = lastError;
+    // Anything claimed but not finished goes back for the next run (same dedupe_id, so safe).
+    for (const rest of rows.slice(done)) {
+      await deps.rpc("monzo_worker_finish", { p_transfer_id: rest.id, p_status: "pending", p_ref: null, p_error: lastError });
+      summary.pending++;
+    }
     log("connection error", { connection_id: connectionId, error: lastError });
   } finally {
     await deps.rpc("monzo_worker_release", { p_connection_id: connectionId, p_holder: deps.holder, p_error: lastError });

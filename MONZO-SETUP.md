@@ -82,12 +82,13 @@ How it works:
 
 1. When a Monzo payment becomes "applied" (games marked paid), a row is added to
    `monzo_pot_transfers` for the amount that paid for games (any leftover stays in the account).
-2. The row waits `hold_minutes` (30 by default). If a manager presses "Undo paid" on any of its
-   games during the hold, the transfer is cancelled.
-3. Every 10 minutes the `monzo-pot-transfer` function (pg_cron) takes the login lease, fetches the
+2. The row waits `hold_minutes` (Perranporth uses 0 since 4 Nov, Adam's choice: he moves money back
+   by hand if needed). With a hold, pressing "Undo paid" on any of its games during the hold cancels the transfer.
+3. Every minute the `monzo-pot-transfer` function (pg_cron; an idle run makes no Monzo calls) takes the login lease, fetches the
    original payment from Monzo again and checks it is an incoming GBP payment into the subs account
    for at least the amount. Only then does it deposit, with a fixed `dedupe_id` so a retry can
    never move the money twice. Anything that fails a check is marked `rejected` and never moved.
+   Monzo errors are retried with growing gaps (1, 4, 9 ... minutes) and marked `failed` after 10 tries.
 
 Off switches (all three must be on for money to move):
 
