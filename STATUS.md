@@ -14,6 +14,7 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 
 - **In review (3 Nov)**: Monzo payments into the Subs Tracker (branch `claude/project-thread-cggm03`). New tables/functions in migration `20261103210000_monzo_subs_payments.sql`, edge function `monzo-webhook`, Monzo panel on `subs.html`. Live 3 Nov: Monzo payments mark games paid automatically (see log). The Monzo panel on the Subs Tracker appears after the next production release. Affects any team with a Monzo connection; Perranporth 1st Team first.
 
+- **In review (4 Nov)**: No subs for under 20 minutes. Finished matches automatically mark players with fewer than `subs_settings.min_minutes` (20) minutes as N/A, unless already paid or a manager set a status. Migration `20261104120000_subs_min_minutes.sql`. Perranporth 1st Team (any team with subs).
 - **In review (4 Nov)**: Monzo pot transfers within about a minute (Adam: "should be automatic"): hold 0, worker every minute, retry backoff. Branch `claude/project-thread-cggm03`.
 - **In review (3 Nov)**: Monzo pot transfers (branch `claude/project-thread-cggm03`). Moves subs that Football PA has marked paid into the "Perranporth Subs" pot, as a separate process. Switched on 3 Nov 23:31 UTC (see log). See MONZO-SETUP.md "Pot transfers". Perranporth 1st Team only.
 
