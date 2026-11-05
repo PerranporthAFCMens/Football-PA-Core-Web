@@ -226,34 +226,49 @@ async function setStatus(btn){
   busy=false;if(r.error){btn.disabled=false;btn.textContent=old;toast(r.error.message);return}
   await reload();toast('Subs updated');
 }
-async function copyText(text,msg){
-  // iOS Safari can reject the async Clipboard API after a tap. Try the
-  // synchronous selection method while the original user gesture is active.
-  function copyBySelection(){
-    const ta=document.createElement('textarea');
-    ta.value=text;
-    ta.setAttribute('readonly','');
-    ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;z-index:-1';
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    ta.setSelectionRange(0,ta.value.length);
-    let copied=false;
-    try{copied=document.execCommand('copy')}catch(e){}
-    ta.remove();
-    return copied;
+function showCopyFallback(text){
+  const existing=document.getElementById('subsCopyFallback');
+  if(existing)existing.remove();
+  const overlay=document.createElement('div');
+  overlay.id='subsCopyFallback';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  const panel=document.createElement('div');
+  panel.style.cssText='background:#fff;color:#17212b;width:min(100%,560px);max-height:90vh;overflow:auto;border-radius:16px;padding:18px;box-shadow:0 12px 45px #0004';
+  const title=document.createElement('h3');
+  title.textContent='Copy matches and payment link';
+  title.style.margin='0 0 8px';
+  const help=document.createElement('p');
+  help.textContent='Your browser blocked automatic copying. Tap and hold the text below, then choose Select All and Copy.';
+  help.style.cssText='font-size:14px;line-height:1.5;margin:0 0 12px';
+  const ta=document.createElement('textarea');
+  ta.value=text;
+  ta.readOnly=true;
+  ta.setAttribute('aria-label','Matches and payment link to copy');
+  ta.style.cssText='display:block;width:100%;height:220px;max-height:40vh;padding:12px;border:1px solid #b6cbd9;border-radius:8px;font:16px/1.5 system-ui;resize:vertical;user-select:text;-webkit-user-select:text';
+  const close=document.createElement('button');
+  close.type='button';
+  close.textContent='Close';
+  close.className='btn secondary full';
+  close.style.marginTop='12px';
+  close.addEventListener('click',()=>overlay.remove());
+  panel.append(title,help,ta,close);
+  overlay.appendChild(panel);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
+  document.body.appendChild(overlay);
+  ta.focus();
+  ta.select();
+  ta.setSelectionRange(0,ta.value.length);
+}
+function copyText(text,msg){
+  // Call the Clipboard API directly in the tap handler (iOS Safari requires
+  // the user's gesture). Never rely on hidden textarea execCommand('copy').
+  if(navigator.clipboard&&typeof navigator.clipboard.writeText==='function'){
+    try{
+      navigator.clipboard.writeText(text).then(()=>toast(msg)).catch(()=>showCopyFallback(text));
+      return;
+    }catch(e){}
   }
-  if(copyBySelection()){toast(msg);return}
-  try{
-    if(!navigator.clipboard?.writeText)throw new Error('Clipboard API unavailable');
-    await navigator.clipboard.writeText(text);
-    toast(msg);
-    return;
-  }catch(e){
-    // Never say "copied" unless it really was. Give iPhone users a
-    // selectable message to copy manually if Safari blocks both methods.
-    window.prompt('Copy this message and payment link:',text);
-  }
+  showCopyFallback(text);
 }
 function copyMatch(id){
   const m=(D.matches||[]).find(x=>x.fixture_id===id);if(!m)return;
