@@ -226,78 +226,67 @@ async function setStatus(btn){
   busy=false;if(r.error){btn.disabled=false;btn.textContent=old;toast(r.error.message);return}
   await reload();toast('Subs updated');
 }
+function copyHostDocument(){
+  // Match Hub embeds Subs Tracker in a same-origin iframe. Render the copy
+  // panel in the parent document so it is visible over the entire phone screen.
+  try{if(window.parent!==window&&window.parent.location.origin===location.origin)return window.parent.document}catch(e){}
+  return document;
+}
 function showCopyFallback(text){
-  const existing=document.getElementById('subsCopyFallback');
-  if(existing)existing.remove();
-  const overlay=document.createElement('div');
+  const doc=copyHostDocument();
+  doc.getElementById('subsCopyFallback')?.remove();
+  const overlay=doc.createElement('div');
   overlay.id='subsCopyFallback';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-  const panel=document.createElement('div');
-  panel.style.cssText='background:#fff;color:#17212b;width:min(100%,560px);max-height:90vh;overflow:auto;border-radius:16px;padding:18px;box-shadow:0 12px 45px #0004';
-  const title=document.createElement('h3');
-  title.textContent='Copy matches and payment link';
-  title.style.margin='0 0 8px';
-  const help=document.createElement('p');
-  help.textContent='Your browser blocked automatic copying. Tap and hold the text below, then choose Select All and Copy.';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
+  const panel=doc.createElement('div');
+  panel.style.cssText='background:#fff;color:#17212b;width:min(100%,560px);max-height:85vh;overflow:auto;border-radius:16px;padding:18px;box-shadow:0 12px 45px #0004;box-sizing:border-box';
+  const title=doc.createElement('h3');
+  title.textContent='Matches and payment link';
+  title.style.cssText='font-size:19px;margin:0 0 8px';
+  const help=doc.createElement('p');
+  help.textContent='Copy the message below, or tap and hold it to select and copy manually.';
   help.style.cssText='font-size:14px;line-height:1.5;margin:0 0 12px';
-  const ta=document.createElement('textarea');
+  const ta=doc.createElement('textarea');
   ta.value=text;
   ta.readOnly=true;
   ta.setAttribute('aria-label','Matches and payment link to copy');
-  ta.style.cssText='display:block;width:100%;height:220px;max-height:40vh;padding:12px;border:1px solid #b6cbd9;border-radius:8px;font:16px/1.5 system-ui;resize:vertical;user-select:text;-webkit-user-select:text';
-  const close=document.createElement('button');
-  close.type='button';
-  close.textContent='Close';
-  close.className='btn secondary full';
-  close.style.marginTop='12px';
-  close.addEventListener('click',()=>overlay.remove());
-  const copyButton=document.createElement('button');
+  ta.style.cssText='display:block;width:100%;height:220px;max-height:40vh;padding:12px;border:1px solid #b6cbd9;border-radius:8px;font:16px/1.5 system-ui;resize:vertical;user-select:text;-webkit-user-select:text;box-sizing:border-box';
+  const copyButton=doc.createElement('button');
   copyButton.type='button';
   copyButton.textContent='Copy text';
-  copyButton.className='btn primary full';
-  copyButton.style.marginTop='12px';
-  copyButton.addEventListener('click',()=>{
-    if(navigator.clipboard?.writeText){
-      navigator.clipboard.writeText(ta.value).then(()=>{overlay.remove();toast('Copied')}).catch(()=>{ta.focus();ta.select();toast('Select Copy from the text menu')});
-    }else{ta.focus();ta.select();toast('Select Copy from the text menu')}
+  copyButton.style.cssText='display:block;width:100%;min-height:44px;background:#1357a6;color:white;border:0;border-radius:10px;font-size:16px;font-weight:700;margin-top:12px';
+  copyButton.addEventListener('click',async()=>{
+    try{
+      const clipboard=doc.defaultView?.navigator?.clipboard||navigator.clipboard;
+      if(!clipboard?.writeText)throw new Error('Clipboard unavailable');
+      await clipboard.writeText(ta.value);
+      copyButton.textContent='Copied ✓';
+    }catch(e){
+      ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);
+      help.textContent='Automatic copying is blocked. Touch and hold the selected text, then choose Copy.';
+      copyButton.textContent='Select text to copy';
+    }
   });
+  const close=doc.createElement('button');
+  close.type='button';
+  close.textContent='Close';
+  close.style.cssText='display:block;width:100%;min-height:44px;background:#e8eef3;color:#2f4252;border:0;border-radius:10px;font-size:16px;font-weight:700;margin-top:9px';
+  close.addEventListener('click',()=>overlay.remove());
   panel.append(title,help,ta,copyButton,close);
   overlay.appendChild(panel);
   overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
-  document.body.appendChild(overlay);
-  ta.focus();
-  ta.select();
-  ta.setSelectionRange(0,ta.value.length);
+  doc.body.appendChild(overlay);
 }
 function copyText(text,msg){
-  // Call the Clipboard API directly in the tap handler (iOS Safari requires
-  // the user's gesture). Never rely on hidden textarea execCommand('copy').
-  if(navigator.clipboard&&typeof navigator.clipboard.writeText==='function'){
-    try{
-      navigator.clipboard.writeText(text).then(()=>toast(msg)).catch(()=>showCopyFallback(text));
-      return;
-    }catch(e){}
-  }
+  // Always show the text as the reliable fallback in an embedded iframe.
   showCopyFallback(text);
 }
-// Attached directly to the player button, so a tap produces an immediate
-// visible response even if Safari stalls a clipboard permission request.
 function openPlayerCopy(event,button){
   if(event){event.preventDefault();event.stopPropagation()}
   const id=button?.dataset?.copyPlayer;
   const p=(D.players||[]).find(x=>x.player_id===id);
-  if(!p){toast('Player details unavailable. Refresh and try again.');return false}
-  const text=playerMessage(p);
-  showCopyFallback(text);
-  // Try automatic copy, but the visible sheet remains usable if it hangs or
-  // Safari rejects it. No false "copied" message.
-  if(navigator.clipboard?.writeText){
-    try{navigator.clipboard.writeText(text).then(()=>{
-      const sheet=document.getElementById('subsCopyFallback');
-      if(sheet)sheet.remove();
-      toast('Player payment details copied');
-    }).catch(()=>{});}catch(e){}
-  }
+  if(!p){showCopyFallback('Player details unavailable. Please refresh the page.');return false}
+  showCopyFallback(playerMessage(p));
   return false;
 }
 function copyMatch(id){
