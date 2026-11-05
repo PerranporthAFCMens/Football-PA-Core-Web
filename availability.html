@@ -83,6 +83,25 @@
       </div>
     </section>
 
+    <section id="announceSection" class="section hidden">
+      <h2>Squad announcement</h2>
+      <div class="muted">The message to the boys: your note, match info, kit, the squad ticked above, a shout and the subs link. Sharing saves the squad first.</div>
+      <label class="muted" for="annNote" style="display:block;margin-top:10px;font-weight:900">Message (top)</label>
+      <textarea id="annNote" class="share-preview" style="min-height:90px;font-family:inherit" placeholder="A few words to the squad (optional)"></textarea>
+      <div class="actions" style="margin-top:10px">
+        <div style="flex:1 1 160px"><label class="muted" for="annKit" style="font-weight:900">Kit colour</label><input id="annKit" type="text" placeholder="e.g. Blue" autocomplete="off" style="width:100%;min-height:44px;border:1px solid #cad6e1;border-radius:11px;padding:0 12px;font:inherit;margin-top:4px"></div>
+        <div style="flex:2 1 260px"><label class="muted" for="annSubs" style="font-weight:900">Subs link</label><input id="annSubs" type="url" placeholder="Filled in from the Subs Tracker" autocomplete="off" style="width:100%;min-height:44px;border:1px solid #cad6e1;border-radius:11px;padding:0 12px;font:inherit;margin-top:4px"></div>
+      </div>
+      <label class="muted" for="annShout" style="display:block;margin-top:10px;font-weight:900">Shout</label>
+      <textarea id="annShout" class="share-preview" style="min-height:70px;font-family:inherit" placeholder="Anything else for the squad (optional)"></textarea>
+      <label class="muted" for="annPreview" style="display:block;margin-top:10px;font-weight:900">Preview</label>
+      <textarea id="annPreview" class="share-preview" readonly></textarea>
+      <div class="actions" style="margin-top:10px">
+        <button id="shareAnnBtn" class="btn whatsapp">Share announcement</button>
+        <button id="copyAnnBtn" class="btn">Copy announcement</button>
+      </div>
+    </section>
+
     <section class="section">
       <h2>Season availability</h2>
       <div class="muted">Availability % is Yes responses divided by Yes + No responses. Response rate shows how often the player has answered.</div>
@@ -116,12 +135,20 @@ function squadCompetitionLabel(f){
   return c;
 }
 function squadOpponent(v){return String(v||'Opponent').replace(/\s+FC\b/i,'').replace(/\s+/g,' ').trim()}
+// Ticked players in picker order: available players first, then reserves.
+function squadNames(f){
+  const seen=new Set(),out=[];
+  for(const p of [...(f?.available||[]),...guests]){
+    const id=String(p.player_id);
+    if(!selectedSquad.has(id)||seen.has(id))continue;
+    seen.add(id);
+    const n=String(p.name||'').trim();if(n)out.push(n);
+  }
+  return out;
+}
 function squadShareText(f){
   if(!f)return'';
-  const names=(f.available||[])
-    .filter(p=>selectedSquad.has(String(p.player_id)))
-    .map(p=>String(p.name||'').trim())
-    .filter(Boolean);
+  const names=squadNames(f);
   return [
     '*🏆'+squadCompetitionLabel(f)+' - '+squadOpponent(f.opponent)+' ('+venueCode(f)+')*',
     '',
@@ -148,6 +175,70 @@ function shareText(f){if(!f)return'';return [
   '',
   portalLink(f)
 ].join('\n')}
+// Squad announcement. Kit colour is remembered per team, note and shout per fixture, on this device only.
+let subsLinks={};
+function annKey(k){return 'fpa-ann:'+(ctx?.team?.id||'')+':'+k}
+function annGet(k){try{return localStorage.getItem(annKey(k))||''}catch{return''}}
+function annSet(k,v){try{v?localStorage.setItem(annKey(k),v):localStorage.removeItem(annKey(k))}catch{}}
+function announcementText(f){
+  if(!f)return'';
+  const note=$('annNote').value.trim(),kit=$('annKit').value.trim(),shout=$('annShout').value.trim(),subs=$('annSubs').value.trim();
+  const lines=['*'+gameLabel(f)+' - '+shortOpponent(f.opponent)+' ('+venueCode(f)+')*',''];
+  if(note)lines.push(note,'');
+  lines.push(
+    'ℹ️ *MATCH INFO*',
+    '🏆 '+competitionLabel(f),
+    '🆚 '+String(f.opponent||'Opponent'),
+    '🏟️ '+groundLine(f),
+    '📅 '+londonDate(f.kick_off),
+    '⚽️KO '+londonTime(f.kick_off),
+    '🛬 Arrival '+arrivalTime(f.kick_off)
+  );
+  if(kit)lines.push('👕 '+kit);
+  lines.push('','👥 *SQUAD*',...squadNames(f));
+  if(shout)lines.push('','🗣️ *Shout*',shout);
+  if(subs)lines.push('','💰 *Subs*',subs);
+  return lines.join('\n');
+}
+function updateAnnouncement(){if($('annPreview'))$('annPreview').value=announcementText(selected)}
+function renderAnnouncement(){
+  if(!data?.can_manage||!selected){$('announceSection').classList.add('hidden');return}
+  $('announceSection').classList.remove('hidden');
+  const fid=selected.fixture_id;
+  $('annNote').value=annGet('note:'+fid);
+  $('annShout').value=annGet('shout:'+fid);
+  $('annKit').value=annGet('kit');
+  $('annSubs').value=annGet('subs:'+fid)||subsLinks[fid]||'';
+  updateAnnouncement();
+}
+async function loadSubsLinks(){
+  if(!ctx?.season?.id)return;
+  try{
+    const r=await sb.rpc('get_subs_tracker_v2',{p_team_id:ctx.team.id,p_season_id:ctx.season.id});
+    if(r.error)return;
+    subsLinks={};for(const m of (r.data?.matches||[]))if(m?.fixture_id&&m.payment_link)subsLinks[m.fixture_id]=m.payment_link;
+  }catch{}
+}
+async function shareAnnouncement(){
+  if(!selected||!selectedSquad.size){alert('Select at least one player for the squad first.');return}
+  const b=$('shareAnnBtn'),old=b.textContent;
+  b.disabled=true;b.textContent='Saving…';
+  const saved=await saveSquad(true);
+  if(!saved){b.disabled=false;b.textContent=old;return}
+  const text=announcementText(selected);
+  b.textContent='Sharing…';
+  if(navigator.share){
+    try{await navigator.share({text});b.disabled=false;b.textContent=old;return}
+    catch(e){if(e?.name==='AbortError'){b.disabled=false;b.textContent=old;return}}
+  }
+  try{await navigator.clipboard.writeText(text);b.textContent='Copied ✓';setTimeout(()=>{b.disabled=false;b.textContent=old},1500)}
+  catch(e){b.disabled=false;b.textContent=old;prompt('Copy this announcement:',text)}
+}
+async function copyAnnouncement(){
+  const text=announcementText(selected);if(!text)return;
+  try{await navigator.clipboard.writeText(text);const b=$('copyAnnBtn'),old=b.textContent;b.textContent='Copied ✓';setTimeout(()=>b.textContent=old,1500)}
+  catch{prompt('Copy this announcement:',text)}
+}
 function futureFixture(f){return f?.kick_off&&new Date(f.kick_off).getTime()>Date.now()&&!finalStatus(f.status)}
 function chooseDefault(){const q=new URLSearchParams(location.search),requested=q.get('fixture'),fixtures=data?.fixtures||[];return fixtures.find(f=>f.fixture_id===requested)||fixtures.find(f=>futureFixture(f))||fixtures[fixtures.length-1]||null}
 function renderFixture(){
@@ -164,7 +255,7 @@ function renderSquad(){
   const available=selected?.available||[],saved=new Set(selected?.saved_squad||[]);
   if(!selectedSquad.size){selectedSquad=new Set(saved.size?[...saved]:available.map(p=>p.player_id))}
   $('squadList').innerHTML=available.map(p=>'<label class="squad-player"><input type="checkbox" data-squad-player="'+p.player_id+'" '+(selectedSquad.has(p.player_id)?'checked':'')+'><span>'+esc(p.name)+'</span></label>').join('')||'<div class="empty">No available players yet.</div>';
-  renderGuests();updateSquadStatus();
+  renderGuests();updateSquadStatus();renderAnnouncement();
 }
 let guests=[],invites=[];
 async function loadGuests(){
@@ -179,7 +270,7 @@ function renderGuests(){
     return '<div class="squad-player" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><label style="display:flex;align-items:center;gap:8px;flex:1"><input type="checkbox" data-squad-player="'+p.player_id+'" '+(selectedSquad.has(p.player_id)?'checked':'')+'><span>'+esc(p.name)+' <small class="muted">reserve</small></span></label><button class="btn" data-invite="'+p.player_id+'" data-on="'+(inv?'false':'true')+'" style="min-height:36px;padding:0 12px">'+(inv?'Invited ✓':'Invite')+'</button></div>'
   }).join(''):'<div class="muted">No reserve players yet. Mark one on the Players page, or add one below.</div>';
 }
-function updateSquadStatus(){$('squadStatus').textContent=selectedSquad.size+' selected'}
+function updateSquadStatus(){$('squadStatus').textContent=selectedSquad.size+' selected';updateAnnouncement()}
 function renderStats(){
   $('statsBody').innerHTML=(data?.player_stats||[]).map(p=>'<tr><td><b>'+esc(p.name)+'</b></td><td class="num">'+p.games_asked+'</td><td class="num">'+p.available+'</td><td class="num">'+p.unavailable+'</td><td class="num">'+p.no_response+'</td><td class="num"><span class="pill">'+(p.availability_pct==null?'–':p.availability_pct+'%')+'</span></td><td class="num"><span class="pill">'+(p.response_rate_pct==null?'–':p.response_rate_pct+'%')+'</span></td></tr>').join('')||'<tr><td colspan="7">No availability data yet.</td></tr>'
 }
@@ -204,6 +295,7 @@ async function load(){
   if(ctx.features?.availability===false)throw new Error('Availability is not enabled for this team.');
   FootballPANav.mount({teamId:ctx.team.id});
   await loadGuests();
+  await loadSubsLinks();
   await refreshAvailability();
 }
 async function shareMessage(){const text=shareText(selected);if(!text)return;if(navigator.share){try{await navigator.share({text});return}catch(e){if(e?.name==='AbortError')return}}await copyMessage();alert('Message copied. Paste it into your WhatsApp group.')}
@@ -276,6 +368,11 @@ $('clearBtn').onclick=()=>{selectedSquad=new Set();$('squadList').querySelectorA
 $('saveSquadBtn').onclick=()=>saveSquad(false);
 $('qpAdd').onclick=quickAddPlayer;
 $('shareSquadBtn').onclick=shareSquad;
+$('shareAnnBtn').onclick=shareAnnouncement;$('copyAnnBtn').onclick=copyAnnouncement;
+$('annNote').oninput=()=>{if(selected)annSet('note:'+selected.fixture_id,$('annNote').value);updateAnnouncement()};
+$('annShout').oninput=()=>{if(selected)annSet('shout:'+selected.fixture_id,$('annShout').value);updateAnnouncement()};
+$('annKit').oninput=()=>{annSet('kit',$('annKit').value.trim());updateAnnouncement()};
+$('annSubs').oninput=()=>{if(selected)annSet('subs:'+selected.fixture_id,$('annSubs').value.trim());updateAnnouncement()};
 $('openSubsBtn').onclick=()=>{location.href=ctx.href('/subs.html',selected?'fixture='+encodeURIComponent(selected.fixture_id):'')};
 $('openMatchBtn').onclick=()=>{if(selected)(window.top||window).location.href=ctx.href('/match-hub.html','fixture='+encodeURIComponent(selected.fixture_id)+'&tab=match')};
 load().catch(e=>{$('status').textContent='Could not load Availability: '+e.message;$('status').classList.add('bad')});

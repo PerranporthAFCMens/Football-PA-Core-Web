@@ -20,6 +20,8 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 
 - **In review (3 Nov)**: the match hub (Matches list, then one hub per match) is now the only Match Centre. The separate "Match Centre" menu item is gone; opening `match-centre.html` on its own sends you to the hub's Match tab (or the Matches list). `match-centre.html` stays because it powers the hub's Match tab. Saved menu orders that had "Match Centre" now place Matches there.
 
+- **In review (5 Nov)**: Squad announcement message on the Availability page (Pick squad, then Squad announcement). Separate from Share squad: your note at the top, match info plus kit colour, the ticked squad, a shout and the Monzo subs link from the Subs Tracker. Kit colour is remembered per team, note and shout per fixture, on that device only. Also fixes reserve players being left out of Share squad. Page change only, no database change. Any team with availability (Perranporth 1st Team first).
+
 ## Teams using the app
 
 - Perranporth 1st Team: Saturdays (next: Falmouth United away, Sat 10 Oct, 2:30pm).
