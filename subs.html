@@ -226,7 +226,35 @@ async function setStatus(btn){
   busy=false;if(r.error){btn.disabled=false;btn.textContent=old;toast(r.error.message);return}
   await reload();toast('Subs updated');
 }
-async function copyText(text,msg){try{await navigator.clipboard.writeText(text);toast(msg)}catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast(msg)}}
+async function copyText(text,msg){
+  // iOS Safari can reject the async Clipboard API after a tap. Try the
+  // synchronous selection method while the original user gesture is active.
+  function copyBySelection(){
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;z-index:-1';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0,ta.value.length);
+    let copied=false;
+    try{copied=document.execCommand('copy')}catch(e){}
+    ta.remove();
+    return copied;
+  }
+  if(copyBySelection()){toast(msg);return}
+  try{
+    if(!navigator.clipboard?.writeText)throw new Error('Clipboard API unavailable');
+    await navigator.clipboard.writeText(text);
+    toast(msg);
+    return;
+  }catch(e){
+    // Never say "copied" unless it really was. Give iPhone users a
+    // selectable message to copy manually if Safari blocks both methods.
+    window.prompt('Copy this message and payment link:',text);
+  }
+}
 function copyMatch(id){
   const m=(D.matches||[]).find(x=>x.fixture_id===id);if(!m)return;
   const due=matchPlayers(m).filter(p=>p.status==='Not Paid'||p.status==='Unconfirmed');
