@@ -196,7 +196,7 @@ function renderPlayer(){
   const host=$('playerFile');if(!selectedPlayer){host.innerHTML='';return}
   const p=(D.players||[]).find(x=>x.player_id===selectedPlayer);if(!p){host.innerHTML='';return}
   const matches=p.matches||[];
-  const pay=Number(p.amount_due_pence)>0?'<div class="payBox"><div class="payBoxTop"><div><b>Outstanding subs</b><div class="mini">'+p.payment_due_games+' game'+(p.payment_due_games===1?'':'s')+'</div></div><div class="bigMoney">'+money(p.amount_due_pence)+'</div></div>'+(p.payment_link?'<a class="btn purple full" style="display:block;text-align:center;text-decoration:none;margin-top:10px" target="_blank" rel="noopener" href="'+esc(p.payment_link)+'">Pay '+money(p.amount_due_pence)+' in one payment</a>':'')+'<button class="btn secondary full" style="margin-top:7px" data-copy-player="'+esc(p.player_id)+'">Copy matches + payment link</button></div>':'<div class="success" style="margin:12px 0">Nothing currently due to pay.</div>';
+  const pay=Number(p.amount_due_pence)>0?'<div class="payBox"><div class="payBoxTop"><div><b>Outstanding subs</b><div class="mini">'+p.payment_due_games+' game'+(p.payment_due_games===1?'':'s')+'</div></div><div class="bigMoney">'+money(p.amount_due_pence)+'</div></div>'+(p.payment_link?'<a class="btn purple full" style="display:block;text-align:center;text-decoration:none;margin-top:10px" target="_blank" rel="noopener" href="'+esc(p.payment_link)+'">Pay '+money(p.amount_due_pence)+' in one payment</a>':'')+'<button type="button" class="btn secondary full" style="margin-top:7px" data-copy-player="'+esc(p.player_id)+'" onclick="return openPlayerCopy(event,this)">Copy matches + payment link</button></div>':'<div class="success" style="margin:12px 0">Nothing currently due to pay.</div>';
   const rows=matches.length?matches.map(m=>'<div class="row"><div class="rowTop"><div><div class="matchName">'+esc(fmt(m.kick_off)+' · '+m.opponent)+'</div><div class="mini">'+esc(m.competition||'Fixture')+' · '+esc(m.venue||'')+'</div></div><span class="pill '+pillClass(m.status)+'">'+esc(m.status)+'</span></div><div class="actions">'+statusButtons(m.fixture_id,p.player_id,m.status)+'</div></div>').join(''):'<div class="empty">No chargeable matches recorded for this player yet.</div>';
   host.innerHTML='<div class="file"><div class="fileHead"><div class="fileHeadTop"><div><h3>'+esc(p.name)+'</h3><div class="mini">'+p.confirmed_paid+' paid · '+p.payment_due_games+' owing'+(p.claims_paid?' · '+p.claims_paid+' claim(s) to check':'')+'</div></div><div class="bigMoney">'+money(p.amount_due_pence)+'</div></div></div><div class="fileBody">'+pay+'<div class="sectionTitle"><h3>Match history</h3><span>'+matches.length+' match'+(matches.length===1?'':'es')+'</span></div>'+rows+'</div></div>';
 }
@@ -251,7 +251,17 @@ function showCopyFallback(text){
   close.className='btn secondary full';
   close.style.marginTop='12px';
   close.addEventListener('click',()=>overlay.remove());
-  panel.append(title,help,ta,close);
+  const copyButton=document.createElement('button');
+  copyButton.type='button';
+  copyButton.textContent='Copy text';
+  copyButton.className='btn primary full';
+  copyButton.style.marginTop='12px';
+  copyButton.addEventListener('click',()=>{
+    if(navigator.clipboard?.writeText){
+      navigator.clipboard.writeText(ta.value).then(()=>{overlay.remove();toast('Copied')}).catch(()=>{ta.focus();ta.select();toast('Select Copy from the text menu')});
+    }else{ta.focus();ta.select();toast('Select Copy from the text menu')}
+  });
+  panel.append(title,help,ta,copyButton,close);
   overlay.appendChild(panel);
   overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
   document.body.appendChild(overlay);
@@ -269,6 +279,26 @@ function copyText(text,msg){
     }catch(e){}
   }
   showCopyFallback(text);
+}
+// Attached directly to the player button, so a tap produces an immediate
+// visible response even if Safari stalls a clipboard permission request.
+function openPlayerCopy(event,button){
+  if(event){event.preventDefault();event.stopPropagation()}
+  const id=button?.dataset?.copyPlayer;
+  const p=(D.players||[]).find(x=>x.player_id===id);
+  if(!p){toast('Player details unavailable. Refresh and try again.');return false}
+  const text=playerMessage(p);
+  showCopyFallback(text);
+  // Try automatic copy, but the visible sheet remains usable if it hangs or
+  // Safari rejects it. No false "copied" message.
+  if(navigator.clipboard?.writeText){
+    try{navigator.clipboard.writeText(text).then(()=>{
+      const sheet=document.getElementById('subsCopyFallback');
+      if(sheet)sheet.remove();
+      toast('Player payment details copied');
+    }).catch(()=>{});}catch(e){}
+  }
+  return false;
 }
 function copyMatch(id){
   const m=(D.matches||[]).find(x=>x.fixture_id===id);if(!m)return;
