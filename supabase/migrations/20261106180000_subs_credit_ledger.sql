@@ -289,6 +289,25 @@ create trigger subs_credit_squad after insert or update of selected on public.ma
  for each row execute function public.subs_credit_squad_trg();
 revoke all on function public.subs_credit_squad_trg() from public,anon,authenticated;
 
+-- If a manager undoes a credit-paid match, restore that credit rather
+-- than silently losing it. Never generate new Monzo transfers.
+create or replace function public.subs_credit_payment_undo_trg()
+returns trigger language plpgsql security definer set search_path='public'
+as $fn$
+begin
+ if old.method='Credit' and old.fixture_id is not null then
+   delete from public.subs_credit_ledger
+   where team_id=old.team_id and player_id=old.player_id
+     and usage_fixture_id=old.fixture_id;
+ end if;
+ return old;
+end;
+$fn$;
+drop trigger if exists subs_credit_payment_undo on public.subs_payments;
+create trigger subs_credit_payment_undo after delete on public.subs_payments
+ for each row execute function public.subs_credit_payment_undo_trg();
+revoke all on function public.subs_credit_payment_undo_trg() from public,anon,authenticated;
+
 -- Financial snapshot uses actual paid fixtures and official status N/A,
 -- rather than charging every appearance like the old portal.
 create or replace function public.subs_player_credit_snapshot(p_team uuid,p_player uuid)
