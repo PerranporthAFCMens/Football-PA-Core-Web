@@ -180,15 +180,23 @@ begin
       for v_pay in
         select sp.* from public.subs_payments sp
         where sp.fixture_id=p_fixture_id and sp.player_id=p.player_id
-          and sp.method is distinct from 'Credit'
         for update
       loop
-        insert into public.subs_credit_ledger
-          (club_id,team_id,season_id,player_id,fixture_id,origin_payment_id,amount_pence,note)
-        values (v_pay.club_id,v_pay.team_id,v_pay.season_id,v_pay.player_id,p_fixture_id,
-                v_pay.id,v_pay.amount_pence,'No subs: under '||v_min||' minutes')
-        on conflict (origin_payment_id) do nothing;
-        delete from public.subs_payments where id=v_pay.id;
+        if v_pay.method='Credit' then
+          -- The player did not owe for this match. Undo the previously
+          -- spent credit so it becomes available again.
+          delete from public.subs_payments where id=v_pay.id;
+          delete from public.subs_credit_ledger
+            where team_id=f.team_id and player_id=p.player_id
+              and usage_fixture_id=p_fixture_id;
+        else
+          insert into public.subs_credit_ledger
+            (club_id,team_id,season_id,player_id,fixture_id,origin_payment_id,amount_pence,note)
+          values (v_pay.club_id,v_pay.team_id,v_pay.season_id,v_pay.player_id,p_fixture_id,
+                  v_pay.id,v_pay.amount_pence,'No subs: under '||v_min||' minutes')
+          on conflict (origin_payment_id) do nothing;
+          delete from public.subs_payments where id=v_pay.id;
+        end if;
       end loop;
       if not exists (select 1 from public.subs_fixture_statuses st
                      where st.fixture_id=p_fixture_id and st.player_id=p.player_id)
@@ -295,7 +303,7 @@ begin
  select coalesce(sum(amount_pence),0)::int into v_balance
  from public.subs_credit_ledger where team_id=p_team and player_id=p_player;
  select coalesce(sum(amount_pence),0)::int into v_paid
- from public.subs_payments where team_id=p_team and player_id=p_player;
+ from public.subs_payments where team_id=p_team and season_id=v_cfg.season_id and player_id=p_player;
  select count(*)::int * v_cfg.amount_pence into v_due
  from public.fixtures f
  where f.team_id=p_team and f.season_id=v_cfg.season_id
