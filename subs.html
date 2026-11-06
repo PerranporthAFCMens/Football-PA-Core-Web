@@ -241,7 +241,7 @@ function renderMatch(){
 function setTab(name){tab=name;['summary','player','match'].forEach(v=>{$(v+'View').classList.toggle('hidden',v!==name);document.querySelectorAll('[data-tab="'+v+'"]').forEach(b=>b.classList.toggle('active',v===name))})}
 async function setStatus(btn){
   if(busy)return;busy=true;const old=btn.textContent;btn.disabled=true;btn.textContent='Saving…';
-  const r=await sb.rpc('set_subs_match_status',{p_team_id:team.id,p_season_id:season.id,p_fixture_id:btn.dataset.fixture,p_player_id:btn.dataset.player,p_status:btn.dataset.status});
+  const r=await sb.rpc('set_subs_match_status_with_credit',{p_team_id:team.id,p_season_id:season.id,p_fixture_id:btn.dataset.fixture,p_player_id:btn.dataset.player,p_status:btn.dataset.status});
   busy=false;if(r.error){btn.disabled=false;btn.textContent=old;toast(r.error.message);return}
   await reload();toast('Subs updated');
 }
