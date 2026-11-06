@@ -341,10 +341,19 @@ returns jsonb language plpgsql stable security definer set search_path='public'
 as $fn$
 begin
  if auth.uid() is null or not public.can_manage_subs(p_team_id) then raise exception 'Subs permission required'; end if;
- return coalesce((select jsonb_agg(jsonb_build_object('player_id',p.id,'account',
-  public.subs_player_credit_snapshot(p_team_id,p.id)) order by p.display_name)
- from public.team_players tp join public.players p on p.id=tp.player_id
- where tp.team_id=p_team_id and tp.active),'[]'::jsonb);
+ return jsonb_build_object(
+   'players',coalesce((select jsonb_agg(jsonb_build_object('player_id',p.id,'account',
+     public.subs_player_credit_snapshot(p_team_id,p.id)) order by p.display_name)
+     from public.team_players tp join public.players p on p.id=tp.player_id
+     where tp.team_id=p_team_id and tp.active),'[]'::jsonb),
+   'cash_received_pence',
+      coalesce((select sum(sp.amount_pence) from public.subs_payments sp
+         where sp.team_id=p_team_id and sp.method is distinct from 'Credit'
+         and sp.season_id=(select season_id from public.subs_settings where team_id=p_team_id and active order by updated_at desc limit 1)),0)
+      + coalesce((select sum(l.amount_pence) from public.subs_credit_ledger l
+         where l.team_id=p_team_id and l.origin_payment_id is not null
+         and l.season_id=(select season_id from public.subs_settings where team_id=p_team_id and active order by updated_at desc limit 1)),0)
+ );
 end;
 $fn$;
 revoke all on function public.list_subs_player_credits(uuid) from public,anon,authenticated;
