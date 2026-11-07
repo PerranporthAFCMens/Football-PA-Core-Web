@@ -13,6 +13,15 @@ async function mount(opts={}){
  if(document.getElementById('fpaSharedNav'))return;
  if(new URLSearchParams(location.search).get('embed')==='1'){const es=document.createElement('style');es.textContent='.top,.topbar,.fpa-pagebar,.fpa-app-head{display:none!important}body{background:transparent!important}.fpa-page{width:100%!important;padding:0 0 12px!important}h1,.voting-card:has(h1){display:none!important}select#fixtureSelect,select#match{display:none!important}.fpa-page .card:before,.fpa-page .panel:before,.fpa-card:before{display:none!important}';document.head.appendChild(es);return}
  const q=new URLSearchParams(location.search);let tid=opts.teamId||q.get('team')||q.get('id'),domainMode=false;
+ const teamSlugs={
+   'd5bcdf95-40a2-4596-b044-e9c8bcabecbc':'Perranporth1st',
+   '5337936a-5db7-4447-ac4a-d50323eb0715':'StAgnesGirls'
+ };
+ const workspaceMatch=location.pathname.match(/^\/team\/([A-Za-z0-9-]+)\/?$/i);
+ if(workspaceMatch){
+   const found=Object.entries(teamSlugs).find(([,slug])=>slug.toLowerCase()===workspaceMatch[1].toLowerCase());
+   if(found)tid=found[0];
+ }
  const host=String(location.hostname||'').toLowerCase(),path=String(location.pathname||'');
  const pathMode=(host==='footballpa.com'||host==='www.footballpa.com')&&/^\/Perranporth(?:\/|$)/i.test(path);
  if(pathMode){tid='d5bcdf95-40a2-4596-b044-e9c8bcabecbc';domainMode=true}
@@ -23,6 +32,20 @@ async function mount(opts={}){
  if(!document.getElementById('fpaSharedNavStyle')){const s=document.createElement('style');s.id='fpaSharedNavStyle';s.textContent=STYLE;document.head.appendChild(s)}
  let features={},team={},club={},access={},scoreboardToken='',liveSlug='',navOrder=[];
  try{let r=await sb.from('team_features').select('*').eq('team_id',tid).maybeSingle();features=r.data||{};r=await sb.from('teams').select('id,name,club_id,badge_url').eq('id',tid).maybeSingle();team=r.data||{};if(team.club_id){r=await sb.from('clubs').select('name,primary_colour,secondary_colour').eq('id',team.club_id).maybeSingle();club=r.data||{}}r=await sb.from('team_settings').select('scoreboard_token,live_slug,nav_order').eq('team_id',tid).maybeSingle();scoreboardToken=r.data?.scoreboard_token||'';liveSlug=r.data?.live_slug||'';navOrder=Array.isArray(r.data?.nav_order)?r.data.nav_order:[];const {data:{session}}=await sb.auth.getSession();if(session){const ar=await sb.rpc('get_team_access_context',{p_team_id:tid});if(!ar.error)access=ar.data||{}}}catch(e){}
+ let accessibleTeams=[];
+ try{
+   const {data:{session}}=await sb.auth.getSession();
+   if(session){
+     const {data:memberships,error}=await sb.from('team_memberships')
+       .select('team_id,teams(id,name)').eq('user_id',session.user.id).eq('active',true).limit(60);
+     if(!error){
+       const options=new Map();
+       for(const row of memberships||[]){if(row.teams?.id)options.set(row.teams.id,row.teams.name)}
+       if(tid&&team.name)options.set(tid,team.name);
+       accessibleTeams=[...options].map(([id,name])=>({id,name})).sort((a,b)=>a.name.localeCompare(b.name));
+     }
+   }
+ }catch(e){/* Existing navigation must remain usable if switcher discovery fails. */}
  const primary=club.primary_colour||'#1357A6',secondary=club.secondary_colour||'#FFFFFF';const applyColours=()=>{const h=String(primary).replace('#',''),r=parseInt(h.slice(0,2),16)||0,g=parseInt(h.slice(2,4),16)||0,b=parseInt(h.slice(4,6),16)||0,y=(r*299+g*587+b*114)/1000,root=document.documentElement;root.style.setProperty('--blue',primary);root.style.setProperty('--fpa-primary',primary);root.style.setProperty('--fpa-secondary',secondary);root.style.setProperty('--fpa-accent',primary);root.style.setProperty('--fpa-header-text',y>165?'#102033':'#FFFFFF')};applyColours();
  const preview=q.get('dev_preview')==='1'?'&dev_preview=1':'';
  const pagesBase=pathMode?'/Perranporth':(location.hostname.endsWith('.github.io')?('/'+location.pathname.split('/').filter(Boolean)[0]):'');
@@ -47,10 +70,18 @@ async function mount(opts={}){
  const badge=team.badge_url?'<img src="'+team.badge_url+'" alt="">':'FP';
  const here=location.pathname.replace(/\/$/,'')||'/index.html';
  const renderItems=items=>items.map(x=>{const path=x[2].split('?')[0],active=(here===path||(here==='/'&&path==='/index.html'))?' active':'';return '<a class="'+active.trim()+'" href="'+x[2]+'"><span class="fpa-nav-ico">'+icon(x[0])+'</span><span>'+x[1]+'</span></a>'}).join('');
- nav.innerHTML='<div class="fpa-nav-head"><div class="fpa-nav-team"><div class="fpa-nav-badge">'+badge+'</div><div style="min-width:0"><span class="fpa-nav-title">'+(team.name||'Football PA')+'</span><span class="fpa-nav-club">'+(club.name||'')+'</span></div></div><button class="fpa-nav-close" aria-label="Close menu">×</button></div><div class="fpa-nav-section">Team</div><nav class="fpa-nav-links">'+renderItems(teamItems)+'</nav><div class="fpa-nav-foot"><button id="fpaNavSignOut">Sign out</button></div>';
+ const switcher=accessibleTeams.length>1?'<div class="fpa-nav-section">Switch team</div><div style="padding:0 14px 6px"><select id="fpaTeamSelect" aria-label="Switch Football PA team" style="width:100%;padding:11px;border:1px solid #d4dfeb;border-radius:10px;background:#fff;color:#102033;font-size:14px;font-weight:700">'+accessibleTeams.map(t=>'<option value="'+t.id+'"'+(t.id===tid?' selected':'')+'>'+String(t.name).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))+'</option>').join('')+'</select></div>':'';
+ nav.innerHTML='<div class="fpa-nav-head"><div class="fpa-nav-team"><div class="fpa-nav-badge">'+badge+'</div><div style="min-width:0"><span class="fpa-nav-title">'+(team.name||'Football PA')+'</span><span class="fpa-nav-club">'+(club.name||'')+'</span></div></div><button class="fpa-nav-close" aria-label="Close menu">×</button></div>'+switcher+'<div class="fpa-nav-section">Team</div><nav class="fpa-nav-links">'+renderItems(teamItems)+'</nav><div class="fpa-nav-foot"><button id="fpaNavSignOut">Sign out</button></div>';
  const btn=document.createElement('button');btn.className='fpa-nav-btn';btn.id='fpaSharedNavBtn';btn.setAttribute('aria-label','Open menu');btn.textContent='☰';
  const oldHeaders=document.querySelectorAll('.top,.topbar,.fpa-pagebar');oldHeaders.forEach(h=>h.style.display='none');const head=document.createElement('header');head.className='fpa-app-head';head.id='fpaAppHead';head.innerHTML='<div class="fpa-app-head-info"><div class="fpa-app-head-copy"><div class="fpa-app-head-club">'+(club.name||'Football PA')+'</div><div class="fpa-app-head-team">'+(team.name||'')+'</div></div><div class="fpa-app-head-badge">'+badge+'</div></div>';head.prepend(btn);const foot=document.createElement('footer');foot.className='fpa-brand-foot';foot.innerHTML='<img src="https://raw.githubusercontent.com/PerranporthAFCMens/Football-PA/main/football-pa-logo-dark.svg" alt=""><span>FOOTBALL PA</span>';document.body.prepend(head);document.body.append(shade,nav,foot);
- const close=()=>{shade.classList.remove('open');nav.classList.remove('open')};btn.onclick=()=>{shade.classList.add('open');nav.classList.add('open')};shade.onclick=close;nav.querySelector('.fpa-nav-close').onclick=close;nav.querySelector('#fpaNavSignOut').onclick=async()=>{await sb.auth.signOut();location.href='./login.html'};
+ const selector=nav.querySelector('#fpaTeamSelect');
+ if(selector)selector.addEventListener('change',()=>{
+   const next=selector.value;
+   if(!accessibleTeams.some(t=>t.id===next))return;
+   localStorage.setItem('fpa_active_team_id',next);
+   location.assign(teamSlugs[next]?'/team/'+encodeURIComponent(teamSlugs[next]):'/index.html?team='+encodeURIComponent(next));
+ });
+ const close=()=>{shade.classList.remove('open');nav.classList.remove('open')};btn.onclick=()=>{shade.classList.add('open');nav.classList.add('open')};shade.onclick=close;nav.querySelector('.fpa-nav-close').onclick=close;nav.querySelector('#fpaNavSignOut').onclick=async()=>{await sb.auth.signOut();location.href='/login.html'};
  }
  window.FootballPANav={mount};
 })();
