@@ -2,6 +2,28 @@
 <html lang="en">
 <head>
 <base href="/">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/footballpa-touch.png">
+<link rel="icon" type="image/png" href="/icons/footballpa-touch.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Football PA">
+<meta name="mobile-web-app-capable" content="yes">
+<script>
+(function(){
+ const slug=location.pathname.match(/^\/team\/([a-z0-9-]+)\/?$/i)?.[1]?.toLowerCase();
+ const badges={
+  perranporth1st:{title:'Perranporth 1st',image:'https://www.perranporthafc.co.uk/wp-content/themes/sharkfin-1-4/images/perranporth-afc-large.jpg',manifest:'/icons/perranporth.webmanifest'},
+  stagnesgirls:{title:'St Agnes Girls',image:'https://hennzggqaquevqgiucqn.supabase.co/storage/v1/object/public/footballpa-team-logos/5337936a-5db7-4447-ac4a-d50323eb0715/logo.webp?v=1789910770908',manifest:'/icons/stagnes.webmanifest'}
+ };
+ const team=badges[slug];
+ if(!team)return;
+ document.querySelector('link[rel="apple-touch-icon"]').href=team.image;
+ document.querySelector('link[rel="icon"]').href=team.image;
+ document.querySelector('link[rel="manifest"]').href=team.manifest;
+ document.querySelector('meta[name="apple-mobile-web-app-title"]').content=team.title;
+ document.title=team.title+' · Football PA';
+})();
+</script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eef3f8">
 <title>Football PA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
