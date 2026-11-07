@@ -8,9 +8,9 @@
   "theme_color": "#111111",
   "icons": [
     {
-      "src": "https://hennzggqaquevqgiucqn.supabase.co/storage/v1/object/public/footballpa-team-logos/5337936a-5db7-4447-ac4a-d50323eb0715/logo.webp?v=1789910770908",
-      "sizes": "any",
-      "type": "image/webp",
+      "src": "/icons/stagnes.png",
+      "sizes": "180x180",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
