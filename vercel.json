@@ -40,6 +40,10 @@
     {
       "source": "/live/:slug",
       "destination": "/live-score.html?slug=:slug"
+    },
+    {
+      "source": "/team/:slug",
+      "destination": "/index.html"
     }
   ]
 }
