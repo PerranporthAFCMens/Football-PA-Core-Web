@@ -43,7 +43,11 @@ async function loadBrand(){
     returnTeam=returnUrl.searchParams.get('team')||returnUrl.searchParams.get('id')||'';
   }catch(e){}
   let teamId=directTeam||returnTeam;
-  const pathLooksPerranporth=/^\/Perranporth(?:\/|$)/i.test(location.pathname)||/^\/Perranporth(?:\/|$)/i.test((()=>{try{return new URL(target,location.origin).pathname}catch(e){return''}})());
+  const returningPath=(()=>{try{return new URL(target,location.origin).pathname}catch(e){return''}})();
+  const teamSlugs={perranporth1st:'d5bcdf95-40a2-4596-b044-e9c8bcabecbc',stagnesgirls:'5337936a-5db7-4447-ac4a-d50323eb0715'};
+  const slugMatch=returningPath.match(/^\/team\/([A-Za-z0-9-]+)\/?$/i);
+  if(!teamId&&slugMatch)teamId=teamSlugs[slugMatch[1].toLowerCase()]||'';
+  const pathLooksPerranporth=/^\/Perranporth(?:\/|$)/i.test(location.pathname)||/^\/Perranporth(?:\/|$)/i.test(returningPath);
   if(!teamId&&pathLooksPerranporth)teamId='d5bcdf95-40a2-4596-b044-e9c8bcabecbc';
 
   if(teamId){
