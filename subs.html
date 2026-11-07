@@ -96,6 +96,21 @@ async function boot(){
 async function reload(){
   const r=await sb.rpc('get_subs_tracker_v2',{p_team_id:team.id,p_season_id:season.id});
   if(r.error)throw r.error;D=r.data||{players:[],matches:[],roster:[],summary:{}};
+  const cr=await sb.rpc('list_subs_player_credits',{p_team_id:team.id});
+  if(cr.error)throw cr.error;
+  const accounts=new Map((cr.data?.players||[]).map(row=>[row.player_id,row.account]));
+  for(const p of (D.players||[])){
+    const account=accounts.get(p.player_id);
+    if(!account)continue;
+    p.credit_account=account;
+    p.credit_pence=Number(account.credit_pence||0);
+    p.amount_due_pence=Number(account.outstanding_pence||0);
+    p.payment_link=account.payment_link||null;
+  }
+  D.summary.outstanding_pence=(D.players||[]).reduce((sum,p)=>sum+Number(p.amount_due_pence||0),0);
+  D.summary.players_owing=(D.players||[]).filter(p=>p.amount_due_pence>0).length;
+  D.summary.received_pence=Number(cr.data?.cash_received_pence||0);
+  D.summary.credit_pence=(D.players||[]).reduce((sum,p)=>sum+Number(p.credit_pence||0),0);
   // Monzo payments are optional: if the feature is not set up, the block stays empty.
   const mr=await sb.rpc('list_monzo_payments',{p_team_id:team.id});M=mr.error?{pending:[],recent:[],aliases:[]}:(mr.data||{pending:[],recent:[],aliases:[]});
   $('configText').textContent=money(D.charge_amount_pence)+' per game · payments tracked against each fixture';
@@ -161,7 +176,7 @@ async function monzoAction(btn,fn){
 }
 function renderSummary(){
   const s=D.summary||{};
-  $('summary').innerHTML='<div class="summaryBox"><b>'+money(s.outstanding_pence)+'</b><span>Outstanding</span></div><div class="summaryBox"><b>'+money(s.received_pence)+'</b><span>Received</span></div><div class="summaryBox"><b>'+(s.players_owing||0)+'</b><span>Players owing</span></div>';
+  $('summary').innerHTML='<div class="summaryBox"><b>'+money(s.outstanding_pence)+'</b><span>Outstanding</span></div><div class="summaryBox"><b>'+money(s.received_pence)+'</b><span>Received</span></div><div class="summaryBox"><b>'+(s.players_owing||0)+'</b><span>Players owing</span></div>'+(Number(s.credit_pence)>0?'<div class="summaryBox" style="grid-column:1/-1;background:#eaf8ee"><b style="color:#176b2f">'+money(s.credit_pence)+'</b><span>Player credit held for future matches</span></div>':'');
   const due=(D.players||[]).filter(p=>Number(p.amount_due_pence)>0).sort((a,b)=>Number(b.amount_due_pence)-Number(a.amount_due_pence)||a.name.localeCompare(b.name));
   $('outstandingList').innerHTML=due.length?due.map(p=>'<div class="debtor" data-open-player="'+esc(p.player_id)+'"><div><b>'+esc(p.name)+'</b><div class="mini">'+p.payment_due_games+' game'+(p.payment_due_games===1?'':'s')+' to pay</div></div><div class="debtorAmount">'+money(p.amount_due_pence)+' ›</div></div>').join(''):'<div class="success">Nobody currently owes subs.</div>';
   const claims=(D.players||[]).filter(p=>Number(p.claims_paid)>0);
@@ -190,15 +205,19 @@ function renderPickers(){
 }
 function playerMessage(p){
   const unpaid=(p.matches||[]).filter(m=>m.status==='Not Paid'||m.status==='Unconfirmed');
-  return p.name+' – subs outstanding\n\n'+unpaid.map(m=>fmt(m.kick_off)+' – '+m.opponent).join('\n')+'\n\nTotal: '+money(p.amount_due_pence)+(p.payment_link?'\n'+p.payment_link:'');
+  return p.name+' – subs outstanding\n\n'+unpaid.map(m=>fmt(m.kick_off)+' – '+m.opponent).join('\n')+'\n\nAvailable credit: '+money(p.credit_pence||0)+'\nAmount to pay: '+money(p.amount_due_pence)+(p.payment_link?'\n'+p.payment_link:'');
 }
 function renderPlayer(){
   const host=$('playerFile');if(!selectedPlayer){host.innerHTML='';return}
   const p=(D.players||[]).find(x=>x.player_id===selectedPlayer);if(!p){host.innerHTML='';return}
   const matches=p.matches||[];
-  const pay=Number(p.amount_due_pence)>0?'<div class="payBox"><div class="payBoxTop"><div><b>Outstanding subs</b><div class="mini">'+p.payment_due_games+' game'+(p.payment_due_games===1?'':'s')+'</div></div><div class="bigMoney">'+money(p.amount_due_pence)+'</div></div>'+(p.payment_link?'<a class="btn purple full" style="display:block;text-align:center;text-decoration:none;margin-top:10px" target="_blank" rel="noopener" href="'+esc(p.payment_link)+'">Pay '+money(p.amount_due_pence)+' in one payment</a>':'')+'<button class="btn secondary full" style="margin-top:7px" data-copy-player="'+esc(p.player_id)+'">Copy matches + payment link</button></div>':'<div class="success" style="margin:12px 0">Nothing currently due to pay.</div>';
+  const account=p.credit_account||{};
+  const history=(account.events||[]).map(e=>'<div class="row"><div class="rowTop"><div><b>'+esc(e.opponent||'Subs credit')+'</b><div class="mini">'+esc(e.note||'')+'</div></div><b style="color:'+(Number(e.amount_pence)>0?'#176b2f':'#17212b')+'">'+(Number(e.amount_pence)>0?'+':'')+money(e.amount_pence)+'</b></div></div>').join('');
+  const creditHtml=Number(p.credit_pence)>0?'<div class="success" style="margin:12px 0"><b>Available credit: '+money(p.credit_pence)+'</b><div class="mini">Automatically used towards the next eligible match.</div></div>':'';
+  const historyHtml=history?'<details style="margin:12px 0"><summary style="font-weight:800;cursor:pointer">Credit history</summary>'+history+'</details>':'';
+  const pay=Number(p.amount_due_pence)>0?'<div class="payBox"><div class="payBoxTop"><div><b>Outstanding subs</b><div class="mini">'+p.payment_due_games+' game'+(p.payment_due_games===1?'':'s')+'</div></div><div class="bigMoney">'+money(p.amount_due_pence)+'</div></div>'+(p.payment_link?'<a class="btn purple full" style="display:block;text-align:center;text-decoration:none;margin-top:10px" target="_blank" rel="noopener" href="'+esc(p.payment_link)+'">Pay '+money(p.amount_due_pence)+' in one payment</a>':'')+'<button type="button" class="btn secondary full" style="margin-top:7px" data-copy-player="'+esc(p.player_id)+'" onclick="return openPlayerCopy(event,this)">Copy matches + payment link</button></div>':'<div class="success" style="margin:12px 0">Nothing currently due to pay.</div>';
   const rows=matches.length?matches.map(m=>'<div class="row"><div class="rowTop"><div><div class="matchName">'+esc(fmt(m.kick_off)+' · '+m.opponent)+'</div><div class="mini">'+esc(m.competition||'Fixture')+' · '+esc(m.venue||'')+'</div></div><span class="pill '+pillClass(m.status)+'">'+esc(m.status)+'</span></div><div class="actions">'+statusButtons(m.fixture_id,p.player_id,m.status)+'</div></div>').join(''):'<div class="empty">No chargeable matches recorded for this player yet.</div>';
-  host.innerHTML='<div class="file"><div class="fileHead"><div class="fileHeadTop"><div><h3>'+esc(p.name)+'</h3><div class="mini">'+p.confirmed_paid+' paid · '+p.payment_due_games+' owing'+(p.claims_paid?' · '+p.claims_paid+' claim(s) to check':'')+'</div></div><div class="bigMoney">'+money(p.amount_due_pence)+'</div></div></div><div class="fileBody">'+pay+'<div class="sectionTitle"><h3>Match history</h3><span>'+matches.length+' match'+(matches.length===1?'':'es')+'</span></div>'+rows+'</div></div>';
+  host.innerHTML='<div class="file"><div class="fileHead"><div class="fileHeadTop"><div><h3>'+esc(p.name)+'</h3><div class="mini">'+p.confirmed_paid+' paid · '+p.payment_due_games+' owing'+(p.claims_paid?' · '+p.claims_paid+' claim(s) to check':'')+'</div></div><div class="bigMoney">'+money(p.amount_due_pence)+'</div></div></div><div class="fileBody">'+creditHtml+pay+historyHtml+'<div class="sectionTitle"><h3>Match history</h3><span>'+matches.length+' match'+(matches.length===1?'':'es')+'</span></div>'+rows+'</div></div>';
 }
 function matchPlayers(m){
   const arr=[...(m.players||[])];
@@ -222,11 +241,73 @@ function renderMatch(){
 function setTab(name){tab=name;['summary','player','match'].forEach(v=>{$(v+'View').classList.toggle('hidden',v!==name);document.querySelectorAll('[data-tab="'+v+'"]').forEach(b=>b.classList.toggle('active',v===name))})}
 async function setStatus(btn){
   if(busy)return;busy=true;const old=btn.textContent;btn.disabled=true;btn.textContent='Saving…';
-  const r=await sb.rpc('set_subs_match_status',{p_team_id:team.id,p_season_id:season.id,p_fixture_id:btn.dataset.fixture,p_player_id:btn.dataset.player,p_status:btn.dataset.status});
+  const r=await sb.rpc('set_subs_match_status_with_credit',{p_team_id:team.id,p_season_id:season.id,p_fixture_id:btn.dataset.fixture,p_player_id:btn.dataset.player,p_status:btn.dataset.status});
   busy=false;if(r.error){btn.disabled=false;btn.textContent=old;toast(r.error.message);return}
   await reload();toast('Subs updated');
 }
-async function copyText(text,msg){try{await navigator.clipboard.writeText(text);toast(msg)}catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast(msg)}}
+function copyHostDocument(){
+  // Match Hub embeds Subs Tracker in a same-origin iframe. Render the copy
+  // panel in the parent document so it is visible over the entire phone screen.
+  try{if(window.parent!==window&&window.parent.location.origin===location.origin)return window.parent.document}catch(e){}
+  return document;
+}
+function showCopyFallback(text){
+  const doc=copyHostDocument();
+  doc.getElementById('subsCopyFallback')?.remove();
+  const overlay=doc.createElement('div');
+  overlay.id='subsCopyFallback';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
+  const panel=doc.createElement('div');
+  panel.style.cssText='background:#fff;color:#17212b;width:min(100%,560px);max-height:85vh;overflow:auto;border-radius:16px;padding:18px;box-shadow:0 12px 45px #0004;box-sizing:border-box';
+  const title=doc.createElement('h3');
+  title.textContent='Matches and payment link';
+  title.style.cssText='font-size:19px;margin:0 0 8px';
+  const help=doc.createElement('p');
+  help.textContent='Copy the message below, or tap and hold it to select and copy manually.';
+  help.style.cssText='font-size:14px;line-height:1.5;margin:0 0 12px';
+  const ta=doc.createElement('textarea');
+  ta.value=text;
+  ta.readOnly=true;
+  ta.setAttribute('aria-label','Matches and payment link to copy');
+  ta.style.cssText='display:block;width:100%;height:220px;max-height:40vh;padding:12px;border:1px solid #b6cbd9;border-radius:8px;font:16px/1.5 system-ui;resize:vertical;user-select:text;-webkit-user-select:text;box-sizing:border-box';
+  const copyButton=doc.createElement('button');
+  copyButton.type='button';
+  copyButton.textContent='Copy text';
+  copyButton.style.cssText='display:block;width:100%;min-height:44px;background:#1357a6;color:white;border:0;border-radius:10px;font-size:16px;font-weight:700;margin-top:12px';
+  copyButton.addEventListener('click',async()=>{
+    try{
+      const clipboard=doc.defaultView?.navigator?.clipboard||navigator.clipboard;
+      if(!clipboard?.writeText)throw new Error('Clipboard unavailable');
+      await clipboard.writeText(ta.value);
+      copyButton.textContent='Copied ✓';
+    }catch(e){
+      ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);
+      help.textContent='Automatic copying is blocked. Touch and hold the selected text, then choose Copy.';
+      copyButton.textContent='Select text to copy';
+    }
+  });
+  const close=doc.createElement('button');
+  close.type='button';
+  close.textContent='Close';
+  close.style.cssText='display:block;width:100%;min-height:44px;background:#e8eef3;color:#2f4252;border:0;border-radius:10px;font-size:16px;font-weight:700;margin-top:9px';
+  close.addEventListener('click',()=>overlay.remove());
+  panel.append(title,help,ta,copyButton,close);
+  overlay.appendChild(panel);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
+  doc.body.appendChild(overlay);
+}
+function copyText(text,msg){
+  // Always show the text as the reliable fallback in an embedded iframe.
+  showCopyFallback(text);
+}
+function openPlayerCopy(event,button){
+  if(event){event.preventDefault();event.stopPropagation()}
+  const id=button?.dataset?.copyPlayer;
+  const p=(D.players||[]).find(x=>x.player_id===id);
+  if(!p){showCopyFallback('Player details unavailable. Please refresh the page.');return false}
+  showCopyFallback(playerMessage(p));
+  return false;
+}
 function copyMatch(id){
   const m=(D.matches||[]).find(x=>x.fixture_id===id);if(!m)return;
   const due=matchPlayers(m).filter(p=>p.status==='Not Paid'||p.status==='Unconfirmed');

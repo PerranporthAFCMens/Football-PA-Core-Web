@@ -10,11 +10,21 @@ function applyTheme(club){
   root.style.setProperty('--fpa-accent',primary);
   root.style.setProperty('--fpa-header-text',contrast(primary));
 }
+// Canonical team entry points. Keep legacy /Perranporth links working.
+const WORKSPACE_TEAMS={
+  perranporth1st:'d5bcdf95-40a2-4596-b044-e9c8bcabecbc',
+  stagnesgirls:'5337936a-5db7-4447-ac4a-d50323eb0715'
+};
 function pathTenant(){
   const host=String(location.hostname||'').toLowerCase();
   const path=String(location.pathname||'');
-  if((host==='footballpa.com'||host==='www.footballpa.com')&&/^\/Perranporth(?:\/|$)/i.test(path)){
-    return {team_id:'d5bcdf95-40a2-4596-b044-e9c8bcabecbc',hostname:host,team_name:'Perranporth 1st Team',club_name:'Perranporth AFC',path_base:'/Perranporth'};
+  if((host==='footballpa.com'||host==='www.footballpa.com'||host==='core.footballpa.com'||host.endsWith('.vercel.app'))&&/^\/Perranporth(?:\/|$)/i.test(path)){
+    return {team_id:WORKSPACE_TEAMS.perranporth1st,hostname:host,team_name:'Perranporth 1st Team',club_name:'Perranporth AFC',path_base:'/Perranporth',legacy:true};
+  }
+  const match=path.match(/^\/team\/([A-Za-z0-9-]+)\/?$/i);
+  const teamId=match&&WORKSPACE_TEAMS[match[1].toLowerCase()];
+  if(teamId){
+    return {team_id:teamId,hostname:host,path_base:'',workspace:true};
   }
   return null;
 }
@@ -108,7 +118,7 @@ async function resolve(opts={}){
     href(path,extra=''){
       const cleanExtra=extra?extra.replace(/^&/,''):'';
       const route=routedPath(path);
-      if(domain){
+      if(domain&&!domain.workspace){
         if(!cleanExtra)return route;
         return route+(route.includes('?')?'&':'?')+cleanExtra;
       }
@@ -117,5 +127,5 @@ async function resolve(opts={}){
     }
   };
 }
-window.FootballPAContext={resolve,applyTheme,domainTeam,pathTenant};
+window.FootballPAContext={resolve,applyTheme,domainTeam,pathTenant,WORKSPACE_TEAMS};
 })();

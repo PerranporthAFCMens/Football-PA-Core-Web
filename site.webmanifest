@@ -1,0 +1,17 @@
+{
+  "name": "Football PA",
+  "short_name": "Football PA",
+  "start_url": "/login.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f2643",
+  "theme_color": "#0f2643",
+  "icons": [
+    {
+      "src": "/icons/footballpa-touch.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
