@@ -35,5 +35,11 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/live/:slug",
+      "destination": "/live-score.html?slug=:slug"
+    }
   ]
 }
