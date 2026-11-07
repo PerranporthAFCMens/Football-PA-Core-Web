@@ -8,9 +8,9 @@
   "theme_color": "#136ab6",
   "icons": [
     {
-      "src": "https://www.perranporthafc.co.uk/wp-content/themes/sharkfin-1-4/images/perranporth-afc-large.jpg",
-      "sizes": "any",
-      "type": "image/jpeg",
+      "src": "/icons/perranporth.png",
+      "sizes": "180x180",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
