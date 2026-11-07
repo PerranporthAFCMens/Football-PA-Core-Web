@@ -12,8 +12,8 @@
 (function(){
  const slug=location.pathname.match(/^\/team\/([a-z0-9-]+)\/?$/i)?.[1]?.toLowerCase();
  const badges={
-  perranporth1st:{title:'Perranporth 1st',image:'https://www.perranporthafc.co.uk/wp-content/themes/sharkfin-1-4/images/perranporth-afc-large.jpg',manifest:'/icons/perranporth.webmanifest'},
-  stagnesgirls:{title:'St Agnes Girls',image:'https://hennzggqaquevqgiucqn.supabase.co/storage/v1/object/public/footballpa-team-logos/5337936a-5db7-4447-ac4a-d50323eb0715/logo.webp?v=1789910770908',manifest:'/icons/stagnes.webmanifest'}
+  perranporth1st:{title:'Perranporth 1st',image:'/icons/perranporth.png',manifest:'/icons/perranporth.webmanifest'},
+  stagnesgirls:{title:'St Agnes Girls',image:'/icons/stagnes.png',manifest:'/icons/stagnes.webmanifest'}
  };
  const team=badges[slug];
  if(!team)return;
