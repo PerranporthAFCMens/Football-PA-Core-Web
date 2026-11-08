@@ -176,8 +176,34 @@ function render(){
  document.querySelectorAll('[data-player-id]').forEach(r=>r.onclick=()=>{selectedPlayerId=r.dataset.playerId;renderPlayerDetail(ln,sbx,ev)});
 }
 async function boot(){try{
- ctx=await FootballPAContext.resolve();FootballPANav.mount({teamId:ctx.team.id});if(ctx.club.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
+ const qp=new URLSearchParams(location.search),portalView=qp.get('portal_view')==='1';
+ if(portalView){
+   const teamId=qp.get('team');
+   if(!teamId||!/^[0-9a-f-]{36}$/i.test(teamId))throw new Error('Open the dashboard from your Player Portal.');
+   let saved=null;
+   try{saved=JSON.parse(localStorage.getItem('fpa_portal_'+teamId)||'null')}catch{}
+   if(!saved?.token||!saved.expiresAt||saved.expiresAt<=Date.now())throw new Error('Player session expired. Return to the Player Portal and log in again.');
+   const result=await sb.rpc('player_portal_dashboard',{p_token:saved.token});
+   if(result.error)throw result.error;
+   const data=result.data;
+   if(!data?.team?.id||data.team.id!==teamId)throw new Error('Invalid team dashboard session');
+   ctx={team:data.team,club:data.club,season:data.season,settings:data.settings||{}};
+   fixtures=data.fixtures||[];players=data.players||[];events=data.events||[];
+   lineups=data.lineups||[];subs=data.subs||[];sessions=data.sessions||[];attendance=data.attendance||[];
+   const nav=document.createElement('div');
+   nav.className='fpa-card';nav.style.cssText='padding:11px 14px';
+   const back=document.createElement('a');
+   back.textContent='← Back to Player Portal';
+   back.href='./player-portal.html?pin=1&team='+encodeURIComponent(teamId);
+   back.style.cssText='font-weight:800;text-decoration:none;color:var(--blue)';
+   nav.appendChild(back);document.getElementById('app').prepend(nav);
+ }else{
+   ctx=await FootballPAContext.resolve();
+   FootballPANav.mount({teamId:ctx.team.id});
+ }
+ if(ctx.club.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
  $('dashTitle').textContent=ctx.team.name;$('dashSub').textContent=(ctx.season?.label||ctx.team.season_label||'Current season')+' · '+ctx.club.name;
+ if(!portalView){
  let fq=sb.from('fixtures').select('id,opponent,venue,competition,kick_off,status,home_score,away_score,include_in_stats').eq('team_id',ctx.team.id).eq('include_in_stats',true).order('kick_off');if(ctx.season?.id)fq=fq.eq('season_id',ctx.season.id);
  let pq=sb.from('team_players').select('active,players(id,display_name,first_name,last_name,shirt_number)').eq('team_id',ctx.team.id);if(ctx.season?.id)pq=pq.eq('season_id',ctx.season.id);
  const [fr,pr,tr]=await Promise.all([fq,pq,sb.from('training_sessions').select('id,session_date').eq('team_id',ctx.team.id)]);if(fr.error)throw fr.error;if(pr.error)throw pr.error;if(tr.error)throw tr.error;fixtures=fr.data||[];players=(pr.data||[]).filter(x=>x.players).map(x=>({...x.players,rosterActive:x.active!==false}));sessions=tr.data||[];
@@ -191,6 +217,7 @@ async function boot(){try{
    if(!er.error)events=er.data||[];if(!lr.error)lineups=lr.data||[];if(!sr.error)subs=sr.data||[];
  }
  const sessionIds=sessions.map(s=>s.id);if(sessionIds.length){const ar=await sb.from('training_attendance').select('session_id,player_id,status').in('session_id',sessionIds);if(!ar.error)attendance=ar.data||[]}
+ }
  const comps=[...new Set(fixtures.map(f=>f.competition).filter(Boolean))].sort();$('competitionFilter').innerHTML='<option value="all">All competitions</option>'+comps.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
  $('competitionFilter').onchange=render;$('venueFilter').onchange=render;$('trainingWindow').onchange=()=>{render();if(selectedPlayerId){const fs=activeFixtures(),ids=new Set(fs.map(f=>f.id));renderPlayerDetail(lineups.filter(x=>ids.has(x.fixture_id)),subs.filter(x=>ids.has(x.fixture_id)),events.filter(x=>ids.has(x.fixture_id)))}};$('teamTab').onclick=()=>setView('team');$('playersTab').onclick=()=>setView('players');$('closePlayerModal').onclick=closePlayerModal;$('playerModal').onclick=e=>{if(e.target===$('playerModal'))closePlayerModal()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('playerModal').classList.contains('hidden'))closePlayerModal()});render();$('loading').classList.add('hidden');$('app').classList.remove('hidden');
 }catch(e){$('loading').innerHTML='<b>Could not load dashboard.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}}
