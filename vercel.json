@@ -38,6 +38,10 @@
   ],
   "rewrites": [
     {
+      "source": "/perranporth-player",
+      "destination": "/player-portal.html"
+    },
+    {
       "source": "/perranporth",
       "destination": "/player-portal.html"
     },
@@ -59,6 +63,11 @@
     }
   ],
   "redirects": [
+    {
+      "source": "/perranporth-player/",
+      "destination": "/perranporth-player",
+      "permanent": true
+    },
     {
       "source": "/perranporth/",
       "destination": "/perranporth",
