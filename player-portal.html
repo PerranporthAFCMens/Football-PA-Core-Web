@@ -174,7 +174,8 @@ async function loadManagerPreview(){
   render();
   $('voteBody').innerHTML='<div class="empty">Voting is disabled in manager preview. Nothing can be submitted.</div>';
   $('availabilityBody').innerHTML='<div class="empty">Availability changes are disabled in manager preview.</div>';
-  $('subsBody').querySelectorAll('a,button,input,select').forEach(el=>{if(el.tagName==='A')el.removeAttribute('href');else el.disabled=true});
+  $('subsBody').querySelectorAll('a,button').forEach(el=>el.remove());
+  $('subsBody').querySelectorAll('input,select').forEach(el=>el.disabled=true);
   // A manager preview must never leave the staff-authenticated view via a player-PIN link.
   const dash=$('fullDashboardLink');
   if(dash)dash.href='./dashboard.html?team='+encodeURIComponent(team);
