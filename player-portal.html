@@ -34,7 +34,7 @@
   <div id="setupStatus" class="muted" style="margin-top:10px"></div>
 </div>
 
-<div id="app" class="hidden">
+<div id="app" class="hidden"><div id="previewBanner" class="card hidden" style="background:#fff7e7;border-color:#e9c878"><b>👁 Manager preview · Read-only</b><div class="muted">This is the selected player’s portal view. Voting, payments, availability and PIN changes are disabled. No player session was created.</div><a id="previewBack" class="btn secondary" style="margin-top:9px;display:inline-block;text-decoration:none" href="./players.html?view=players">← Back to players</a></div>
   <div class="card hero"><img id="badge" class="badge" alt="Team"><div><h1 id="name">Player Portal</h1><div id="season" class="muted"></div><div id="identity" class="identity"></div></div><div class="heroActions"><button class="iconBtn" id="changePinBtn" aria-label="Change PIN">🔢</button><button class="iconBtn" onclick="location.reload()" aria-label="Refresh">↻</button><button class="iconBtn" id="logout" aria-label="Sign out">⎋</button></div></div>
   <div class="tabs"><button class="tab active" data-tab="stats">My Stats</button><button class="tab" data-tab="team">Team</button><button class="tab" data-tab="availability">Availability</button><button class="tab" data-tab="vote">Vote</button><button class="tab" data-tab="subs">Subs</button></div>
   <section id="stats"><div class="card"><div style="display:flex;align-items:center;gap:8px"><h2 style="margin:0;flex:1">My season</h2><select id="mySeason" class="selector"></select></div><div id="myStats" style="margin-top:12px"></div></div><div class="card"><h2>Recent team fixtures</h2><div id="recent"></div></div></section>
@@ -52,7 +52,7 @@
 const sb=FootballPAClient;
 const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),PIN_MODE=q.get('pin')==='1',PORTAL_TOKEN=q.get('portal')||'';
 let TEAM_ID=q.get('team')||'',STORE='fpa_portal_'+TEAM_ID;
-let D=null,TOKEN='',PAY_LINK=null,CREDIT=null,AVAIL=null,AUTH_MODE=!PIN_MODE;
+let D=null,TOKEN='',PAY_LINK=null,CREDIT=null,AVAIL=null,AUTH_MODE=!PIN_MODE;const PREVIEW_MODE=q.has('preview_player');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=p=>'£'+((Number(p)||0)/100).toFixed(2);
 const final=f=>['ft','full_time','completed','complete','finished'].includes(String(f?.status||'').toLowerCase());
@@ -156,6 +156,30 @@ async function startPinMode(){try{await resolvePortalTeam();await loadPlayers();
 async function loginPin(){const player=$('loginPlayer').value,pin=$('loginPin').value.trim();if(!player||!pin){$('loginStatus').textContent='Select your name and enter your PIN.';return}const b=$('loginBtn');busy(b,true,'Logging in…');const {data,error}=PORTAL_TOKEN?await sb.rpc('player_portal_login_v2',{p_team_id:TEAM_ID,p_player_id:player,p_pin:pin,p_portal_token:PORTAL_TOKEN}):await sb.rpc('player_portal_login',{p_team_id:TEAM_ID,p_player_id:player,p_pin:pin});busy(b,false);if(error){$('loginStatus').textContent=error.message;return}TOKEN=data.token;saveSession({token:TOKEN,expiresAt:new Date(data.expires_at).getTime(),pinChosen:data.pin_chosen});await loadPinData();if(data.pin_chosen===false)$('pinModal').classList.remove('hidden')}
 async function firstTimeSetup(){const player=$('setupPlayer').value,dob=$('setupDob').value,pin=$('setupPin').value.trim();if(!player||!dob||!/^\d{4}$/.test(pin)){$('setupStatus').textContent='Select your name, enter your date of birth and choose a 4-digit PIN.';return}const b=$('setupBtn');busy(b,true,'Checking…');const {data,error}=PORTAL_TOKEN?await sb.rpc('player_portal_first_time_setup_v2',{p_team_id:TEAM_ID,p_player_id:player,p_date_of_birth:dob,p_new_pin:pin,p_portal_token:PORTAL_TOKEN}):await sb.rpc('player_portal_first_time_setup',{p_team_id:TEAM_ID,p_player_id:player,p_date_of_birth:dob,p_new_pin:pin});busy(b,false);if(error){$('setupStatus').textContent=error.message;return}TOKEN=data.token;saveSession({token:TOKEN,expiresAt:new Date(data.expires_at).getTime(),pinChosen:true});await loadPinData()}
 async function saveNewPin(){const a=$('newPin').value.trim(),b=$('confirmPin').value.trim();if(!/^\d{4}$/.test(a)||a!==b){$('pinStatus').textContent='Enter the same 4-digit PIN twice.';return}const btn=$('savePin');busy(btn,true,'Saving…');const {error}=await sb.rpc('player_portal_change_pin',{p_token:TOKEN,p_new_pin:a});busy(btn,false);if(error){$('pinStatus').textContent=error.message;return}const s=saved()||{};s.pinChosen=true;saveSession(s);$('pinModal').classList.add('hidden')}
+async function loadManagerPreview(){
+ try{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){location.replace('./login.html?return='+encodeURIComponent(location.pathname+location.search));return}
+  const team=q.get('team')||'',player=q.get('preview_player')||'';
+  if(!/^[0-9a-f-]{36}$/i.test(team)||!/^[0-9a-f-]{36}$/i.test(player))throw new Error('Invalid player preview link');
+  const {data,error}=await sb.rpc('preview_player_portal',{p_team_id:team,p_player_id:player});
+  if(error)throw error;
+  if(!data?.data?.player?.id)throw new Error('Player preview was not available');
+  D=data.data;CREDIT=data.credit||null;PAY_LINK=null;AVAIL={fixtures:[],player_stats:[]};
+  TEAM_ID=team;
+  $('previewBanner').classList.remove('hidden');
+  $('previewBack').href='./players.html?view=players&team='+encodeURIComponent(team);
+  $('changePinBtn').classList.add('hidden');
+  $('logout').classList.add('hidden');
+  render();
+  $('voteBody').innerHTML='<div class="empty">Voting is disabled in manager preview. Nothing can be submitted.</div>';
+  $('availabilityBody').innerHTML='<div class="empty">Availability changes are disabled in manager preview.</div>';
+  $('subsBody').querySelectorAll('a,button,input,select').forEach(el=>{if(el.tagName==='A')el.removeAttribute('href');else el.disabled=true});
+  // A manager preview must never leave the staff-authenticated view via a player-PIN link.
+  const dash=$('fullDashboardLink');
+  if(dash)dash.href='./dashboard.html?team='+encodeURIComponent(team);
+ }catch(e){$('loading').innerHTML='<h2>Player preview unavailable</h2><div class="muted">'+esc(e.message)+'</div><p><a href="./players.html?view=players">Back to players</a></p>'}
+}
 async function loadAuthMode(){const {data:{session}}=await sb.auth.getSession();if(!session){location.replace('./login.html?return='+encodeURIComponent(location.pathname+location.search));return}const {data,error}=await sb.rpc('get_my_player_portal');if(error){$('loading').innerHTML='<h2>Player Portal</h2><div class="muted">'+esc(error.message)+'</div><button class="btn full" style="margin-top:12px" onclick="location.href=\'./index.html\'">Back to team</button>';return}D=data;const cr=await sb.rpc('get_my_subs_credit');if(cr.error)throw cr.error;CREDIT=cr.data;PAY_LINK=CREDIT?.payment_link||null;FootballPANav.mount({teamId:D.team?.id});$('changePinBtn').classList.add('hidden');await loadAvailability();render()}
 function tab(name){['stats','team','availability','vote','subs'].forEach(x=>{$(x).classList.toggle('hidden',x!==name);document.querySelector('[data-tab="'+x+'"]').classList.toggle('active',x===name)})}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>tab(b.dataset.tab));$('mySeason').onchange=renderMy;$('teamSeason').onchange=renderTeam;
@@ -163,6 +187,6 @@ $('loginBtn').onclick=loginPin;$('firstTimeBtn').onclick=()=>{const v=$('loginPl
 $('changePinBtn').onclick=()=>{$('newPin').value='';$('confirmPin').value='';$('pinStatus').textContent='';$('pinModal').classList.remove('hidden')};$('savePin').onclick=saveNewPin;$('cancelPin').onclick=()=>$('pinModal').classList.add('hidden');
 $('closeVote').onclick=()=>{$('voteOverlay').classList.add('hidden');renderVote()};$('changeVote').onclick=()=>{$('voteOverlay').classList.add('hidden');renderVote(true)};
 $('logout').onclick=async()=>{if(AUTH_MODE){await sb.auth.signOut();location.replace('./login.html');return}if(TOKEN)await sb.rpc('player_portal_logout',{p_token:TOKEN});clearSession();TOKEN='';location.reload()};
-if(PIN_MODE)startPinMode();else loadAuthMode();
+if(PREVIEW_MODE)loadManagerPreview();else if(PIN_MODE)startPinMode();else loadAuthMode();
 </script>
 </body></html>
