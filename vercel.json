@@ -38,6 +38,10 @@
   ],
   "rewrites": [
     {
+      "source": "/perranporth",
+      "destination": "/player-portal.html?pin=1&team=d5bcdf95-40a2-4596-b044-e9c8bcabecbc"
+    },
+    {
       "source": "/icons/stagnes.png",
       "destination": "https://hennzggqaquevqgiucqn.supabase.co/functions/v1/team-app-icon?team=stagnes"
     },
@@ -52,6 +56,13 @@
     {
       "source": "/team/:slug",
       "destination": "/index.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/perranporth/",
+      "destination": "/perranporth",
+      "permanent": true
     }
   ]
 }
