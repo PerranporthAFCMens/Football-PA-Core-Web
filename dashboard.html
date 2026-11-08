@@ -194,7 +194,7 @@ async function boot(){try{
    nav.className='fpa-card';nav.style.cssText='padding:11px 14px';
    const back=document.createElement('a');
    back.textContent='← Back to Player Portal';
-   back.href='./player-portal.html?pin=1&team='+encodeURIComponent(teamId);
+   back.href='./player-portal.html?pin=1&team='+encodeURIComponent(teamId)+(qp.get('portal_link')?'&portal='+encodeURIComponent(qp.get('portal_link')):'');
    back.style.cssText='font-weight:800;text-decoration:none;color:var(--blue)';
    nav.appendChild(back);document.getElementById('app').prepend(nav);
  }else{
