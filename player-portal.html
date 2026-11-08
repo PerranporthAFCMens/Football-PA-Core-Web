@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1357A6">
-<title>Football PA Player Portal</title>
+<title>Perranporth AFC Player Portal</title>
+<link rel="icon" type="image/png" href="/icons/perranporth.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/perranporth.png">
+<link rel="manifest" href="/perranporth-player.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Perranporth">
+<meta name="application-name" content="Perranporth">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./core-client.js"></script>
 <style>
@@ -51,7 +58,7 @@
 
 <script>
 const sb=FootballPAClient;
-const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),PERRANPORTH_SHORT_LINK=location.pathname.replace(/\/$/,'').toLowerCase()==='/perranporth',PIN_MODE=PERRANPORTH_SHORT_LINK||q.get('pin')==='1',PORTAL_TOKEN=q.get('portal')||'';
+const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),PERRANPORTH_SHORT_LINK=['/perranporth','/perranporth-player'].includes(location.pathname.replace(/\/$/,'').toLowerCase()),PIN_MODE=PERRANPORTH_SHORT_LINK||q.get('pin')==='1',PORTAL_TOKEN=q.get('portal')||'';
 let TEAM_ID=PERRANPORTH_SHORT_LINK?'d5bcdf95-40a2-4596-b044-e9c8bcabecbc':(q.get('team')||''),STORE='fpa_portal_'+TEAM_ID;
 let D=null,TOKEN='',PAY_LINK=null,CREDIT=null,AVAIL=null,AUTH_MODE=!PIN_MODE;const PREVIEW_MODE=q.has('preview_player');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
