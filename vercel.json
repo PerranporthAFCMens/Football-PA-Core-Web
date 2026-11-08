@@ -39,7 +39,7 @@
   "rewrites": [
     {
       "source": "/perranporth",
-      "destination": "/player-portal.html?pin=1&team=d5bcdf95-40a2-4596-b044-e9c8bcabecbc"
+      "destination": "/player-portal.html"
     },
     {
       "source": "/icons/stagnes.png",
