@@ -50,8 +50,8 @@
 
 <script>
 const sb=FootballPAClient;
-const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),PIN_MODE=q.get('pin')==='1',PORTAL_TOKEN=q.get('portal')||'';
-let TEAM_ID=q.get('team')||'',STORE='fpa_portal_'+TEAM_ID;
+const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),PERRANPORTH_SHORT_LINK=location.pathname.replace(/\/$/,'').toLowerCase()==='/perranporth',PIN_MODE=PERRANPORTH_SHORT_LINK||q.get('pin')==='1',PORTAL_TOKEN=q.get('portal')||'';
+let TEAM_ID=PERRANPORTH_SHORT_LINK?'d5bcdf95-40a2-4596-b044-e9c8bcabecbc':(q.get('team')||''),STORE='fpa_portal_'+TEAM_ID;
 let D=null,TOKEN='',PAY_LINK=null,CREDIT=null,AVAIL=null,AUTH_MODE=!PIN_MODE;const PREVIEW_MODE=q.has('preview_player');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=p=>'£'+((Number(p)||0)/100).toFixed(2);
