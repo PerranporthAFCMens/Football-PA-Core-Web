@@ -35,5 +35,43 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/perranporth-player",
+      "destination": "/player-portal.html"
+    },
+    {
+      "source": "/perranporth",
+      "destination": "/player-portal.html"
+    },
+    {
+      "source": "/icons/stagnes.png",
+      "destination": "https://hennzggqaquevqgiucqn.supabase.co/functions/v1/team-app-icon?team=stagnes"
+    },
+    {
+      "source": "/icons/perranporth.png",
+      "destination": "https://hennzggqaquevqgiucqn.supabase.co/functions/v1/team-app-icon?team=perranporth"
+    },
+    {
+      "source": "/live/:slug",
+      "destination": "/live-score.html?slug=:slug"
+    },
+    {
+      "source": "/team/:slug",
+      "destination": "/index.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/perranporth-player/",
+      "destination": "/perranporth-player",
+      "permanent": true
+    },
+    {
+      "source": "/perranporth/",
+      "destination": "/perranporth",
+      "permanent": true
+    }
   ]
 }

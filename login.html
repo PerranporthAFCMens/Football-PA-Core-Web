@@ -1,6 +1,12 @@
 <!doctype html>
 <html lang="en">
 <head>
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/footballpa-touch.png">
+<link rel="icon" type="image/png" href="/icons/footballpa-touch.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Football PA">
+<meta name="mobile-web-app-capable" content="yes">
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Football PA Login</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -43,7 +49,11 @@ async function loadBrand(){
     returnTeam=returnUrl.searchParams.get('team')||returnUrl.searchParams.get('id')||'';
   }catch(e){}
   let teamId=directTeam||returnTeam;
-  const pathLooksPerranporth=/^\/Perranporth(?:\/|$)/i.test(location.pathname)||/^\/Perranporth(?:\/|$)/i.test((()=>{try{return new URL(target,location.origin).pathname}catch(e){return''}})());
+  const returningPath=(()=>{try{return new URL(target,location.origin).pathname}catch(e){return''}})();
+  const teamSlugs={perranporth1st:'d5bcdf95-40a2-4596-b044-e9c8bcabecbc',stagnesgirls:'5337936a-5db7-4447-ac4a-d50323eb0715'};
+  const slugMatch=returningPath.match(/^\/team\/([A-Za-z0-9-]+)\/?$/i);
+  if(!teamId&&slugMatch)teamId=teamSlugs[slugMatch[1].toLowerCase()]||'';
+  const pathLooksPerranporth=/^\/Perranporth(?:\/|$)/i.test(location.pathname)||/^\/Perranporth(?:\/|$)/i.test(returningPath);
   if(!teamId&&pathLooksPerranporth)teamId='d5bcdf95-40a2-4596-b044-e9c8bcabecbc';
 
   if(teamId){

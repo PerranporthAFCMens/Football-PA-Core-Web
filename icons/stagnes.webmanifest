@@ -1,0 +1,17 @@
+{
+  "name": "St Agnes Girls · Football PA",
+  "short_name": "St Agnes Girls",
+  "start_url": "/team/StAgnesGirls",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "/icons/stagnes.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

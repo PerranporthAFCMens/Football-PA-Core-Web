@@ -131,7 +131,7 @@ let loginKnown=false,guestIds=new Set(),loginMap=new Map(),loginFor=null;
 function renderRoster(){
   const comparator=playerSort==='shirt'?byShirt:playerSort==='first'?(a,b)=>firstKey(a).localeCompare(firstKey(b),'en-GB',{sensitivity:'base'})||surnameKey(a).localeCompare(surnameKey(b),'en-GB',{sensitivity:'base'}):(a,b)=>surnameKey(a).localeCompare(surnameKey(b),'en-GB',{sensitivity:'base'})||firstKey(a).localeCompare(firstKey(b),'en-GB',{sensitivity:'base'});
   const rows=[...players].sort(comparator);
-  $('roster').innerHTML=rows.length?rows.map(p=>'<div class="playerRow"><div><div class="playerName">'+esc(p.display_name)+(guestIds.has(p.id)?' <span style="font-size:11px;font-weight:800;background:#fff1d6;color:#8a5a00;border-radius:99px;padding:2px 8px;vertical-align:middle">Reserve</span>':'')+(loginKnown&&!loginMap.has(p.id)?' <span style="font-size:11px;font-weight:800;background:#fde7e5;color:#a02a1f;border-radius:99px;padding:2px 8px;vertical-align:middle">No login</span>':'')+'</div><div class="playerMeta">#'+esc(p.shirt_number??'–')+(p.preferred_position?' · '+esc(p.preferred_position):'')+'</div></div><div class="rowActions">'+((ctx.access?.can_manage_players??ctx.canManage)?'<button class="btn" data-edit="'+p.id+'">Edit</button>'+(loginKnown?'<button class="btn" data-login="'+p.id+'">'+(loginMap.has(p.id)?'Reset login':'Give login')+'</button>':'')+'<button class="btn" data-guest="'+p.id+'" data-on="'+(guestIds.has(p.id)?'false':'true')+'">'+(guestIds.has(p.id)?'Make full player':'Mark as reserve')+'</button><button class="btn danger" data-remove="'+p.id+'">Remove</button>':'')+'</div></div>').join(''):'<div class="empty">No players in this squad yet.</div>';
+  $('roster').innerHTML=rows.length?rows.map(p=>'<div class="playerRow"><div><div class="playerName">'+esc(p.display_name)+(guestIds.has(p.id)?' <span style="font-size:11px;font-weight:800;background:#fff1d6;color:#8a5a00;border-radius:99px;padding:2px 8px;vertical-align:middle">Reserve</span>':'')+(loginKnown&&!loginMap.has(p.id)?' <span style="font-size:11px;font-weight:800;background:#fde7e5;color:#a02a1f;border-radius:99px;padding:2px 8px;vertical-align:middle">No login</span>':'')+'</div><div class="playerMeta">#'+esc(p.shirt_number??'–')+(p.preferred_position?' · '+esc(p.preferred_position):'')+'</div></div><div class="rowActions">'+((ctx.access?.can_manage_players??ctx.canManage)?'<button class="btn" data-preview="'+p.id+'">View as player</button><button class="btn" data-edit="'+p.id+'">Edit</button>'+(loginKnown?'<button class="btn" data-login="'+p.id+'">'+(loginMap.has(p.id)?'Reset login':'Give login')+'</button>':'')+'<button class="btn" data-guest="'+p.id+'" data-on="'+(guestIds.has(p.id)?'false':'true')+'">'+(guestIds.has(p.id)?'Make full player':'Mark as reserve')+'</button><button class="btn danger" data-remove="'+p.id+'">Remove</button>':'')+'</div></div>').join(''):'<div class="empty">No players in this squad yet.</div>';
 }
 function renderTraining(){
   if(!sessions.length){
@@ -206,6 +206,13 @@ $('savePlayer').onclick=async()=>{
 $('roster').onclick=async e=>{
   const edit=e.target.closest('[data-edit]'),remove=e.target.closest('[data-remove]');
   if(edit){const p=players.find(x=>x.id===edit.dataset.edit);if(!p)return;editingPlayerId=p.id;$('firstName').value=p.first_name||'';$('lastName').value=p.last_name||'';$('lineupAlias').value=p.lineup_alias||'';$('position').value=p.preferred_position||'';$('shirtNumber').value=p.shirt_number??'';$('dobWrap').classList.add('hidden');$('reserveWrap').classList.add('hidden');$('savePlayer').textContent='Save changes';$('playerForm').classList.remove('hidden');$('firstName').focus();return}
+  const previewBtn=e.target.closest('[data-preview]');
+  if(previewBtn){
+    const p=players.find(x=>x.id===previewBtn.dataset.preview);
+    if(!p)return;
+    location.href='./player-portal.html?team='+encodeURIComponent(ctx.team.id)+'&preview_player='+encodeURIComponent(p.id);
+    return;
+  }
   const lbtn=e.target.closest('[data-login]');
   if(lbtn){const p=players.find(x=>x.id===lbtn.dataset.login);if(!p)return;loginFor=p.id;$('loginBoxTitle').textContent=(loginMap.has(p.id)?'Reset login for ':'Give login to ')+p.display_name+'. Enter their date of birth.';$('loginDob').value='';$('loginBox').classList.remove('hidden');$('loginDob').focus();return}
   const gbtn=e.target.closest('[data-guest]');

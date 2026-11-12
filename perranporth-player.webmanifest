@@ -1,0 +1,25 @@
+{
+  "id": "/perranporth-player",
+  "name": "Perranporth AFC Player Portal",
+  "short_name": "Perranporth",
+  "description": "Perranporth AFC player portal",
+  "start_url": "/perranporth-player",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#136AB6",
+  "icons": [
+    {
+      "src": "/icons/perranporth.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/perranporth.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

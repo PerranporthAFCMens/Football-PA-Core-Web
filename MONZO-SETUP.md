@@ -22,6 +22,9 @@ Remembered payers can be removed under "Remembered payers".
 The amount is divided by the per-game charge. That many games are marked paid, oldest unpaid
 first, then upcoming games. Anything that does not divide evenly is shown as "left over".
 
+If the reference names a game that is already paid (a duplicate), the payment goes on the player's
+next unpaid game instead (since 5 Nov).
+
 ## Privacy
 
 The account also receives money that is not subs. A payment from someone who is **not** a known

@@ -1,0 +1,17 @@
+{
+  "name": "Perranporth 1st · Football PA",
+  "short_name": "Perranporth",
+  "start_url": "/team/Perranporth1st",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#136ab6",
+  "theme_color": "#136ab6",
+  "icons": [
+    {
+      "src": "/icons/perranporth.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

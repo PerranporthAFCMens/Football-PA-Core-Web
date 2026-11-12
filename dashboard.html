@@ -16,6 +16,7 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.fpa-page{min-width:0!impo
 .rankRow{display:grid;grid-template-columns:minmax(0,1fr) 1fr 34px;gap:9px;align-items:center;padding:7px 0}.rankName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px;font-weight:800}.track{height:9px;border-radius:999px;background:#eef2f5;overflow:hidden}.fill{height:100%;border-radius:999px;background:var(--blue)}.rankVal{text-align:right;font-weight:900;font-size:12px}
 .matchBars{display:flex;align-items:flex-end;gap:7px;height:180px;overflow-x:auto;padding:10px 2px 0}.matchBar{min-width:42px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}.barPair{height:132px;display:flex;align-items:flex-end;gap:3px}.bar{width:13px;border-radius:4px 4px 0 0;min-height:2px}.bar.gf{background:var(--blue)}.bar.ga{background:#d65a5a}.barLabel{font-size:8px;color:var(--muted);max-width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.barScore{font-size:9px;font-weight:900}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:9px}.splitCard{border:1px solid #e5ebf1;border-radius:12px;padding:12px}.splitCard b{font-size:22px}.splitCard small{display:block;color:var(--muted);font-weight:800;margin-top:3px}.miniStats{display:flex;gap:10px;margin-top:9px;font-size:11px;color:var(--muted);font-weight:800;flex-wrap:wrap}
+.contribChart{display:grid;gap:10px;padding-top:7px}.contribHead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:7px}.contribLegend{display:flex;align-items:center;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:12px;font-weight:800}.contribLegend span{display:inline-flex;align-items:center;gap:6px}.contribSwatch{width:11px;height:11px;border-radius:3px;display:inline-block}.contribSwatch.goals{background:var(--blue)}.contribSwatch.assists{background:#e7a33b}.contribChartRow{display:grid;grid-template-columns:minmax(92px,170px) minmax(0,1fr) 34px;align-items:center;gap:10px;min-width:0}.contribPlayer{font-weight:800;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.contribTrack{height:22px;border-radius:6px;background:#eef2f5;display:flex;overflow:hidden}.contribSegment{height:100%;display:block;min-width:0}.contribSegment.goals{background:var(--blue)}.contribSegment.assists{background:#e7a33b}.contribTotal{text-align:right;font-weight:900;font-size:13px;font-variant-numeric:tabular-nums}.contribFoot{font-size:11px;color:var(--muted);margin-top:7px}@media(max-width:480px){.contribChartRow{grid-template-columns:minmax(75px,114px) minmax(0,1fr) 25px;gap:7px}.contribPlayer{font-size:11px}}
 .contribRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px 0;border-top:1px solid #eef2f5}.contribRow:first-child{border-top:0}.contribRow strong{font-size:13px}.contribRow small{color:var(--muted)}.contribNum{font-size:13px;font-weight:900}.dash-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.dash-tab{border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px;font-weight:900;color:var(--ink);cursor:pointer}.dash-tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}.view.hidden{display:none!important}.zonePitch{position:relative;width:100%;max-width:430px;aspect-ratio:1.30/1;background:#528844;border:3px solid #d9e8d2;border-radius:8px;overflow:hidden;margin:auto}.zonePitchSvg{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none}.zoneCell{position:absolute;border:1px solid rgba(255,255,255,.28);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:900;z-index:2;text-shadow:0 1px 2px #000}.zoneCell b{font-size:20px;line-height:1}.zoneCell small{font-size:8px;opacity:.9;margin-top:2px}.z1{left:37%;top:0;width:26%;height:12%}.z2{left:37%;top:12%;width:26%;height:11%}.z3{left:37%;top:23%;width:26%;height:13%}.z4{left:20%;top:0;width:17%;height:36%}.z5{left:63%;top:0;width:17%;height:36%}.z6{left:0;top:0;width:20%;height:36%}.z7{left:80%;top:0;width:20%;height:36%}.z8{left:20%;top:36%;width:60%;height:26%}.z9{left:0;top:36%;width:20%;height:64%}.z10{left:20%;top:62%;width:60%;height:38%}.z11{left:80%;top:36%;width:20%;height:64%}.zonePitch.zones-10 .z1{left:37%;top:0;width:26%;height:12%}.zonePitch.zones-10 .z2{left:37%;top:12%;width:26%;height:23%}.zonePitch.zones-10 .z3{left:20%;top:0;width:17%;height:35%}.zonePitch.zones-10 .z4{left:63%;top:0;width:17%;height:35%}.zonePitch.zones-10 .z5{left:0;top:0;width:20%;height:35%}.zonePitch.zones-10 .z6{left:80%;top:0;width:20%;height:35%}.zonePitch.zones-10 .z7{left:20%;top:35%;width:60%;height:25%}.zonePitch.zones-10 .z8{left:0;top:35%;width:20%;height:65%}.zonePitch.zones-10 .z9{left:20%;top:60%;width:60%;height:40%}.zonePitch.zones-10 .z10{left:80%;top:35%;width:20%;height:65%}.zoneKey{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;margin-top:9px;font-size:10px;color:var(--muted)}.playerTable tbody tr{cursor:pointer}.playerTable tbody tr:hover td{background:#f7f9fb}.playerTable tbody tr.selected td{background:#eef4fb}.playerTable tbody tr.selected .playerCol{background:#eef4fb}.player-detail-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}.player-detail-name{font-size:24px;font-weight:900}.player-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}.player-kpi{border:1px solid #e5ebf1;border-radius:12px;padding:11px;text-align:center}.player-kpi b{display:block;font-size:21px}.player-kpi span{display:block;font-size:8px;font-weight:900;color:var(--muted);margin-top:4px;letter-spacing:.06em}.player-tools{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.player-tools select{border:1px solid var(--line);border-radius:10px;background:#fff;padding:9px 10px;font:inherit}.playerModal{position:fixed;inset:0;background:#071a2db8;z-index:60;display:grid;place-items:center;padding:14px}.playerModal.hidden{display:none}.playerModalCard{width:min(920px,100%);max-height:90vh;overflow:auto;background:#f6f9fc;border-radius:18px;border:1px solid var(--line);box-shadow:0 24px 70px #0005;padding:14px}.playerModalHead{display:flex;justify-content:flex-end;margin-bottom:4px}.playerModalClose{border:0;border-radius:999px;width:42px;height:42px;background:#fff;font-size:22px;font-weight:900;cursor:pointer}.playerModalGrid{display:grid;gap:12px}
 .legend{display:flex;gap:12px;font-size:10px;color:var(--muted);font-weight:800;margin-top:-5px;margin-bottom:7px}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}.legend .g{background:var(--blue)}.legend .c{background:#d65a5a}.playerTable{width:100%;border-collapse:separate;border-spacing:0;min-width:560px}.playerTable th,.playerTable td{background:#fff}.playerTable thead th{background:#eef0f2}.playerTable .playerCol{position:sticky;left:0;z-index:3;width:118px;min-width:118px;max-width:118px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.playerTable thead .playerCol{z-index:5;background:#eef0f2}.playerTable tbody .playerCol{background:#fff;box-shadow:8px 0 10px -10px #10203388}.playerTable tbody tr:nth-child(even) .playerCol{background:#fff}
 @media(max-width:760px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid2{grid-template-columns:minmax(0,1fr)}.dash-title{font-size:24px}.panel{padding:14px}.kpi b{font-size:22px}.dash-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.dash-filters select{width:100%;min-width:0}.playerTableWrap{max-width:calc(100vw - 46px)}.player-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.zoneKey{grid-template-columns:1fr}.zoneCell b{font-size:17px}}
@@ -51,6 +52,12 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}.fpa-page{min-width:0!impo
     <section id="scorerAssistGrid" class="grid2">
       <article class="fpa-card panel"><h2>Top goalscorers</h2><div id="scorers"></div></article>
       <article id="teamAssistsPanel" class="fpa-card panel assistOnly"><h2>Top assists</h2><div id="assists"></div></article>
+    </section>
+
+    <section id="teamContribPanel" class="fpa-card panel assistOnly">
+      <div class="contribHead"><h2 style="margin:0">Goal contributions</h2><div class="contribLegend"><span><i class="contribSwatch goals"></i>Goals</span><span><i class="contribSwatch assists"></i>Assists</span></div></div>
+      <div id="contributionsChart" class="contribChart" role="img" aria-label="Goal contributions by player, stacked goals and assists"></div>
+      <div class="contribFoot">Goals + assists · Sorted by total contributions · Uses the current dashboard filters</div>
     </section>
 
     <section class="grid2">
@@ -141,6 +148,17 @@ function render(){
  ev.filter(e=>e.event_type==='goal'&&e.team_side==='us').forEach(e=>{if(e.player_id)goalMap.set(e.player_id,(goalMap.get(e.player_id)||0)+1);if(e.related_player_id)assistMap.set(e.related_player_id,(assistMap.get(e.related_player_id)||0)+1)});
  $('scorers').innerHTML=rankHtml([...goalMap].map(([id,value])=>({name:playerName(id),value})).sort((a,b)=>b.value-a.value),'No goalscorer data recorded yet.');
  $('assists').innerHTML=rankHtml([...assistMap].map(([id,value])=>({name:playerName(id),value})).sort((a,b)=>b.value-a.value),'No assist data recorded yet.');
+ const contributionRows=[...new Set([...goalMap.keys(),...assistMap.keys()])]
+   .map(id=>({name:playerName(id),goals:goalMap.get(id)||0,assists:assistMap.get(id)||0}))
+   .map(x=>({...x,total:x.goals+x.assists}))
+   .filter(x=>x.total>0)
+   .sort((a,b)=>b.total-a.total||b.goals-a.goals||a.name.localeCompare(b.name));
+ const contributionMax=Math.max(1,...contributionRows.map(x=>x.total));
+ $('contributionsChart').innerHTML=contributionRows.length?contributionRows.map(x=>{
+   const title=esc(x.name+': '+x.goals+' goal'+(x.goals===1?'':'s')+', '+x.assists+' assist'+(x.assists===1?'':'s')+', '+x.total+' total contributions');
+   const goalPct=x.goals/contributionMax*100,assistPct=x.assists/contributionMax*100;
+   return '<div class="contribChartRow" title="'+title+'"><span class="contribPlayer">'+esc(x.name)+'</span><div class="contribTrack"><span class="contribSegment goals" style="width:'+goalPct+'%"></span><span class="contribSegment assists" style="width:'+assistPct+'%"></span></div><strong class="contribTotal">'+x.total+'</strong></div>';
+ }).join(''):'<div class="empty">No goals or assists recorded for these filters yet.</div>';
 
  const apps=new Map();
  ln.forEach(x=>{if(x.player_id)apps.set(x.player_id,(apps.get(x.player_id)||0)+1)});
@@ -153,16 +171,42 @@ function render(){
  if(captureAssists)$('teamAssistZones').innerHTML=zonePitchHtml(teamGoals,true);
  $('teamGoalTypes').innerHTML=goalTypeHtml(teamGoals);
 
- const playerRows=[...players].sort((a,b)=>(a.shirt_number??999)-(b.shirt_number??999)).map(p=>{const m=playerMetrics(p,ln,sbx,ev),first=p.first_name||String(p.display_name||'').split(' ')[0]||'Player',last=p.last_name||String(p.display_name||'').trim().split(' ').slice(1).join(' '),shortName=first+(last?' '+last.trim().charAt(0).toUpperCase()+'.':''),training=m.trainingPct===null?'—':m.trainingPct+'%',assistCell=captureAssists?'<td style="text-align:center">'+m.assists+'</td>':'';return '<tr data-player-id="'+p.id+'"><td class="playerCol" style="padding:9px 8px;border-bottom:1px solid #eef2f5;font-weight:800">'+esc(shortName)+'</td><td style="text-align:center">'+m.apps+'</td><td style="text-align:center">'+m.starts+'</td><td style="text-align:center">'+m.mins+'</td><td style="text-align:center">'+m.goals+'</td>'+assistCell+'<td style="text-align:center">'+training+'</td></tr>'});
+ const playerRows=[...players].sort((a,b)=>Number(b.rosterActive)-Number(a.rosterActive)||(a.shirt_number??999)-(b.shirt_number??999)).map(p=>{const m=playerMetrics(p,ln,sbx,ev),first=p.first_name||String(p.display_name||'').split(' ')[0]||'Player',last=p.last_name||String(p.display_name||'').trim().split(' ').slice(1).join(' '),shortName=first+(last?' '+last.trim().charAt(0).toUpperCase()+'.':''),training=m.trainingPct===null?'—':m.trainingPct+'%',assistCell=captureAssists?'<td style="text-align:center">'+m.assists+'</td>':'';return '<tr data-player-id="'+p.id+'"><td class="playerCol" style="padding:9px 8px;border-bottom:1px solid #eef2f5;font-weight:800">'+esc(shortName)+(p.rosterActive?'':' <span title="Former player (historical stats retained)" style="font-size:10px;color:var(--muted);font-weight:600">(former)</span>')+'</td><td style="text-align:center">'+m.apps+'</td><td style="text-align:center">'+m.starts+'</td><td style="text-align:center">'+m.mins+'</td><td style="text-align:center">'+m.goals+'</td>'+assistCell+'<td style="text-align:center">'+training+'</td></tr>'});
  $('playerDataRows').innerHTML=playerRows.join('')||'<tr><td colspan="'+(captureAssists?7:6)+'" class="empty">No player data yet.</td></tr>';
  document.querySelectorAll('[data-player-id]').forEach(r=>r.onclick=()=>{selectedPlayerId=r.dataset.playerId;renderPlayerDetail(ln,sbx,ev)});
 }
 async function boot(){try{
- ctx=await FootballPAContext.resolve();FootballPANav.mount({teamId:ctx.team.id});if(ctx.club.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
+ const qp=new URLSearchParams(location.search),portalView=qp.get('portal_view')==='1';
+ if(portalView){
+   const teamId=qp.get('team');
+   if(!teamId||!/^[0-9a-f-]{36}$/i.test(teamId))throw new Error('Open the dashboard from your Player Portal.');
+   let saved=null;
+   try{saved=JSON.parse(localStorage.getItem('fpa_portal_'+teamId)||'null')}catch{}
+   if(!saved?.token||!saved.expiresAt||saved.expiresAt<=Date.now())throw new Error('Player session expired. Return to the Player Portal and log in again.');
+   const result=await sb.rpc('player_portal_dashboard',{p_token:saved.token});
+   if(result.error)throw result.error;
+   const data=result.data;
+   if(!data?.team?.id||data.team.id!==teamId)throw new Error('Invalid team dashboard session');
+   ctx={team:data.team,club:data.club,season:data.season,settings:data.settings||{}};
+   fixtures=data.fixtures||[];players=data.players||[];events=data.events||[];
+   lineups=data.lineups||[];subs=data.subs||[];sessions=data.sessions||[];attendance=data.attendance||[];
+   const nav=document.createElement('div');
+   nav.className='fpa-card';nav.style.cssText='padding:11px 14px';
+   const back=document.createElement('a');
+   back.textContent='← Back to Player Portal';
+   back.href='./player-portal.html?pin=1&team='+encodeURIComponent(teamId)+(qp.get('portal_link')?'&portal='+encodeURIComponent(qp.get('portal_link')):'');
+   back.style.cssText='font-weight:800;text-decoration:none;color:var(--blue)';
+   nav.appendChild(back);document.getElementById('app').prepend(nav);
+ }else{
+   ctx=await FootballPAContext.resolve();
+   FootballPANav.mount({teamId:ctx.team.id});
+ }
+ if(ctx.club.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
  $('dashTitle').textContent=ctx.team.name;$('dashSub').textContent=(ctx.season?.label||ctx.team.season_label||'Current season')+' · '+ctx.club.name;
+ if(!portalView){
  let fq=sb.from('fixtures').select('id,opponent,venue,competition,kick_off,status,home_score,away_score,include_in_stats').eq('team_id',ctx.team.id).eq('include_in_stats',true).order('kick_off');if(ctx.season?.id)fq=fq.eq('season_id',ctx.season.id);
- let pq=sb.from('team_players').select('players(id,display_name,first_name,last_name,shirt_number)').eq('team_id',ctx.team.id).eq('active',true);if(ctx.season?.id)pq=pq.eq('season_id',ctx.season.id);
- const [fr,pr,tr]=await Promise.all([fq,pq,sb.from('training_sessions').select('id,session_date').eq('team_id',ctx.team.id)]);if(fr.error)throw fr.error;if(pr.error)throw pr.error;if(tr.error)throw tr.error;fixtures=fr.data||[];players=(pr.data||[]).map(x=>x.players).filter(Boolean);sessions=tr.data||[];
+ let pq=sb.from('team_players').select('active,players(id,display_name,first_name,last_name,shirt_number)').eq('team_id',ctx.team.id);if(ctx.season?.id)pq=pq.eq('season_id',ctx.season.id);
+ const [fr,pr,tr]=await Promise.all([fq,pq,sb.from('training_sessions').select('id,session_date').eq('team_id',ctx.team.id)]);if(fr.error)throw fr.error;if(pr.error)throw pr.error;if(tr.error)throw tr.error;fixtures=fr.data||[];players=(pr.data||[]).filter(x=>x.players).map(x=>({...x.players,rosterActive:x.active!==false}));sessions=tr.data||[];
  const ids=fixtures.map(f=>f.id);
  if(ids.length){
    const [er,lr,sr]=await Promise.all([
@@ -173,9 +217,10 @@ async function boot(){try{
    if(!er.error)events=er.data||[];if(!lr.error)lineups=lr.data||[];if(!sr.error)subs=sr.data||[];
  }
  const sessionIds=sessions.map(s=>s.id);if(sessionIds.length){const ar=await sb.from('training_attendance').select('session_id,player_id,status').in('session_id',sessionIds);if(!ar.error)attendance=ar.data||[]}
+ }
  const comps=[...new Set(fixtures.map(f=>f.competition).filter(Boolean))].sort();$('competitionFilter').innerHTML='<option value="all">All competitions</option>'+comps.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
  $('competitionFilter').onchange=render;$('venueFilter').onchange=render;$('trainingWindow').onchange=()=>{render();if(selectedPlayerId){const fs=activeFixtures(),ids=new Set(fs.map(f=>f.id));renderPlayerDetail(lineups.filter(x=>ids.has(x.fixture_id)),subs.filter(x=>ids.has(x.fixture_id)),events.filter(x=>ids.has(x.fixture_id)))}};$('teamTab').onclick=()=>setView('team');$('playersTab').onclick=()=>setView('players');$('closePlayerModal').onclick=closePlayerModal;$('playerModal').onclick=e=>{if(e.target===$('playerModal'))closePlayerModal()};document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('playerModal').classList.contains('hidden'))closePlayerModal()});render();$('loading').classList.add('hidden');$('app').classList.remove('hidden');
 }catch(e){$('loading').innerHTML='<b>Could not load dashboard.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}}
-sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('./login.html')});boot();
+sb.auth.onAuthStateChange((e,s)=>{if(new URLSearchParams(location.search).get('portal_view')==='1')return;if(e==='SIGNED_OUT'||!s)location.replace('./login.html')});boot();
 </script>
 </body></html>
