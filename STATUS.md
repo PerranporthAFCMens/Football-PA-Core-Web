@@ -4,6 +4,8 @@ Read this file and AI_WORKING_RULES.md at the start of every session. Anything n
 
 ## Where we are (6 Oct 2026)
 
+- **In review (14 Nov)**: V3.1 League Model visual dashboard added as `league-model.html` for Perranporth 1st Team. It is a dated, read-only model snapshot (strength chart, leading cluster, finishing bands, result-impact view and forecast drivers). No database change. Direct page only for now; navigation is deliberately unchanged until the presentation is approved.
+
 - Work is now done with Claude only. ChatGPT has stopped working on Football PA.
 - Release gate live on `main` (PR #16, merged 2 Oct). `dev` brought level with `main` (PR #18).
 - Save fix (`match-save-guard.js`, PR #17) released to production 3 Oct (rollback tag `prod-2026-10-03`).
