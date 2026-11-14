@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#eef3f8">
+<title>League Model · Football PA</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./core-client.js"></script>
+<script src="./core-context.js"></script>
+<script src="./core-nav.js"></script>
+<link rel="stylesheet" href="./core-ui.css">
+<style>
+:root{--model-green:#18a66a;--model-amber:#e8a020;--model-red:#d65b5b;--model-ink:#102033;--model-soft:#eef4fb}
+body{background:#eef3f8}
+.model-shell{display:grid;gap:14px}
+.model-hero{padding:22px;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--blue),color-mix(in srgb,var(--blue) 76%,#08131f));color:#fff}
+.model-hero:after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;right:-90px;top:-120px;background:#ffffff12}
+.model-eyebrow{font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;opacity:.72}
+.model-title{font-size:31px;line-height:1.02;font-weight:950;letter-spacing:-.03em;margin:7px 0}
+.model-sub{font-size:13px;line-height:1.5;max-width:680px;opacity:.88}
+.model-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.model-badge{background:#ffffff16;border:1px solid #ffffff2e;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;backdrop-filter:blur(8px)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{padding:15px}
+.kpi small{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);font-weight:900}
+.kpi strong{display:block;font-size:27px;line-height:1;margin-top:7px;letter-spacing:-.03em}
+.kpi span{display:block;font-size:11px;color:var(--muted);margin-top:6px}
+.two-col{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:14px}
+.panel{padding:17px}
+.panel-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+.panel-head h2{font-size:18px;margin:0;letter-spacing:-.02em}
+.panel-head p{font-size:10px;color:var(--muted);margin:0;text-align:right}
+.strength-list{display:grid;gap:10px}
+.strength-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(150px,2.2fr) 48px;gap:10px;align-items:center}
+.strength-name{font-size:12px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.strength-track{height:13px;border-radius:999px;background:#e8eef4;overflow:hidden;position:relative}
+.strength-track:after{content:"";position:absolute;left:44.44%;top:0;bottom:0;width:1px;background:#8494a5aa}
+.strength-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--blue) 72%,#fff),var(--blue))}
+.strength-row.us .strength-name,.strength-row.us .strength-value{color:var(--blue)}
+.strength-row.us .strength-fill{background:linear-gradient(90deg,var(--model-green),color-mix(in srgb,var(--model-green) 65%,var(--blue)))}
+.strength-value{text-align:right;font-size:13px;font-weight:950}
+.cluster{display:grid;gap:9px}
+.cluster-card{border:1px solid #dfe7ee;border-radius:15px;padding:13px;background:#fff}
+.cluster-card.top{border-color:color-mix(in srgb,var(--blue) 30%,#dfe7ee);box-shadow:0 6px 18px #1020330b}
+.cluster-rank{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.cluster-line{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px}
+.cluster-line strong{font-size:16px}
+.cluster-score{font-size:22px;font-weight:950;color:var(--blue)}
+.cluster-card p{font-size:11px;line-height:1.42;color:var(--muted);margin:7px 0 0}
+.band-chart{display:grid;gap:10px;margin-top:4px}
+.band-row{display:grid;grid-template-columns:120px minmax(0,1fr) 50px;gap:9px;align-items:center}
+.band-name{font-size:11px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.band-track{height:20px;position:relative;background:repeating-linear-gradient(90deg,#f1f4f7 0,#f1f4f7 calc(6.666% - 1px),#dce4eb calc(6.666% - 1px),#dce4eb 6.666%);border-radius:7px}
+.band-range{position:absolute;top:4px;height:12px;border-radius:999px;background:#9fc4ec}
+.band-dot{position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:var(--blue);transform:translateX(-50%);box-shadow:0 0 0 3px #fff}
+.band-row.us .band-range{background:#74d7ae}.band-row.us .band-dot{background:var(--model-green)}
+.band-label{font-size:10px;color:var(--muted);font-weight:800;text-align:right}
+.impact-grid{display:grid;gap:8px}
+.impact-row{display:grid;grid-template-columns:minmax(145px,1fr) minmax(130px,1.5fr) 54px;gap:8px;align-items:center}
+.impact-name{font-size:11px;font-weight:800}
+.impact-axis{height:18px;border-radius:8px;background:linear-gradient(90deg,#faeded 0 49.7%,#cdd8e2 49.7% 50.3%,#ecf7f1 50.3% 100%);position:relative;overflow:hidden}
+.impact-bar{position:absolute;top:4px;height:10px;border-radius:999px}
+.impact-bar.pos{left:50%;background:var(--model-green)}.impact-bar.neg{right:50%;background:var(--model-red)}
+.impact-score{text-align:right;font-size:10px;font-weight:900}
+.signal-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.signal{padding:14px;border:1px solid #e1e8ef;border-radius:15px;background:#fff}
+.signal-tag{display:inline-block;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;background:#eef4fb;color:var(--blue)}
+.signal h3{font-size:14px;margin:9px 0 5px}.signal p{font-size:11px;color:var(--muted);line-height:1.45;margin:0}
+.model-note{padding:14px 16px;border-left:4px solid var(--blue);background:#f7fbff;border-radius:12px;font-size:11px;line-height:1.5;color:#405267}
+.model-note b{color:var(--model-ink)}
+.empty-state{padding:30px;text-align:center}
+@media(max-width:760px){.model-hero{padding:18px}.model-title{font-size:26px}.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two-col{grid-template-columns:1fr}.signal-grid{grid-template-columns:1fr}.strength-row{grid-template-columns:minmax(100px,1fr) minmax(115px,1.7fr) 43px}.band-row{grid-template-columns:100px minmax(0,1fr) 44px}.impact-row{grid-template-columns:minmax(115px,1fr) minmax(100px,1.2fr) 46px}.panel{padding:14px}.panel-head{align-items:flex-start}.panel-head p{max-width:140px}}
+</style>
+</head>
+<body>
+<main class="fpa-page">
+<div id="loading" class="fpa-card" style="padding:28px;text-align:center">Loading league model…</div>
+<div id="app" class="hidden model-shell">
+  <section class="fpa-card model-hero">
+    <div class="model-eyebrow">Football PA · V3.1</div>
+    <div class="model-title">Division 1 West model</div>
+    <div class="model-sub">Opponent-adjusted strength and season forecast. This is a model of underlying performance, not a copy of the league table.</div>
+    <div class="model-badges"><span class="model-badge">Snapshot: 14 Nov 2026</span><span class="model-badge">100 = league average</span><span class="model-badge">League matches only</span></div>
+  </section>
+
+  <section class="kpi-grid">
+    <article class="fpa-card kpi"><small>Our strength</small><strong id="ourStrength">—</strong><span>V3.1 rating</span></article>
+    <article class="fpa-card kpi"><small>Model rank</small><strong id="ourRank">—</strong><span>underlying strength</span></article>
+    <article class="fpa-card kpi"><small>Central finish</small><strong id="centralFinish">—</strong><span id="finishBand">—</span></article>
+    <article class="fpa-card kpi"><small>Model status</small><strong id="statusLabel">—</strong><span>current season signal</span></article>
+  </section>
+
+  <section class="two-col">
+    <article class="fpa-card panel">
+      <div class="panel-head"><div><h2>Underlying strength</h2><p style="text-align:left;margin-top:4px">Recursive opponent-adjusted rating</p></div><p>Average<br><b>100</b></p></div>
+      <div id="strengthList" class="strength-list"></div>
+    </article>
+    <article class="fpa-card panel">
+      <div class="panel-head"><div><h2>Title cluster</h2><p style="text-align:left;margin-top:4px">Who the model currently sees at the top</p></div><p>Small gaps<br>are not decisive</p></div>
+      <div id="cluster" class="cluster"></div>
+    </article>
+  </section>
+
+  <section class="fpa-card panel">
+    <div class="panel-head"><div><h2>Predicted finishing ranges</h2><p style="text-align:left;margin-top:4px">Central prediction plus realistic band</p></div><p>1st is<br>left</p></div>
+    <div id="bandChart" class="band-chart"></div>
+  </section>
+
+  <section class="two-col">
+    <article class="fpa-card panel">
+      <div class="panel-head"><div><h2>What is driving Perranporth</h2><p style="text-align:left;margin-top:4px">Relative contribution to the current rating</p></div><p>Green helps<br>red hurts</p></div>
+      <div id="impactGrid" class="impact-grid"></div>
+    </article>
+    <article class="fpa-card panel">
+      <div class="panel-head"><div><h2>What changes the forecast</h2><p style="text-align:left;margin-top:4px">Not all future results are worth the same</p></div></div>
+      <div class="signal-grid">
+        <div class="signal"><span class="signal-tag">Very high</span><h3>Beat Holman or Mawnan</h3><p>Directly separates the leading cluster and changes both teams' recursive ratings.</p></div>
+        <div class="signal"><span class="signal-tag">High</span><h3>Beat Culdrose or Illogan</h3><p>Strong evidence because both currently sit above league average in the model.</p></div>
+        <div class="signal"><span class="signal-tag">Capped</span><h3>Hammer a weaker side</h3><p>Still positive, but goal margin and opponent quality prevent one big score distorting the model.</p></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="fpa-card panel">
+    <div class="panel-head"><div><h2>Why V3.1 behaves this way</h2><p style="text-align:left;margin-top:4px">Learned from three completed St Piran seasons</p></div></div>
+    <div class="model-note"><b>Locked model rules:</b> opponent strength is recursive; home/away has a modest effect; goal margin is capped; early ratings shrink towards 100; Cup/CC matches are excluded; P-P and A-A are ignored; walkovers may affect league points but not playing strength; close ratings are shown as clusters and finishing bands rather than fake precision.</div>
+  </section>
+</div>
+</main>
+<script>
+const sb=FootballPAClient;
+const PERRANPORTH_TEAM_ID='d5bcdf95-40a2-4596-b044-e9c8bcabecbc';
+const MODEL_BY_TEAM_ID={
+  [PERRANPORTH_TEAM_ID]:{
+    snapshot:'14 Nov 2026',
+    strength:103.5,rank:2,central:2,band:[1,4],status:'TITLE',
+    ratings:[
+      ['Holman Sports',103.7],['Perranporth',103.5],['Mawnan',103.1],['Culdrose',101.1],
+      ['Illogan RBL 2nd',100.9],['Goonhavern',100.6],['Porthleven 2nd',100.1],
+      ['Lizard Argyle',99.9],['Newlyn',99.7],['Probus',99.4]
+    ],
+    cluster:[
+      ['Holman Sports',103.7,'Slight model edge; recent Lizard defeat has narrowed the gap.'],
+      ['Perranporth',103.5,'Title-strength profile and effectively level with Holman on underlying quality.'],
+      ['Mawnan',103.1,'Excellent output, but a smaller completed-league sample keeps the rating damped.']
+    ],
+    bands:[
+      ['Holman Sports',1,1,3],['Perranporth',2,1,4],['Mawnan',3,1,4],['Culdrose',4,3,7],
+      ['Illogan RBL 2nd',5,4,8],['Goonhavern',6,4,9],['Porthleven 2nd',7,5,10],
+      ['Lizard Argyle',8,6,11],['Newlyn',9,6,12],['Probus',10,7,12]
+    ],
+    impacts:[
+      ['3–2 at Culdrose',3.0],['3–0 at Wendron',1.8],['6–0 at Falmouth',1.5],['3–0 v West Cornwall',1.2],
+      ['7–1 v St Buryan',1.0],['1–1 at Porthleven',-0.6],['1–2 at Illogan',-1.4]
+    ]
+  }
+};
+const ordinal=n=>n+(n%10===1&&n%100!==11?'st':n%10===2&&n%100!==12?'nd':n%10===3&&n%100!==13?'rd':'th');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function strengthWidth(v){return Math.max(4,Math.min(100,(v-96)/9*100))}
+function posPct(n){return ((n-1)/14)*100}
+function render(model){
+  document.querySelector('.model-badges').children[0].textContent='Snapshot: '+model.snapshot;
+  ourStrength.textContent=model.strength.toFixed(1);ourRank.textContent='#'+model.rank;
+  centralFinish.textContent=ordinal(model.central);finishBand.textContent='realistic band: '+ordinal(model.band[0])+'–'+ordinal(model.band[1]);statusLabel.textContent=model.status;
+  strengthList.innerHTML=model.ratings.map(([name,v])=>'<div class="strength-row '+(name==='Perranporth'?'us':'')+'"><div class="strength-name">'+esc(name)+'</div><div class="strength-track"><div class="strength-fill" style="width:'+strengthWidth(v)+'%"></div></div><div class="strength-value">'+v.toFixed(1)+'</div></div>').join('');
+  cluster.innerHTML=model.cluster.map(([name,v,copy],i)=>'<div class="cluster-card '+(i<3?'top':'')+'"><div class="cluster-rank">Model #'+(i+1)+'</div><div class="cluster-line"><strong>'+esc(name)+'</strong><span class="cluster-score">'+v.toFixed(1)+'</span></div><p>'+esc(copy)+'</p></div>').join('');
+  bandChart.innerHTML=model.bands.map(([name,central,best,worst])=>{const left=posPct(best),right=posPct(worst),width=Math.max(2,right-left);return '<div class="band-row '+(name==='Perranporth'?'us':'')+'"><div class="band-name">'+esc(name)+'</div><div class="band-track"><div class="band-range" style="left:'+left+'%;width:'+width+'%"></div><div class="band-dot" style="left:'+posPct(central)+'%"></div></div><div class="band-label">'+ordinal(best)+'–'+ordinal(worst)+'</div></div>'}).join('');
+  const maxImpact=Math.max(...model.impacts.map(x=>Math.abs(x[1])));
+  impactGrid.innerHTML=model.impacts.map(([name,val])=>{const pct=Math.abs(val)/maxImpact*48;return '<div class="impact-row"><div class="impact-name">'+esc(name)+'</div><div class="impact-axis"><div class="impact-bar '+(val>=0?'pos':'neg')+'" style="width:'+pct+'%"></div></div><div class="impact-score">'+(val>0?'+':'')+val.toFixed(1)+'</div></div>'}).join('');
+}
+async function boot(){
+  try{
+    const ctx=await FootballPAContext.resolve();
+    FootballPANav.mount({teamId:ctx.team.id});
+    if(ctx.club?.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
+    const model=MODEL_BY_TEAM_ID[ctx.team.id];
+    if(!model){loading.innerHTML='<div class="empty-state"><b>League model not configured for this team yet.</b><br><span class="fpa-muted">This page is currently available for Perranporth 1st Team.</span></div>';return}
+    render(model);loading.classList.add('hidden');app.classList.remove('hidden');
+  }catch(e){loading.innerHTML='<b>Could not load league model.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}
+}
+sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('./login.html')});
+boot();
+</script>
+</body>
+</html>
