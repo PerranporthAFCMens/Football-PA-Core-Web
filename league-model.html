@@ -193,7 +193,7 @@ function renderTrajectory(model){
   const svg=document.getElementById('trajectoryChart'),legend=document.getElementById('trajectoryLegend');
   if(!svg||!legend||!model.trajectory)return;
   const W=920,H=500,L=72,R=118,T=30,B=52,maxPos=15;
-  const seasonGw=Math.max(2,(model.trajectory.teams?.length||15-1)*2);
+  const seasonGw=Math.max(2,((model.trajectory.teams?.length||15)-1)*2);
   const x=gw=>L+(W-L-R)*((gw-1)/Math.max(1,seasonGw-1));
   const y=pos=>T+(H-T-B)*((pos-1)/(maxPos-1));
   const colours={
