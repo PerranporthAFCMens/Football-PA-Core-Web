@@ -243,6 +243,7 @@ function renderTrajectory(model){
   });
   svg.innerHTML=parts.join('');
   legend.innerHTML='<span><i class="trajectory-dot" style="background:#1357A6"></i><b>Perranporth</b></span><span><i class="trajectory-dot" style="background:#3d4652"></i>Holman</span><span><i class="trajectory-dot" style="background:#8b5cf6"></i>Mawnan</span><span><b>Solid</b> = completed results</span><span><b>Dotted</b> = current forecast</span>';
+}
 function render(model){
   const $=id=>document.getElementById(id);
   const badges=document.querySelector('.model-badges');
