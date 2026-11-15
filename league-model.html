@@ -18,7 +18,7 @@ body{background:#eef3f8}
 .model-hero:after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;right:-90px;top:-120px;background:#ffffff12}
 .model-eyebrow{font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;opacity:.72}
 .model-title{font-size:31px;line-height:1.02;font-weight:950;letter-spacing:-.03em;margin:7px 0}
-.model-sub{font-size:13px;line-height:1.5;max-width:680px;opacity:.88}
+.model-sub{font-size:13px;line-height:1.5;max-width:680px;opacity:.88}.model-verdict{position:relative;z-index:1;margin-top:18px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 16px;border:1px solid #ffffff2a;background:#ffffff12;border-radius:16px;backdrop-filter:blur(8px)}.model-verdict small{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.12em;font-weight:900;opacity:.7}.model-verdict strong{display:block;font-size:18px;margin-top:4px}.model-verdict-rank{text-align:right;font-size:30px;font-weight:950;line-height:1}.model-verdict-rank span{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-top:5px}
 .model-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
 .model-badge{background:#ffffff16;border:1px solid #ffffff2e;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;backdrop-filter:blur(8px)}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
@@ -69,8 +69,8 @@ body{background:#eef3f8}
 .signal h3{font-size:14px;margin:9px 0 5px}.signal p{font-size:11px;color:var(--muted);line-height:1.45;margin:0}
 .model-note{padding:14px 16px;border-left:4px solid var(--blue);background:#f7fbff;border-radius:12px;font-size:11px;line-height:1.5;color:#405267}
 .model-note b{color:var(--model-ink)}
-.empty-state{padding:30px;text-align:center}
-@media(max-width:760px){.model-hero{padding:18px}.model-title{font-size:26px}.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two-col{grid-template-columns:1fr}.signal-grid{grid-template-columns:1fr}.strength-row{grid-template-columns:minmax(100px,1fr) minmax(115px,1.7fr) 43px}.band-row{grid-template-columns:100px minmax(0,1fr) 44px}.impact-row{grid-template-columns:minmax(115px,1fr) minmax(100px,1.2fr) 46px}.panel{padding:14px}.panel-head{align-items:flex-start}.panel-head p{max-width:140px}}
+.empty-state{padding:30px;text-align:center}.trajectory-wrap{overflow-x:auto;padding-bottom:4px}.trajectory-svg{width:100%;min-width:720px;height:auto;display:block}.trajectory-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}.trajectory-legend span{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;color:var(--muted)}.trajectory-dot{width:9px;height:9px;border-radius:50%;display:inline-block}.trajectory-note{font-size:10px;color:var(--muted);line-height:1.45;margin-top:8px}
+@media(max-width:760px){.model-hero{padding:18px}.model-verdict{grid-template-columns:1fr auto}.model-verdict strong{font-size:15px}.model-verdict-rank{font-size:25px}.model-title{font-size:26px}.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two-col{grid-template-columns:1fr}.signal-grid{grid-template-columns:1fr}.strength-row{grid-template-columns:minmax(100px,1fr) minmax(115px,1.7fr) 43px}.band-row{grid-template-columns:100px minmax(0,1fr) 44px}.impact-row{grid-template-columns:minmax(115px,1fr) minmax(100px,1.2fr) 46px}.panel{padding:14px}.panel-head{align-items:flex-start}.panel-head p{max-width:140px}}
 </style>
 </head>
 <body>
@@ -81,7 +81,7 @@ body{background:#eef3f8}
     <div class="model-eyebrow">Football PA · V3.1</div>
     <div class="model-title">Division 1 West model</div>
     <div class="model-sub">Opponent-adjusted strength and season forecast. This is a model of underlying performance, not a copy of the league table.</div>
-    <div class="model-badges"><span class="model-badge">Snapshot: 14 Nov 2026</span><span class="model-badge">100 = league average</span><span class="model-badge">League matches only</span></div>
+    <div class="model-verdict"><div><small>Current model verdict</small><strong id="heroVerdict">Loading model…</strong></div><div id="heroRank" class="model-verdict-rank">—<span>central finish</span></div></div><div class="model-badges"><span class="model-badge">Snapshot: 14 Nov 2026</span><span class="model-badge">100 = league average</span><span class="model-badge">League matches only</span></div>
   </section>
 
   <section class="kpi-grid">
@@ -89,6 +89,13 @@ body{background:#eef3f8}
     <article class="fpa-card kpi"><small>Model rank</small><strong id="ourRank">—</strong><span>underlying strength</span></article>
     <article class="fpa-card kpi"><small>Central finish</small><strong id="centralFinish">—</strong><span id="finishBand">—</span></article>
     <article class="fpa-card kpi"><small>Model status</small><strong id="statusLabel">—</strong><span>current season signal</span></article>
+  </section>
+
+  <section class="fpa-card panel">
+    <div class="panel-head"><div><h2>Forecast trajectory</h2><p style="text-align:left;margin-top:4px">How the model's predicted finish has moved as new results arrived</p></div><p>1st is<br>top</p></div>
+    <div class="trajectory-wrap"><svg id="trajectoryChart" class="trajectory-svg" viewBox="0 0 920 360" role="img" aria-label="Predicted finishing position over model checkpoints"></svg></div>
+    <div id="trajectoryLegend" class="trajectory-legend"></div>
+    <div class="trajectory-note">This uses the model checkpoints actually saved during this season. It does not invent missing game weeks. Future model updates can append another point automatically.</div>
   </section>
 
   <section class="two-col">
@@ -153,22 +160,66 @@ const MODEL_BY_TEAM_ID={
     impacts:[
       ['3–2 at Culdrose',3.0],['3–0 at Wendron',1.8],['6–0 at Falmouth',1.5],['3–0 v West Cornwall',1.2],
       ['7–1 v St Buryan',1.0],['1–1 at Porthleven',-0.6],['1–2 at Illogan',-1.4]
-    ]
+    ],
+    trajectory:{
+      checkpoints:['3 Oct','10 Oct','31 Oct','14 Nov'],
+      teams:[
+        ['Holman Sports',[1,1,1,1]],
+        ['Perranporth',[2,2,3,2]],
+        ['Mawnan',[3,3,2,3]],
+        ['Culdrose',[6,5,4,4]],
+        ['Illogan RBL 2nd',[9,9,5,5]],
+        ['Goonhavern',[4,4,6,6]]
+      ]
+    }
   }
 };
 const ordinal=n=>n+(n%10===1&&n%100!==11?'st':n%10===2&&n%100!==12?'nd':n%10===3&&n%100!==13?'rd':'th');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function strengthWidth(v){return Math.max(4,Math.min(100,(v-96)/9*100))}
 function posPct(n){return ((n-1)/14)*100}
+function renderTrajectory(model){
+  const svg=document.getElementById('trajectoryChart'),legend=document.getElementById('trajectoryLegend');
+  if(!svg||!legend||!model.trajectory)return;
+  const W=920,H=360,L=86,R=26,T=26,B=52,maxPos=10;
+  const xs=model.trajectory.checkpoints.map((_,i)=>L+(W-L-R)*(i/Math.max(1,model.trajectory.checkpoints.length-1)));
+  const y=pos=>T+(H-T-B)*((pos-1)/(maxPos-1));
+  const palette=['#1357A6','#18a66a','#8b5cf6','#e8a020','#d65b5b','#2f7f8f'];
+  let parts=[];
+  for(let p=1;p<=maxPos;p++){
+    const yy=y(p);
+    parts.push('<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="#dce4eb" stroke-width="1"/>');
+    parts.push('<text x="'+(L-13)+'" y="'+(yy+4)+'" text-anchor="end" font-size="11" font-weight="800" fill="#708090">'+ordinal(p)+'</text>');
+  }
+  model.trajectory.checkpoints.forEach((label,i)=>{
+    parts.push('<text x="'+xs[i]+'" y="'+(H-18)+'" text-anchor="middle" font-size="11" font-weight="800" fill="#708090">'+esc(label)+'</text>');
+  });
+  model.trajectory.teams.forEach(([name,vals],idx)=>{
+    const color=palette[idx%palette.length];
+    const points=vals.map((v,i)=>xs[i]+','+y(v)).join(' ');
+    parts.push('<polyline points="'+points+'" fill="none" stroke="'+color+'" stroke-width="'+(name==='Perranporth'?4:2.5)+'" stroke-linecap="round" stroke-linejoin="round"/>');
+    vals.forEach((v,i)=>parts.push('<circle cx="'+xs[i]+'" cy="'+y(v)+'" r="'+(name==='Perranporth'?5:4)+'" fill="'+color+'" stroke="#fff" stroke-width="2"/>'));
+  });
+  svg.innerHTML=parts.join('');
+  legend.innerHTML=model.trajectory.teams.map(([name],idx)=>'<span><i class="trajectory-dot" style="background:'+palette[idx%palette.length]+'"></i>'+esc(name)+'</span>').join('');
+}
 function render(model){
-  document.querySelector('.model-badges').children[0].textContent='Snapshot: '+model.snapshot;
-  ourStrength.textContent=model.strength.toFixed(1);ourRank.textContent='#'+model.rank;
-  centralFinish.textContent=ordinal(model.central);finishBand.textContent='realistic band: '+ordinal(model.band[0])+'–'+ordinal(model.band[1]);statusLabel.textContent=model.status;
-  strengthList.innerHTML=model.ratings.map(([name,v])=>'<div class="strength-row '+(name==='Perranporth'?'us':'')+'"><div class="strength-name">'+esc(name)+'</div><div class="strength-track"><div class="strength-fill" style="width:'+strengthWidth(v)+'%"></div></div><div class="strength-value">'+v.toFixed(1)+'</div></div>').join('');
-  cluster.innerHTML=model.cluster.map(([name,v,copy],i)=>'<div class="cluster-card '+(i<3?'top':'')+'"><div class="cluster-rank">Model #'+(i+1)+'</div><div class="cluster-line"><strong>'+esc(name)+'</strong><span class="cluster-score">'+v.toFixed(1)+'</span></div><p>'+esc(copy)+'</p></div>').join('');
-  bandChart.innerHTML=model.bands.map(([name,central,best,worst])=>{const left=posPct(best),right=posPct(worst),width=Math.max(2,right-left);return '<div class="band-row '+(name==='Perranporth'?'us':'')+'"><div class="band-name">'+esc(name)+'</div><div class="band-track"><div class="band-range" style="left:'+left+'%;width:'+width+'%"></div><div class="band-dot" style="left:'+posPct(central)+'%"></div></div><div class="band-label">'+ordinal(best)+'–'+ordinal(worst)+'</div></div>'}).join('');
+  const $=id=>document.getElementById(id);
+  const badges=document.querySelector('.model-badges');
+  if(badges?.children?.[0])badges.children[0].textContent='Snapshot: '+model.snapshot;
+  $('ourStrength').textContent=model.strength.toFixed(1);
+  $('ourRank').textContent='#'+model.rank;
+  $('centralFinish').textContent=ordinal(model.central);
+  $('finishBand').textContent='realistic band: '+ordinal(model.band[0])+'–'+ordinal(model.band[1]);
+  $('statusLabel').textContent=model.status;
+  $('heroVerdict').textContent='Perranporth are a genuine title contender, effectively level with Holman on underlying strength.';
+  $('heroRank').innerHTML=ordinal(model.central)+'<span>central finish</span>';
+  $('strengthList').innerHTML=model.ratings.map(([name,v])=>'<div class="strength-row '+(name==='Perranporth'?'us':'')+'"><div class="strength-name">'+esc(name)+'</div><div class="strength-track"><div class="strength-fill" style="width:'+strengthWidth(v)+'%"></div></div><div class="strength-value">'+v.toFixed(1)+'</div></div>').join('');
+  $('cluster').innerHTML=model.cluster.map(([name,v,copy],i)=>'<div class="cluster-card '+(i<3?'top':'')+'"><div class="cluster-rank">Model #'+(i+1)+'</div><div class="cluster-line"><strong>'+esc(name)+'</strong><span class="cluster-score">'+v.toFixed(1)+'</span></div><p>'+esc(copy)+'</p></div>').join('');
+  $('bandChart').innerHTML=model.bands.map(([name,central,best,worst])=>{const left=posPct(best),right=posPct(worst),width=Math.max(2,right-left);return '<div class="band-row '+(name==='Perranporth'?'us':'')+'"><div class="band-name">'+esc(name)+'</div><div class="band-track"><div class="band-range" style="left:'+left+'%;width:'+width+'%"></div><div class="band-dot" style="left:'+posPct(central)+'%"></div></div><div class="band-label">'+ordinal(best)+'–'+ordinal(worst)+'</div></div>'}).join('');
   const maxImpact=Math.max(...model.impacts.map(x=>Math.abs(x[1])));
-  impactGrid.innerHTML=model.impacts.map(([name,val])=>{const pct=Math.abs(val)/maxImpact*48;return '<div class="impact-row"><div class="impact-name">'+esc(name)+'</div><div class="impact-axis"><div class="impact-bar '+(val>=0?'pos':'neg')+'" style="width:'+pct+'%"></div></div><div class="impact-score">'+(val>0?'+':'')+val.toFixed(1)+'</div></div>'}).join('');
+  $('impactGrid').innerHTML=model.impacts.map(([name,val])=>{const pct=Math.abs(val)/maxImpact*48;return '<div class="impact-row"><div class="impact-name">'+esc(name)+'</div><div class="impact-axis"><div class="impact-bar '+(val>=0?'pos':'neg')+'" style="width:'+pct+'%"></div></div><div class="impact-score">'+(val>0?'+':'')+val.toFixed(1)+'</div></div>'}).join('');
+  renderTrajectory(model);
 }
 async function boot(){
   try{
@@ -176,9 +227,10 @@ async function boot(){
     FootballPANav.mount({teamId:ctx.team.id});
     if(ctx.club?.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
     const model=MODEL_BY_TEAM_ID[ctx.team.id];
-    if(!model){loading.innerHTML='<div class="empty-state"><b>League model not configured for this team yet.</b><br><span class="fpa-muted">This page is currently available for Perranporth 1st Team.</span></div>';return}
-    render(model);loading.classList.add('hidden');app.classList.remove('hidden');
-  }catch(e){loading.innerHTML='<b>Could not load league model.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}
+    const loadingEl=document.getElementById('loading'),appEl=document.getElementById('app');
+    if(!model){loadingEl.innerHTML='<div class="empty-state"><b>League model not configured for this team yet.</b><br><span class="fpa-muted">This page is currently available for Perranporth 1st Team.</span></div>';return}
+    render(model);loadingEl.classList.add('hidden');appEl.classList.remove('hidden');
+  }catch(e){document.getElementById('loading').innerHTML='<b>Could not load league model.</b><br><span class="fpa-muted">'+esc(e.message)+'</span>'}
 }
 sb.auth.onAuthStateChange((e,s)=>{if(e==='SIGNED_OUT'||!s)location.replace('./login.html')});
 boot();
