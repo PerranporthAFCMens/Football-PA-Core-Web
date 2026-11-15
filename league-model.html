@@ -93,9 +93,9 @@ body{background:#eef3f8}
 
   <section class="fpa-card panel">
     <div class="panel-head"><div><h2>Forecast trajectory</h2><p style="text-align:left;margin-top:4px">How the model's predicted finish has moved as new results arrived</p></div><p>1st is<br>top</p></div>
-    <div class="trajectory-wrap"><svg id="trajectoryChart" class="trajectory-svg" viewBox="0 0 920 360" role="img" aria-label="Predicted finishing position over model checkpoints"></svg></div>
+    <div class="trajectory-wrap"><svg id="trajectoryChart" class="trajectory-svg" viewBox="0 0 920 500" role="img" aria-label="Predicted finishing position over model checkpoints"></svg></div>
     <div id="trajectoryLegend" class="trajectory-legend"></div>
-    <div class="trajectory-note">This uses the model checkpoints actually saved during this season. It does not invent missing game weeks. Future model updates can append another point automatically.</div>
+    <div class="trajectory-note">GW1 means each team after its first completed league game, GW2 after its second, and so on. Teams stop where their completed league-game count stops, so postponements do not distort the x-axis.</div>
   </section>
 
   <section class="two-col">
@@ -162,16 +162,25 @@ const MODEL_BY_TEAM_ID={
       ['7–1 v St Buryan',1.0],['1–1 at Porthleven',-0.6],['1–2 at Illogan',-1.4]
     ],
     trajectory:{
-      checkpoints:['3 Oct','10 Oct','31 Oct','14 Nov'],
+      maxGw:10,
       teams:[
-        ['Holman Sports',[1,1,1,1]],
-        ['Perranporth',[2,2,3,2]],
-        ['Mawnan',[3,3,2,3]],
-        ['Culdrose',[6,5,4,4]],
-        ['Illogan RBL 2nd',[9,10,5,5]],
-        ['Goonhavern',[4,4,6,6]]
+        ['Holman Sports',[[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[9,1]]],
+        ['Perranporth',[[1,3],[2,2],[3,2],[4,2],[5,3],[6,3],[7,3],[8,2]]],
+        ['Mawnan',[[1,3],[2,3],[3,3]]],
+        ['Culdrose',[[1,5],[2,6],[3,5],[4,7],[5,4]]],
+        ['Illogan RBL 2nd',[[1,14],[2,15],[3,14],[4,14],[5,14],[6,11],[7,9],[8,8],[9,7]]],
+        ['Goonhavern',[[1,3],[2,4],[3,1],[4,6],[5,4],[6,4],[7,6],[8,6]]],
+        ['Porthleven 2nd',[[1,15],[2,13],[3,2],[4,6],[5,5],[6,5],[7,6],[8,6],[9,5],[10,5]]],
+        ['Lizard Argyle',[[1,14],[2,15],[3,15],[4,13],[5,9],[6,12],[7,10]]],
+        ['Newlyn',[[1,13],[2,11],[3,14],[4,15],[5,10],[6,9],[7,8],[8,7],[9,8]]],
+        ['Probus',[[1,5],[2,10],[3,7],[4,9],[5,7],[6,7],[7,8],[8,9]]],
+        ['Wendron 3rd',[[1,13],[2,13],[3,12],[4,15],[5,12],[6,10]]],
+        ['Frogpool & Cusgarne',[[1,2],[2,6],[3,11],[4,12],[5,12],[6,13],[7,13]]],
+        ['St Buryan',[[1,14],[2,12],[3,10],[4,10],[5,11],[6,14],[7,14]]],
+        ['West Cornwall',[[1,15],[2,2],[3,3],[4,8],[5,7],[6,8],[7,11],[8,12]]],
+        ['Falmouth United',[[1,8],[2,10],[3,14],[4,15],[5,15],[6,15]]]
       ]
-    }
+    }    }
   }
 };
 const ordinal=n=>n+(n%10===1&&n%100!==11?'st':n%10===2&&n%100!==12?'nd':n%10===3&&n%100!==13?'rd':'th');
@@ -181,29 +190,50 @@ function posPct(n){return ((n-1)/14)*100}
 function renderTrajectory(model){
   const svg=document.getElementById('trajectoryChart'),legend=document.getElementById('trajectoryLegend');
   if(!svg||!legend||!model.trajectory)return;
-  const W=920,H=360,L=86,R=26,T=26,B=52,maxPos=10;
-  const xs=model.trajectory.checkpoints.map((_,i)=>L+(W-L-R)*(i/Math.max(1,model.trajectory.checkpoints.length-1)));
+  const W=920,H=500,L=72,R=118,T=30,B=52,maxPos=15,maxGw=model.trajectory.maxGw||10;
+  const x=gw=>L+(W-L-R)*((gw-1)/Math.max(1,maxGw-1));
   const y=pos=>T+(H-T-B)*((pos-1)/(maxPos-1));
-  const palette=['#1357A6','#18a66a','#8b5cf6','#e8a020','#d65b5b','#2f7f8f'];
+  const colours={
+    'Perranporth':'#1357A6',
+    'Holman Sports':'#3d4652',
+    'Mawnan':'#8b5cf6',
+    'Culdrose':'#e8a020',
+    'Illogan RBL 2nd':'#d65b5b',
+    'Goonhavern':'#2f7f8f',
+    'Porthleven 2nd':'#7b8794',
+    'Lizard Argyle':'#8292a1',
+    'Newlyn':'#91a0ad',
+    'Probus':'#9aa7b3',
+    'Wendron 3rd':'#a4afb9',
+    'Frogpool & Cusgarne':'#adb7c0',
+    'St Buryan':'#b5bec6',
+    'West Cornwall':'#bdc5cc',
+    'Falmouth United':'#c5ccd2'
+  };
   let parts=[];
   for(let p=1;p<=maxPos;p++){
     const yy=y(p);
-    parts.push('<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="#dce4eb" stroke-width="1"/>');
-    parts.push('<text x="'+(L-13)+'" y="'+(yy+4)+'" text-anchor="end" font-size="11" font-weight="800" fill="#708090">'+ordinal(p)+'</text>');
+    parts.push('<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="'+(p<=4?'#d4e3f2':'#e8edf2')+'" stroke-width="1"/>');
+    parts.push('<text x="'+(L-12)+'" y="'+(yy+4)+'" text-anchor="end" font-size="10" font-weight="'+(p<=4?'900':'700')+'" fill="'+(p<=4?'#405267':'#8290a0')+'">'+ordinal(p)+'</text>');
   }
-  model.trajectory.checkpoints.forEach((label,i)=>{
-    parts.push('<text x="'+xs[i]+'" y="'+(H-18)+'" text-anchor="middle" font-size="11" font-weight="800" fill="#708090">'+esc(label)+'</text>');
-  });
-  model.trajectory.teams.forEach(([name,vals],idx)=>{
-    const color=palette[idx%palette.length];
-    const points=vals.map((v,i)=>xs[i]+','+y(v)).join(' ');
-    parts.push('<polyline points="'+points+'" fill="none" stroke="'+color+'" stroke-width="'+(name==='Perranporth'?4:2.5)+'" stroke-linecap="round" stroke-linejoin="round"/>');
-    vals.forEach((v,i)=>parts.push('<circle cx="'+xs[i]+'" cy="'+y(v)+'" r="'+(name==='Perranporth'?5:4)+'" fill="'+color+'" stroke="#fff" stroke-width="2"/>'));
+  for(let gw=1;gw<=maxGw;gw++){
+    const xx=x(gw);
+    parts.push('<line x1="'+xx+'" y1="'+T+'" x2="'+xx+'" y2="'+(H-B)+'" stroke="#f0f3f6" stroke-width="1"/>');
+    parts.push('<text x="'+xx+'" y="'+(H-18)+'" text-anchor="middle" font-size="10" font-weight="800" fill="#708090">GW'+gw+'</text>');
+  }
+  const drawOrder=[...model.trajectory.teams].sort((a,b)=>(a[0]==='Perranporth'?1:0)-(b[0]==='Perranporth'?1:0));
+  drawOrder.forEach(([name,points])=>{
+    if(!points.length)return;
+    const color=colours[name]||'#9aa7b3',isUs=name==='Perranporth',isLead=['Holman Sports','Mawnan','Culdrose','Illogan RBL 2nd','Goonhavern'].includes(name);
+    const poly=points.map(([gw,pos])=>x(gw)+','+y(pos)).join(' ');
+    parts.push('<polyline points="'+poly+'" fill="none" stroke="'+color+'" stroke-width="'+(isUs?5:isLead?2.8:1.8)+'" opacity="'+(isUs?1:isLead?.78:.5)+'" stroke-linecap="round" stroke-linejoin="round"/>');
+    points.forEach(([gw,pos])=>parts.push('<circle cx="'+x(gw)+'" cy="'+y(pos)+'" r="'+(isUs?5.5:isLead?4:3)+'" fill="'+color+'" opacity="'+(isUs?1:isLead?.9:.65)+'" stroke="#fff" stroke-width="'+(isUs?2.5:1.5)+'"/>'));
+    const last=points[points.length-1];
+    parts.push('<text x="'+(x(last[0])+10)+'" y="'+(y(last[1])+4)+'" font-size="'+(isUs?12:9.5)+'" font-weight="'+(isUs?950:800)+'" fill="'+color+'">'+esc(name)+'</text>');
   });
   svg.innerHTML=parts.join('');
-  legend.innerHTML=model.trajectory.teams.map(([name],idx)=>'<span><i class="trajectory-dot" style="background:'+palette[idx%palette.length]+'"></i>'+esc(name)+'</span>').join('');
-}
-function render(model){
+  legend.innerHTML='<span><i class="trajectory-dot" style="background:#1357A6"></i><b>Perranporth</b></span><span><i class="trajectory-dot" style="background:#3d4652"></i>Holman</span><span><i class="trajectory-dot" style="background:#8b5cf6"></i>Mawnan</span><span style="color:#8290a0">Other teams shown in muted colours</span>';
+}function render(model){
   const $=id=>document.getElementById(id);
   const badges=document.querySelector('.model-badges');
   if(badges?.children?.[0])badges.children[0].textContent='Snapshot: '+model.snapshot;
