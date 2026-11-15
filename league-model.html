@@ -258,6 +258,7 @@ async function boot(){
     const ctx=await FootballPAContext.resolve();
     FootballPANav.mount({teamId:ctx.team.id});
     if(ctx.club?.primary_colour)document.documentElement.style.setProperty('--blue',ctx.club.primary_colour);
+    if(!ctx.access?.can_manage_team){document.getElementById('loading').innerHTML='<div class="empty-state"><b>Admin access required.</b><br><span class="fpa-muted">This League Model page is available to Perranporth management only.</span></div>';return}
     const model=MODEL_BY_TEAM_ID[ctx.team.id];
     const loadingEl=document.getElementById('loading'),appEl=document.getElementById('app');
     if(!model){loadingEl.innerHTML='<div class="empty-state"><b>League model not configured for this team yet.</b><br><span class="fpa-muted">This page is currently available for Perranporth 1st Team.</span></div>';return}
