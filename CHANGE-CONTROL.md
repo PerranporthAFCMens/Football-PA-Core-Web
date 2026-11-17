@@ -296,3 +296,11 @@ Read, in order:
 6. relevant source files and current database objects
 
 If code and this register disagree, investigate the disagreement before changing anything. Do not silently “standardise” behaviour that may have been an intentional product decision.
+
+
+## Dashboard appearances report — 17 November 2026
+
+- **Type:** additive product change; preserve the existing eight-player dashboard summary and other dashboard views.
+- **Implementation:** dashboard.html on dev, commit `48cce5e368680035558cd7470f3d5c7fd2ca745a`.
+- **Behaviour:** the Player appearances card has a View all button opening a mobile-friendly modal report of all current players plus players retained in historical appearance records, sorted by appearances. Each row shows appearances and percentage of completed team fixtures in the current competition/venue filters. A starting line-up or substitution-on record counts once per player/fixture; rolling substitutions do not create extra appearances. No completed fixtures shows a dash instead of dividing by zero. Other dashboard stats remain unchanged.
+- **Verification:** Code updated on dev. Authenticated browser testing, smoke-check execution and production deployment remain **OPEN**. Do not call this production-ready until verified.
